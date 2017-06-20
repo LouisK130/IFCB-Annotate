@@ -54,5 +54,5 @@ Temporary Items
 !/python/env/manualclassify/classify
 /python/env/manualclassify/classify/__pycache__
 /python/env/manualclassify/classify/migrations
-#python/env/manualclassify/classify/config.py
-#MATLAB/getDBConnection.m
+python/env/manualclassify/classify/config.py
+MATLAB/getDBConnection.m
