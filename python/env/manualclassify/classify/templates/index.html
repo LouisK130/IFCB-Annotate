@@ -1,0 +1,63 @@
+{% load staticfiles %}
+<html>
+	<body>
+		<b>Enter bin manually: </b>
+		<br>
+		<input type="textarea" id ='MCBinsText' style='margin-top:3px;margin-bottom:3px;';>
+		<input type="button" id='MCBinsAddBtn' value="Add">
+		<div id='MCRecentBinsDiv'>
+			<b>Recent bins viewed:</b><br>
+			<select id='MCRecentBinsSelect' size='10'></select>
+			<input type='button' id='MCRecentBinsAddBtn' value='Add'>
+		</div>
+		<div>
+			<b>Chosen bins:</b><br>
+			<select id='MCBins' size='10'></select>
+			<input type='button' id='MCBinsRemoveBtn' value='Remove'>
+		</div>
+		<input type='button' id='MCBinsSubmit' value='Begin Classifying'>
+		<p id='MCLogout'><a href='/logout/'>Logout</a></p>
+    </body>
+</html>
+
+<script>
+	var csrf_token_form = "{% csrf_token %}"
+	var failed = '{{ failed }}'
+</script>
+
+<script type='text/javascript' src="{% static 'javascript/utils.js' %}"></script>
+<script type='text/javascript' src="{% static 'javascript/index.js' %}"></script>
+
+<style>
+body {
+	background-color: #79b7e0;
+}
+#MCRecentBinsSelect {
+	margin-left: 5px;
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+#MCBinsText {
+	width: 358px;
+}
+#MCBins {
+	margin-left: 5px;
+	margin-top: 5px;
+	margin-bottom: 5px;
+	min-width: 352px;
+}
+#MCRecentBinsAddBtn {
+	position: relative;
+	top: -8px;
+}
+#MCBinsRemoveBtn {
+	position: relative;
+	top: -8px;
+}
+#MCLogout {
+	margin: 0;
+	position: absolute;
+	top: 10px;
+	right: 10px;
+}
+</style>

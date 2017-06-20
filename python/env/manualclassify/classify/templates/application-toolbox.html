@@ -1,0 +1,40 @@
+<!-- howdy/templates/index.html -->
+<!DOCTYPE html>
+<html>
+	<div id='IFCBApplicationToolbox'>
+		<div class='ClassificationSelectionLabel'><small><b>Select a classification to apply:</b></small></div>
+		<select id='ClassificationApplicationSelection'>
+			<option value=''></option>
+			{% for label in classification_labels %}
+				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+			{% endfor %}
+		</select>
+		<small><div id='IFCBNumberAppliedLabel'>0 targets updated</div></small>
+	</div>
+</html>
+
+<style>
+#IFCBApplicationToolbox {
+	height: 70px;
+	width: 200px;
+	outline-style: solid;
+	outline-color: black;
+	outline-width: 2px;
+	background-color: #ffffff;
+	position: fixed;
+	top: 105px;
+}
+#ClassificationApplicationSelection {
+	width: 186px;
+	position: relative;
+	left: 5px;
+	top: 7px;
+}
+#IFCBNumberAppliedLabel {
+	position: absolute;
+	bottom: 2px;
+	left: 0px;
+	width: 200px;
+	text-align: center;
+}
+</style>

@@ -1,0 +1,73 @@
+<!-- howdy/templates/index.html -->
+<!DOCTYPE html>
+<html>
+	<div id='IFCBFilterToolbox'>
+		<div class='ClassificationSelectionLabel'><small><b>Select a classification to view:</b></small></div>
+		<select id='IFCBClassificationSelection'>
+			{% for label in classification_labels %}
+				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+			{% endfor %}
+		</select>
+		<center><small><b><a id='MCSetSizeLabel'>Set size: </a></b></small>
+		<input type='number' min='1' name='MCSetSize' id='MCSetSize'></input></center>
+		<!--<div id='MaxWidthInputLabel'><small><b>Max image width:</b></small></div>
+		<input type="number" id='MaxWidthInput' value=400></input>-->
+		<small><div id='IFCBNumberLoadedLabel'>0 loaded of 0</div></small>
+	</div>
+</html>
+
+<style>
+#IFCBFilterToolbox {
+	height: 90px;
+	width: 200px;
+	outline-style: solid;
+	outline-color: black;
+	outline-width: 2px;
+	background-color: #ffffff;
+	position: fixed;
+}
+#IFCBClassificationSelection {
+	width: 186px;
+	position: relative;
+	left: 5px;
+	top: 7px;
+}
+div.ClassificationSelectionLabel {
+	position: relative;
+	left: 5px;
+	top: 2px;
+}
+#MCSetSize {
+	position: relative;
+	left: 3px;
+	top: 13px;
+	width: 70px;
+	margin: 0;
+}
+#MCSetSizeLabel {
+	position: relative;
+	top: 13px;
+	margin: 0;
+}
+#IFCBNumberLoadedLabel {
+	position: absolute;
+	bottom: 2px;
+	left: 0px;
+	width: 200px;
+	text-align: center;
+}
+
+/*
+#MaxWidthInputLabel {
+	position: relative;
+	left: 5px;
+	top: 7px;
+}
+#MaxWidthInput {
+	width: 50px;
+	position: relative;
+	top: 7px;
+	left: 5px;
+}
+*/
+</style>

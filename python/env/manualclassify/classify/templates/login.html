@@ -1,0 +1,46 @@
+<!-- howdy/templates/index.html -->
+<!DOCTYPE html>
+<html>
+	<body>
+		<div id='MCLoginDiv'>
+			<center><h1 id='MCLoginHeader'>Manual Classify Login</h1>
+			<form action="/login/" method="post">
+				{% csrf_token %}
+				<p>
+					Username: 
+					<input type="text" name="username">
+				</p>
+				<p>
+					Password:
+					<input type="password" name="password">
+				</p>
+				<input type="submit" value="Login">
+			</form></center>
+		</div>
+	</body>
+</html>
+
+<style>
+body {
+	background-color: #79b7e0;
+}
+#MCLoginDiv {
+	position: absolute;
+	top: 40%;
+	left: 50%;
+	transform: translateY(-50%) translateX(-50%);
+}
+#MCLoginHeader {
+	margin-bottom: 5px;
+}
+</style>
+
+<script>
+	if ('{{ failed }}' == 'True') {
+		var failure = document.createElement('div')
+		var center = document.getElementById('MCLoginDiv').children[0];
+		failure.innerHTML = 'Invalid username or password'
+		failure.style.color = 'red';
+		center.insertBefore(failure, center.children[1]);
+	}
+</script>

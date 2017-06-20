@@ -1,0 +1,30 @@
+<html>
+	<div class='IFCBTarget' id='IFCBTarget_{{ pid }}'>
+		<small><a class='IFCBSeeFullSize' target='_black' href='{{ web_services_path }}{{ pid }}.png'>See full size</a></small>
+		<img id='IFCBImg_{{ pid }}' src='{{ web_services_path }}{{ pid }}.png'></img>
+	</div>
+</html>
+
+<script>
+	var target = document.getElementById('IFCBTarget_{{ pid }}');
+	target.style.visibility = 'hidden';
+	var img = document.getElementById('IFCBImg_{{ pid }}');
+	img.onload = function() {
+		target.style.width = img.naturalWidth + 'px';
+		target.style.visibility = 'visible';
+	}
+</script>
+
+<style>
+div.IFCBTarget {
+	outline-style: solid;
+	outline-color: black;
+	outline-width: 1px;
+	background-color: #ffffff
+}
+a.IFCBSeeFullSize {
+	position: absolute;
+	right: 4px;
+	top: 2px;
+}
+</style>
