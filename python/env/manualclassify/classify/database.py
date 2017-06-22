@@ -1,7 +1,7 @@
 import psycopg2 as sql
 import time
-from classify import utils
-from classify import config
+import json
+from classify import utils, config
 
 db = config.db
 username = config.username
@@ -15,9 +15,12 @@ def getDBConnection():
 	return sql.connect(database=db, user=username, password=password, host=server)
 	# This needs to be closed at the end of each function that uses it
 
-def getPidsOfClassificationForBins(bins, targets, classification):
+def getAllClassificationsForBins(bins, targets):
 	conn = getDBConnection()
 	cur = conn.cursor()
+	for i,bin in enumerate(bins):
+		if not config.web_services_path in bin:
+			bins[i] = config.web_services_path + bin
 	formatted_list = ["('" + bin + "')" for bin in bins]
 	formatted_string = ','.join(formatted_list)
 	query = 'SELECT * FROM classifications WHERE bin = ANY (VALUES ' + formatted_string + ') AND level = 1;'
@@ -25,7 +28,6 @@ def getPidsOfClassificationForBins(bins, targets, classification):
 	rows = cur.fetchall()
 	# we use a dictionary for easy indexing now, while we build the "level 1" data
 	# then turn it into a list later, so we can order by height
-	user_powers = {}
 	data = {}
 	for row in rows:
 		id = int(row[0])
@@ -45,9 +47,7 @@ def getPidsOfClassificationForBins(bins, targets, classification):
 				'height' : targets[pid]['height'],
 				'other_classifications' : []
 			}
-		if not user_id in user_powers:
-			user_powers[user_id] = getUserPower(user_id)
-		power = user_powers[user_id]
+		power = getUserPower(user_id)
 		time1 = time_val.isoformat()
 		if verification_time and verification_time > time_val:
 			time1 = verification_time.isoformat()
@@ -73,33 +73,35 @@ def getPidsOfClassificationForBins(bins, targets, classification):
 			data[pid] = {**data[pid], **dict}
 		else:
 			data[pid]['other_classifications'].append(dict)
-	# if viewing 'other', include all pids not yet in database
-	# also remove all entries with an accepted classification that we are not interested in
 	for pid,dims in targets.items():
 		if not pid in data:
-			if classification == utils.other_classification_id:
-				data[pid] = {'pid' : pid, 'width' : dims['width'], 'height' : dims['height']}
-		else:
-			if data[pid]['classification_id'] != classification:
-				del data[pid];
+			data[pid] = {'pid' : pid, 'width' : dims['width'], 'height' : dims['height']}
+		#else:
+		#		if data[pid]['classification_id'] != classification:
+		#		del data[pid];
 
 	# turn dictionary into sorted list
-	sorted_pids = list(data.values())
-	sorted_pids.sort(key=lambda x:x['width'], reverse=True)
+	# this is done on JS side now
+	#sorted_pids = list(data.values())
+	#sorted_pids.sort(key=lambda x:x['width'], reverse=True)
 	conn.close()
-	return sorted_pids
+	# return sorted_pids
+	return data
 
+user_powers = {}
 def getUserPower(user_id):
-	conn = getDBConnection()
-	cur = conn.cursor()
-	cur.execute('SELECT power FROM roles WHERE id = (SELECT role FROM users WHERE id = ' + str(user_id) + ');')
-	row = cur.fetchone()
-	if row != None:
-		power = int(row[0])
-	else:
-		power = 0
-	conn.close()
-	return power
+	if not user_id in user_powers:
+		conn = getDBConnection()
+		cur = conn.cursor()
+		cur.execute('SELECT power FROM roles WHERE id = (SELECT role FROM users WHERE id = ' + str(user_id) + ');')
+		row = cur.fetchone()
+		if row != None:
+			power = int(row[0])
+		else:
+			power = 0
+		user_powers[user_id] = power
+		conn.close()
+	return user_powers[user_id]
 
 def getClassificationList():
 	conn = getDBConnection()
@@ -122,15 +124,35 @@ def insertUpdatesForPids(updates):
 		i = pid.rfind('_')
 		bin = pid[:i]
 		roi = pid[i+1:]
-		query = 'INSERT INTO classifications (bin, roi, classification_id) VALUES (\'' + bin + '\', ' + roi + ', ' + id + ') ON CONFLICT (bin, roi, user_id, classification_id) DO UPDATE SET (verifications, verification_time) = (classifications.verifications + 1, now())'
+		query = ('INSERT INTO classifications (bin, roi, classification_id) VALUES (\'' + bin + '\', ' + roi + ', ' + id + ')'
+			'ON CONFLICT (bin, roi, user_id, classification_id) DO UPDATE SET (verifications, verification_time) = '
+			'(classifications.verifications + 1, now()) RETURNING *;')
 		queries.append(query)
 	query_string = ';'.join(queries)
 	conn = getDBConnection()
 	cur = conn.cursor()
 	cur.execute(query_string)
 	conn.commit()
+	rows = cur.fetchall()
+	return_updates = {}
+	for row in rows:
+		pid = row[1] + '_' + utils.formatROI(row[2])
+		dict = {
+			'id' : row[0],
+			'pid' : pid,
+			'user_id' : row[3],
+			'time' : row[4].isoformat(),
+			'classification_id' : row[5],
+			'level' : row[6],
+			'verifications' : row[7],
+			'verification_time' : row[8],
+			'user_power' : getUserPower(row[3]),
+		}
+		if dict['verification_time']:
+			dict['verification_time'] = dict['verification_time'].isoformat()
+		return_updates[pid] = dict
 	conn.close()
 	if cur.statusmessage == 'INSERT 0 1':
-		return 'success'
+		return json.dumps(return_updates)
 	else:
 		return 'failure'

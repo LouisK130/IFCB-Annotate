@@ -3,8 +3,7 @@ from django.views.generic import TemplateView
 from django.http import HttpResponse
 from django import forms
 import json
-from classify import utils
-from classify import database
+from classify import utils, database, config
 from django.contrib.auth import authenticate, login, logout
 from django.conf import settings
 
@@ -45,21 +44,14 @@ class ClassifyPageView(TemplateView):
 				request.session['failed_bins_input'] = True
 				return redirect('/')
 			classList = database.getClassificationList()
-			for dict in classList:
-				if dict['name'] == 'other':
-					utils.other_classification_id = int(dict['id'])
-			classification = request.POST.get('classification', utils.other_classification_id)
 			print(str(len(targets)) + ' total pids found')
 			print(str(len(misfit_pids)) + ' are misfits')
 			if len(misfit_pids) > 0:
 				print('misfits are not yet supported')
-			inCategory = database.getPidsOfClassificationForBins(bins, targets, int(classification))
-			print(str(len(inCategory)) + ' belong in category ' + str(classification))
-			classifications = json.dumps(inCategory)
+			classifications = json.dumps(database.getAllClassificationsForBins(bins, targets))
 		return render(request, 'classify.html', {
-			'web_services_path' : utils.web_services_path,
+			'web_services_path' : config.web_services_path,
 			'classification_labels' : classList,
-			'classification' : classification,
 			'classifications' : classifications,
 			'pids_input' : pidsInput,
 			'bins' : json.dumps(bins),

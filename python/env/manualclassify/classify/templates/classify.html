@@ -53,7 +53,6 @@ div.IFCBNewClassification {
 <script type='text/javascript'>
 	var web_services_path = '{{ web_services_path }}'
 	var classifications = {{ classifications|safe }}
-	var classification_input = {{ classification }}
 	var pids_input = '{{ pids_input }}'
 	var csrf_token_form = "{% csrf_token %}"
 	var csrf_token = '{{ csrf_token }}'
@@ -61,4 +60,5 @@ div.IFCBNewClassification {
 	var user_id = '{{ user_id }}'
 </script>
 <script type='text/javascript' src="{% static 'javascript/utils.js' %}"></script>
+<script type='text/javascript' src="{% static 'javascript/area-selection.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/classify.js' %}"></script>

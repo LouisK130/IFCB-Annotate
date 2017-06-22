@@ -61,3 +61,65 @@ function isClippedByBox(ele, box) {
 		//return true;
 	return false;
 }
+
+function compareTargets(a, b) {
+	if (a['width'] > b['width'])
+		return -1;
+	else if(a['width'] < b['width'])
+		return 1;
+	return 0;
+}
+
+function getTargetsInCategory(classification, include_unclassified) {
+	var targets = [];
+	for(var pid in classifications) {
+		if (classifications.hasOwnProperty(pid)) {
+			if (classifications[pid]['classification_id']) {
+				if (classifications[pid]['classification_id'] == classification)
+					targets.push(classifications[pid]);
+			}
+			else if (include_unclassified) {
+				targets.push(classifications[pid]);
+			}
+		}
+	}
+	targets.sort(compareTargets);
+	return targets;
+}
+
+function makeUpdatesToClassifications(updates) {
+	for (pid in updates) {
+		if (pid in classifications) { // should be unnecessary...
+			var c = classifications[pid];
+			var h = c['height'];
+			var w = c['width'];
+			if (!(c['classification_id'])) {
+				classifications[pid] = updates[pid];
+				classifications[pid]['height'] = h;
+				classifications[pid]['width'] = w;
+				classifications[pid]['other_classifications'] = [];
+			}
+			else {
+				var time1 = c['time'];
+				if (c['verification_time'] && c['verification_time'] > time1)
+					time1 = c['verification_time'];
+				var time2 = updates[pid]['time'];
+				if (updates[pid]['verification_time'] && updates[pid]['verification_time'] > time2)
+					time2 = updates[pid]['verification_time'];
+				if (updates[pid]['user_power'] > c['user_power'] || (updates[pid]['user_power'] == c['user_power'] && time2 > time1)) {
+					var oc = c['other_classifications'];
+					delete c['other_classifications']
+					oc.push(c);
+					classifications[pid] = updates[pid]
+					classifications[pid]['height'] = h;
+					classifications[pid]['width'] = w;
+					classifications[pid]['other_classifications'] = oc;
+				}
+				else {
+					classifications[pid]['other_classifications'].push(updates[pid]);
+				}
+			}
+
+		}
+	}
+}

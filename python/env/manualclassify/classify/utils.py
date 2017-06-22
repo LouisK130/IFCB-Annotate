@@ -1,7 +1,3 @@
-# Point to webservices
-web_services_path = "http://ifcb-data.whoi.edu/mvco/"
-other_classification_id = 1 # updates automatically when classify.html is served by views.py
-
 import requests
 import re
 import csv
@@ -9,7 +5,7 @@ import json
 import codecs
 from contextlib import closing
 from xml.etree import ElementTree
-from classify import database
+from classify import database, config
 
 def splitBinsAndPids(str):
 	both = re.split(',', str)
@@ -21,7 +17,7 @@ def splitBinsAndPids(str):
 		if len(s) == 0:
 			continue
 		s = s.replace(' ', '')
-		s_cut = s.replace(web_services_path, '')
+		s_cut = s.replace(config.web_services_path, '')
 		if s_cut[0] == 'I':
 			if len(s_cut) == 21:
 				bins.append(s)
@@ -44,7 +40,7 @@ def splitBinsAndPids(str):
 # pid = height
 def parseBinToPids(bin):
 	pids = {}
-	with closing(requests.get(web_services_path + bin + '.csv', stream=True)) as r:
+	with closing(requests.get(config.web_services_path + bin + '.csv', stream=True)) as r:
 		reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
 		headers = next(reader)
 		pid_index = headers.index('pid')
@@ -61,7 +57,7 @@ def getTargets(str):
 	bins, misfit_pids = splitBinsAndPids(str)
 	targets = {}
 	#for pid in misfit_pids:
-	#	data = json.loads(requests.get(web_services_path + pid + '.json').text)
+	#	data = json.loads(requests.get(config.web_services_path + pid + '.json').text)
 	#	targets[pid] = data['width']
 	for bin in bins:
 		print('parsing bin: ' + bin)
