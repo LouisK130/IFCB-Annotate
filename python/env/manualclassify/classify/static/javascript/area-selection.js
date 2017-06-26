@@ -48,8 +48,41 @@ window.addEventListener('mouseup', function(event) {
 	var box = document.getElementById('MCSelectAreaBox');
 	for(var n = 0; n < targets.length; n++) {
 		var target = targets.item(n);
-		if (isClippedByBox(target, box))
-			target.click();
+		if (isClippedByBox(target, box)) {
+			var pid = target.id.replace('IFCBTarget_', '');
+			var filter = document.getElementById('IFCBClassificationSelection').value;
+			var val = document.getElementById('ClassificationApplicationSelection').value;
+			var verify_other = false;
+			for(var i = 0; i < current_targets.length; i++) {
+				if (current_targets[i]['pid'] == pid && 'other_classifications' in current_targets[i]) {
+					for(var z = 0; z < current_targets[i]['other_classifications'].length; z++) {
+						var c = current_targets[i]['other_classifications'][z]
+						if (c['classification_id'] == val) {
+							if (user_id == c['user_id']) {
+								verify_other = c['classification_id'];
+							}
+						}
+					}
+				}
+			}
+			var label = document.getElementById('IFCBNewClassification_' + pid)
+			if (val == '') {
+				delete classification_updates[pid];
+				label.innerHTML = '';
+			}
+			else {
+				classification_updates[pid] = val;
+				label.style.color = 'red';
+				target.style.outlineColor = 'black';
+				if (val == filter)
+					label.innerHTML = '<small><b>VERIFIED</b></small>';
+				else if (verify_other)
+					label.innerHTML = '<small><b>VERIFIED: ' + verify_other + '</b></small>';
+				else
+					label.innerHTML = '<b>' + val + '</b>';
+			}
+			updateAppliedCounter();
+		}
 	}
 	mouseX1 = null;
 	mouseY1 = null;

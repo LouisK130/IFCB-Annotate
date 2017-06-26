@@ -1,3 +1,6 @@
+var target_img_sources = {};
+var zips = {};
+
 // https://www.w3schools.com/js/js_cookies.asp
 function setCookie(cname, cvalue, exdays) {
     var d = new Date();
@@ -23,6 +26,7 @@ function getCookie(cname) {
 }
 
 function addRecentBinToCookies(new_bin) {
+	new_bin = timeseries + new_bin
 	var bins = getRecentBins();
 	for (var n = 0; n < bins.length; n++) {
 		if (bins[n] == new_bin)
@@ -121,5 +125,65 @@ function makeUpdatesToClassifications(updates) {
 			}
 
 		}
+	}
+}
+
+function getZipForPid(pid) {
+	var k = pid.lastIndexOf('_');
+	var bin = pid.substring(0, k);
+	if (zips[bin])
+		return zips[bin];
+	return null;
+}
+
+function downloadZip(bin) {
+	var xhr = new XMLHttpRequest();
+	xhr.open('POST', '/getzip/')
+	xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+	var params = 'csrfmiddlewaretoken=' + csrf_token + '&bin=' + bin;
+	xhr.responseType = 'blob';
+	xhr.onload = function() {
+		zips[bin] = xhr.response;
+	}
+	xhr.onerror = function() {
+		console.log('something went wrong downloading zip');
+	}
+	xhr.send(params);
+}
+
+function loadImageForPid(pid, img) {
+	var k = pid.lastIndexOf('/')
+	pid = pid.substring(k+1, pid.length);
+	if (!(target_img_sources[pid])) {
+		var zipFile = getZipForPid(pid);
+		if (!(zipFile)) {
+			console.log('couldn\'t find zip file for pid: ' + pid);
+			return;
+		}
+		zip.createReader(new zip.BlobReader(zipFile), function(reader) {
+			reader.getEntries(function(entries) {
+				for (var i = 0; i < entries.length; i++) {
+					if (entries[i].filename == pid + '.png') {
+						entries[i].getData(new zip.BlobWriter('text/plain'), function(data) {
+							var src = URL.createObjectURL(data);
+							if (img) {
+								img.src = src;
+								loaded++;
+								updateLoadedCounter();
+							}
+							target_img_sources[pid] = src;
+						});
+						return;
+					}
+				}
+			});
+		}, function(error) {
+			console.log('error reading zip');
+		});
+	}
+	else if (img) {
+		img.src = target_img_sources[pid];
+		loaded++;
+		updateLoadedCounter();
 	}
 }

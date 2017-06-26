@@ -6,41 +6,39 @@ import codecs
 from contextlib import closing
 from xml.etree import ElementTree
 from classify import database, config
+import os
 
-def splitBinsAndPids(str):
-	both = re.split(',', str)
-	if not both:
-		both = [str]
-	pids = []
+if not os.path.exists('classify/zip_cache'):
+	os.mkdir('classify/zip_cache')
+	
+def verifyBins(str):
+	list = re.split(',', str)
+	if not list:
+		list = [str]
 	bins = []
-	for s in both:
+	failures = []
+	for s in list:
 		if len(s) == 0:
 			continue
-		s = s.replace(' ', '')
-		s_cut = s.replace(config.web_services_path, '')
-		if s_cut[0] == 'I':
-			if len(s_cut) == 21:
-				bins.append(s)
-			elif len(s_cut) == 27:
-				pids.append(s)
-			else:
-				print("[WARNING] Invalid bin/pid specified: " + s)
-		elif s_cut[0] == 'D':
-			if len(s_cut) == 24:
-				bins.append(s)
-			elif len(s_cut) == 30:
-				pids.append(s)
-			else:
-				print("[WARNING] Invalid bin/pid specified: " + s)
+		if s[0] == 'I' and len(s) == 21:
+			bins.append(s)
+		elif s[0] == 'D' and len(s) == 24:
+			bins.append(s)
 		else:
-			print("[WARNING] Invalid bin/pid specified: " + s)
-	return (bins, pids)
+			failures.append(s)
+	for bin in bins:
+		url = timeseries + bin
+		try:
+			r = requests.get(url)
+			if r.status_code == 404:
+				failures.append(bin)
+		except:
+			failures.append(bin)
+	return (bins, failures)
 	
-# dictionary of format:
-# pid = height
-def parseBinToPids(bin):
-	pids = {}
-	with closing(requests.get(config.web_services_path + bin + '.csv', stream=True)) as r:
+def parseBinToTargets(bin):
+	targets = {}
+	with closing(requests.get(timeseries + bin + '.csv', stream=True)) as r:
 		reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
 		headers = next(reader)
 		pid_index = headers.index('pid')
@@ -48,24 +46,32 @@ def parseBinToPids(bin):
 		height_index = headers.index('height')
 		for row in reader:
 			data = {'width' : int(row[width_index]), 'height' : int(row[height_index])}
-			pids[row[pid_index]] = data
-	return pids
+			targets[row[pid_index]] = data
+	return targets
 	
-# dictionary of format:
-# pid = height
-def getTargets(str):
-	bins, misfit_pids = splitBinsAndPids(str)
+# dictionary with key = values:
+# pid = {'height' : height, 'width' : width}
+def getTargets(bins):
 	targets = {}
-	#for pid in misfit_pids:
-	#	data = json.loads(requests.get(config.web_services_path + pid + '.json').text)
-	#	targets[pid] = data['width']
 	for bin in bins:
 		print('parsing bin: ' + bin)
-		targets = {**targets, **parseBinToPids(bin)}
-	return (bins, misfit_pids, targets)
+		targets = {**targets, **parseBinToTargets(bin)}
+	return targets
 
 def formatROI(roi):
 	roi_s = str(roi)
 	while len(roi_s) != 5:
 		roi_s = '0' + roi_s
 	return roi_s
+	
+def getZipForBin(bin):
+	if not os.path.isfile('classify/zip_cache/' + bin + '.zip'):
+		downloadZipForBin(bin)
+	return open('classify/zip_cache/' + bin + '.zip', 'rb').read()
+	
+def downloadZipForBin(bin):
+	print('started downloading: ' + timeseries + bin + '.zip')
+	r = requests.get(timeseries + bin + '.zip')
+	with open('classify/zip_cache/' + bin + '.zip', 'wb') as f:
+		f.write(r.content)
+	print('finished downloading: ' + timeseries + bin + '.zip')

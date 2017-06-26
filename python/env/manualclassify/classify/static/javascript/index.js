@@ -1,6 +1,7 @@
-if (failed == 'True') {
+if (failed != '') {
 	var failure = document.createElement('div')
-	failure.innerHTML = 'Please include at least 1 valid bin';
+	failure.innerHTML = failed;
+	failure.style.whiteSpace = 'pre';
 	failure.style.color = 'red';
 	failure.style.marginBottom = '0px';
 	failure.style.marginTop = '5px';
@@ -78,9 +79,14 @@ function submitForm() {
 	form.method = 'POST';
 	var input1 = document.createElement('input');
 	input1.type = 'hidden';
-	input1.name = 'pids';
+	input1.name = 'bins';
 	input1.value = bins_string;
+	var input2 = document.createElement('input');
+	input2.type = 'hidden';
+	input2.name = 'timeseries';
+	input2.value = document.getElementById('MCTimeSeries').value;
 	form.appendChild(input1);
+	form.appendChild(input2);
 	form.insertAdjacentHTML('beforeend', csrf_token_form);
 	document.body.appendChild(form);
 	form.submit();
@@ -92,8 +98,12 @@ function addBin(bin) {
 		if (container.options[n].value == bin)
 			return
 	}
+	var i = bin.lastIndexOf('/');
+	var url = bin.substring(0, i+1);
+	bin = bin.substring(i+1, bin.length);
 	var option = document.createElement('option');
 	option.text = bin;
 	option.value = bin;
 	document.getElementById('MCBins').add(option);
+	document.getElementById('MCTimeSeries').value = url;
 }

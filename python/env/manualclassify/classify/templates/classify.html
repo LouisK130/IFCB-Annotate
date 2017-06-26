@@ -48,16 +48,18 @@ div.IFCBNewClassification {
 }
 </style>
 
+<script type='text/javascript' src="{% static 'javascript/lib/zip.js' %}"></script>
+
 <!-- Get data first, then load js for this page -->
 <!-- Do it all after above positioning / styling -->
 <script type='text/javascript'>
-	var web_services_path = '{{ web_services_path }}'
+	var timeseries = '{{ timeseries }}'
 	var classifications = {{ classifications|safe }}
-	var pids_input = '{{ pids_input }}'
 	var csrf_token_form = "{% csrf_token %}"
 	var csrf_token = '{{ csrf_token }}'
 	var bins = {{ bins|safe }}
 	var user_id = '{{ user_id }}'
+	zip.workerScriptsPath = "{% static 'javascript/lib/' %}";
 </script>
 <script type='text/javascript' src="{% static 'javascript/utils.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/area-selection.js' %}"></script>

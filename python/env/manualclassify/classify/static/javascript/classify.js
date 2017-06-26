@@ -7,6 +7,7 @@ document.getElementById('MCSetSize').value = set_size
 
 for(var n = 0; n < bins.length; n++) {
 	addRecentBinToCookies(bins[n]);
+	downloadZip(bins[n]);
 }
 
 var target_counter = 0;
@@ -17,10 +18,13 @@ var current_targets = getTargetsInCategory(1);
 var classSelect = document.getElementById('IFCBClassificationSelection');
 classSelect.value = 1;
 classSelect.onchange = function() {
+	classification_updates = {};
 	target_counter = 0;
 	loaded = 0;
 	var include_unclassified = this.options[this.selectedIndex].text.substring(0,5) == 'other';
 	current_targets = getTargetsInCategory(classSelect.value, include_unclassified);
+	updateLoadedCounter();
+	updateAppliedCounter();
 	var targets = document.getElementsByClassName('IFCBTarget');
 	var z = targets.length - 1; // don't update each loop
 	for (var z = z; z >= 0; z--) {
@@ -160,20 +164,12 @@ function createTile(pid, width, height) {
 	}
 	
 	var img = document.createElement('img');
-	img.src = web_services_path + pid + '.png';
 	img.classList.add('IFCBImg');
 	img.id = 'IFCBImg_' + pid;
+	img.classification = document.getElementById('IFCBClassificationSelection').value;
 	img.height = width;
 	img.width = height;
-	img.onload = function() {
-		loaded++;
-		updateLoadedCounter()
-	}
-	// so if one image fails to load it doesn't stop all future loading...
-	img.onerror = function() {
-		loaded++;
-		updateLoadedCounter()
-	}
+	loadImageForPid(pid, img);
 	img.draggable = false;
 	
 	var newClassification = document.createElement('div');

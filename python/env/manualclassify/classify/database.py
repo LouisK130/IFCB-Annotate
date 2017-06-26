@@ -1,6 +1,7 @@
 import psycopg2 as sql
 import time
 import json
+import uuid
 from classify import utils, config
 
 db = config.db
@@ -18,12 +19,10 @@ def getDBConnection():
 def getAllClassificationsForBins(bins, targets):
 	conn = getDBConnection()
 	cur = conn.cursor()
-	for i,bin in enumerate(bins):
-		if not config.web_services_path in bin:
-			bins[i] = config.web_services_path + bin
 	formatted_list = ["('" + bin + "')" for bin in bins]
 	formatted_string = ','.join(formatted_list)
-	query = 'SELECT * FROM classifications WHERE bin = ANY (VALUES ' + formatted_string + ') AND level = 1;'
+	timeseries_id = getTimeseriesId(utils.timeseries)
+	query = "SELECT * FROM classifications WHERE bin = ANY (VALUES " + formatted_string + ") AND timeseries_id = '" + timeseries_id + "';"
 	cur.execute(query)
 	rows = cur.fetchall()
 	# we use a dictionary for easy indexing now, while we build the "level 1" data
@@ -37,9 +36,10 @@ def getAllClassificationsForBins(bins, targets):
 		time_val = row[4]
 		classification_id = int(row[5])
 		level = int(row[6])
-		verifications = row[7] # Might be None
+		verifications = row[7]
 		verification_time = row[8] # Might be None
-		pid = bin + '_' + roi
+		timeseries = row[9]
+		pid = utils.timeseries + bin + '_' + roi
 		if not pid in data:
 			data[pid] = {'user_power' : -1,
 				'time' : 0, 
@@ -62,7 +62,8 @@ def getAllClassificationsForBins(bins, targets):
 			'time' : time_val,
 			'classification_id' : classification_id,
 			'verifications' : verifications,
-			'verification_time' : verification_time
+			'verification_time' : verification_time,
+			'timeseries' : timeseries,
 		}
 		if dict['verification_time']:
 			dict['verification_time'] = dict['verification_time'].isoformat()
@@ -102,6 +103,31 @@ def getUserPower(user_id):
 		user_powers[user_id] = power
 		conn.close()
 	return user_powers[user_id]
+	
+timeseries_ids = {}
+def getTimeseriesId(url):
+	if not url in timeseries_ids:
+		conn = getDBConnection()
+		cur = conn.cursor()
+		cur.execute("SELECT id FROM timeseries WHERE url = '" + url + "';")
+		row = cur.fetchone()
+		if row != None:
+			timeseries_ids[url] = row[0]
+		else:
+			createTimeseries(url)
+		conn.close()
+	return timeseries_ids[url]
+
+def createTimeseries(url):
+	print('creating new timeseries: ' + url)
+	conn = getDBConnection()
+	cur = conn.cursor()
+	id = str(uuid.uuid4())
+	cur.execute("INSERT INTO timeseries (id, url) VALUES ('" + id + "', '" + url + "');")
+	conn.commit()
+	conn.close()
+	print('id: ' + id)
+	timeseries_ids[url] = id
 
 def getClassificationList():
 	conn = getDBConnection()
@@ -147,6 +173,7 @@ def insertUpdatesForPids(updates):
 			'verifications' : row[7],
 			'verification_time' : row[8],
 			'user_power' : getUserPower(row[3]),
+			'timeseries' : row[9],
 		}
 		if dict['verification_time']:
 			dict['verification_time'] = dict['verification_time'].isoformat()

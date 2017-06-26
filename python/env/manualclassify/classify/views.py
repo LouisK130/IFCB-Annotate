@@ -12,7 +12,7 @@ class HomePageView(TemplateView):
 	def get(self, request, **kwargs):
 		if not request.user.is_authenticated:
 			return redirect(settings.LOGIN_URL)
-		return render(request, 'index.html', {'failed' : request.session.pop('failed_bins_input', False)})
+		return render(request, 'index.html', {'failed' : request.session.pop('failed', '')})
 		
 class LoginPageView(TemplateView):
 	def get(self, request, **kwargs):
@@ -38,22 +38,22 @@ class ClassifyPageView(TemplateView):
 		if request.method == 'POST':
 			if not request.user.is_authenticated:
 				return redirect(settings.LOGIN_URL)
-			pidsInput = request.POST.get('pids', '')
-			(bins, misfit_pids, targets) = utils.getTargets(pidsInput)
-			if len(bins) == 0:
-				request.session['failed_bins_input'] = True
+			binsInput = request.POST.get('bins', '')
+			utils.timeseries = request.POST.get('timeseries', '')
+			(bins, failures) = utils.verifyBins(binsInput)
+			if len(failures) > 0:
+				request.session['failed'] = 'Invalid bin(s) specified for given timeseries:'
+				for f in failures:
+					request.session['failed'] = request.session['failed'] + '\\n' + f
 				return redirect('/')
+			targets = utils.getTargets(bins)
 			classList = database.getClassificationList()
-			print(str(len(targets)) + ' total pids found')
-			print(str(len(misfit_pids)) + ' are misfits')
-			if len(misfit_pids) > 0:
-				print('misfits are not yet supported')
+			print(str(len(targets)) + ' total targets found')
 			classifications = json.dumps(database.getAllClassificationsForBins(bins, targets))
 		return render(request, 'classify.html', {
-			'web_services_path' : config.web_services_path,
+			'timeseries' : utils.timeseries,
 			'classification_labels' : classList,
 			'classifications' : classifications,
-			'pids_input' : pidsInput,
 			'bins' : json.dumps(bins),
 			'user_id' : request.session.get('user_id', 1) # TO-DO: Make this real
 		})
@@ -66,3 +66,13 @@ class SubmitUpdatesPageView(TemplateView):
 			updates = request.POST.get('updates', 'EMPTY')
 			result = database.insertUpdatesForPids(json.loads(updates))
 			return HttpResponse(result)
+			
+class ZipDownloadPageView(TemplateView):
+	def post(self, request, **kwargs):
+		if request.method == 'POST':
+			bin = request.POST.get('bin', '')
+			if bin == '':
+				return HttpResponse('failure')
+			response = HttpResponse(utils.getZipForBin(bin), content_type='application/zip')
+			response['Content-Disposition'] = 'attachment; filename=' + bin + '.zip'
+			return response

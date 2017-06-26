@@ -1,4 +1,4 @@
-function insertData(conn, old_classification, file)
+function insertData4(conn, old_classification, file)
 
     load('class_table_mvco.mat')
     index = strcmp(class_table_mvco{:,1}, old_classification);
