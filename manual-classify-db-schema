@@ -1,0 +1,393 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.6.2
+-- Dumped by pg_dump version 9.6.2
+
+-- Started on 2017-06-26 22:36:52
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 1 (class 3079 OID 12387)
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- TOC entry 2208 (class 0 OID 0)
+-- Dependencies: 1
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 202 (class 1259 OID 16509)
+-- Name: classification_labels; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE classification_labels (
+    id integer NOT NULL,
+    name text NOT NULL,
+    international_id integer
+);
+
+
+--
+-- TOC entry 201 (class 1259 OID 16507)
+-- Name: classification_labels_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE classification_labels_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2209 (class 0 OID 0)
+-- Dependencies: 201
+-- Name: classification_labels_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE classification_labels_id_seq OWNED BY classification_labels.id;
+
+
+--
+-- TOC entry 206 (class 1259 OID 18840)
+-- Name: classifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE classifications (
+    id integer NOT NULL,
+    bin text NOT NULL,
+    roi integer NOT NULL,
+    user_id integer DEFAULT 1 NOT NULL,
+    "time" timestamp without time zone DEFAULT now() NOT NULL,
+    classification_id integer NOT NULL,
+    level integer DEFAULT 1 NOT NULL,
+    verifications integer DEFAULT 0,
+    verification_time timestamp without time zone,
+    timeseries_id text DEFAULT '341fae31-89d7-4f27-ba25-27d2c9216dc0'::text
+);
+
+
+--
+-- TOC entry 205 (class 1259 OID 18838)
+-- Name: classifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE classifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2210 (class 0 OID 0)
+-- Dependencies: 205
+-- Name: classifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE classifications_id_seq OWNED BY classifications.id;
+
+
+--
+-- TOC entry 200 (class 1259 OID 16497)
+-- Name: roles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE roles (
+    id integer NOT NULL,
+    name text NOT NULL,
+    power integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- TOC entry 199 (class 1259 OID 16495)
+-- Name: roles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE roles_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2211 (class 0 OID 0)
+-- Dependencies: 199
+-- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE roles_id_seq OWNED BY roles.id;
+
+
+--
+-- TOC entry 204 (class 1259 OID 16520)
+-- Name: tag_labels; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE tag_labels (
+    id integer NOT NULL,
+    name text NOT NULL
+);
+
+
+--
+-- TOC entry 203 (class 1259 OID 16518)
+-- Name: tag_labels_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tag_labels_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2212 (class 0 OID 0)
+-- Dependencies: 203
+-- Name: tag_labels_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tag_labels_id_seq OWNED BY tag_labels.id;
+
+
+--
+-- TOC entry 208 (class 1259 OID 18855)
+-- Name: tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE tags (
+    id integer NOT NULL,
+    bin text NOT NULL,
+    roi integer NOT NULL,
+    user_id integer DEFAULT 1 NOT NULL,
+    "time" timestamp without time zone DEFAULT now() NOT NULL,
+    tag_id integer NOT NULL,
+    level integer DEFAULT 1 NOT NULL,
+    timeseries_id text
+);
+
+
+--
+-- TOC entry 207 (class 1259 OID 18853)
+-- Name: tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tags_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2213 (class 0 OID 0)
+-- Dependencies: 207
+-- Name: tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tags_id_seq OWNED BY tags.id;
+
+
+--
+-- TOC entry 209 (class 1259 OID 23533)
+-- Name: timeseries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE timeseries (
+    id text NOT NULL,
+    url text NOT NULL
+);
+
+
+--
+-- TOC entry 198 (class 1259 OID 16486)
+-- Name: users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE users (
+    id integer NOT NULL,
+    username text NOT NULL,
+    role integer NOT NULL
+);
+
+
+--
+-- TOC entry 197 (class 1259 OID 16484)
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2214 (class 0 OID 0)
+-- Dependencies: 197
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE users_id_seq OWNED BY users.id;
+
+
+--
+-- TOC entry 2057 (class 2604 OID 16512)
+-- Name: classification_labels id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY classification_labels ALTER COLUMN id SET DEFAULT nextval('classification_labels_id_seq'::regclass);
+
+
+--
+-- TOC entry 2059 (class 2604 OID 19020)
+-- Name: classifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY classifications ALTER COLUMN id SET DEFAULT nextval('classifications_id_seq'::regclass);
+
+
+--
+-- TOC entry 2055 (class 2604 OID 16500)
+-- Name: roles id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq'::regclass);
+
+
+--
+-- TOC entry 2058 (class 2604 OID 16523)
+-- Name: tag_labels id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tag_labels ALTER COLUMN id SET DEFAULT nextval('tag_labels_id_seq'::regclass);
+
+
+--
+-- TOC entry 2065 (class 2604 OID 18858)
+-- Name: tags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tags ALTER COLUMN id SET DEFAULT nextval('tags_id_seq'::regclass);
+
+
+--
+-- TOC entry 2054 (class 2604 OID 16489)
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
+
+
+--
+-- TOC entry 2074 (class 2606 OID 16517)
+-- Name: classification_labels classification_labels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY classification_labels
+    ADD CONSTRAINT classification_labels_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2078 (class 2606 OID 19877)
+-- Name: classifications classifications_bin_roi_user_id_classification_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY classifications
+    ADD CONSTRAINT classifications_bin_roi_user_id_classification_id_key UNIQUE (bin, roi, user_id, classification_id);
+
+
+--
+-- TOC entry 2080 (class 2606 OID 18848)
+-- Name: classifications classifications_pkey1; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY classifications
+    ADD CONSTRAINT classifications_pkey1 PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2076 (class 2606 OID 16528)
+-- Name: tag_labels facet_labels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tag_labels
+    ADD CONSTRAINT facet_labels_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2072 (class 2606 OID 16505)
+-- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY roles
+    ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2082 (class 2606 OID 19879)
+-- Name: tags tags_bin_roi_user_id_tag_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tags
+    ADD CONSTRAINT tags_bin_roi_user_id_tag_id_key UNIQUE (bin, roi, user_id, tag_id);
+
+
+--
+-- TOC entry 2084 (class 2606 OID 23540)
+-- Name: timeseries timeseries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY timeseries
+    ADD CONSTRAINT timeseries_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2070 (class 2606 OID 16494)
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+-- Completed on 2017-06-26 22:36:53
+
+--
+-- PostgreSQL database dump complete
+--
+
