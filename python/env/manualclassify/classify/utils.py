@@ -42,11 +42,13 @@ def parseBinToTargets(bin):
 		reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
 		headers = next(reader)
 		pid_index = headers.index('pid')
-		width_index = headers.index('width')
-		height_index = headers.index('height')
+		# reversed because regardless of how they go through IFCB, on display these values are backwards
+		width_index = headers.index('height')
+		height_index = headers.index('width')
 		for row in reader:
 			data = {'width' : int(row[width_index]), 'height' : int(row[height_index])}
-			targets[row[pid_index]] = data
+			pid = row[pid_index].replace(timeseries, '')
+			targets[pid] = data
 	return targets
 	
 # dictionary with key = values:

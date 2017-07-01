@@ -1,9 +1,9 @@
 <!-- howdy/templates/index.html -->
 <!DOCTYPE html>
 <html>
-	<div id='IFCBFilterToolbox'>
+	<div id='MCFilterToolbox'>
 		<div class='ClassificationSelectionLabel'><small><b>Select a classification to view:</b></small></div>
-		<select id='IFCBClassificationSelection'>
+		<select id='MCClassificationSelection'>
 			{% for label in classification_labels %}
 				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
 			{% endfor %}
@@ -12,12 +12,12 @@
 		<input type='number' min='1' name='MCSetSize' id='MCSetSize'></input></center>
 		<!--<div id='MaxWidthInputLabel'><small><b>Max image width:</b></small></div>
 		<input type="number" id='MaxWidthInput' value=400></input>-->
-		<small><div id='IFCBNumberLoadedLabel'>0 loaded of 0</div></small>
+		<small><div id='MCNumberLoadedLabel'>0 loaded of 0</div></small>
 	</div>
 </html>
 
 <style>
-#IFCBFilterToolbox {
+#MCFilterToolbox {
 	height: 90px;
 	width: 200px;
 	outline-style: solid;
@@ -26,7 +26,7 @@
 	background-color: #ffffff;
 	position: fixed;
 }
-#IFCBClassificationSelection {
+#MCClassificationSelection {
 	width: 186px;
 	position: relative;
 	left: 5px;
@@ -49,7 +49,7 @@ div.ClassificationSelectionLabel {
 	top: 13px;
 	margin: 0;
 }
-#IFCBNumberLoadedLabel {
+#MCNumberLoadedLabel {
 	position: absolute;
 	bottom: 2px;
 	left: 0px;

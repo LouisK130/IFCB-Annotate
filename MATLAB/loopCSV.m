@@ -8,6 +8,8 @@ result = cursor.Data{1,1}{1};
 
 query = sprintf('ALTER TABLE classifications ALTER COLUMN timeseries_id SET DEFAULT ''%s'';', result);
 exec(conn, query);
+query = sprintf('ALTER TABLE tags ALTER column timeseries_id SET DEFAULT ''%s'';', result);
+exec(conn, query);
 
 for csv = csvs'
     name = strrep(csv.name, '.csv', '');
@@ -15,3 +17,4 @@ for csv = csvs'
 end
 
 exec(conn, 'ATLER TABLE classifications ALTER COLUMN timeseries_id DROP DEFAULT;');
+exec(conn, 'ALTER TABLE tags ALTER COLUMN timeseries_id DROP DEFAULT;');

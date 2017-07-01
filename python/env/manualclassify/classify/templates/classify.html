@@ -3,9 +3,8 @@
 	{% csrf_token %}
 	{% include 'filter-toolbox.html' %}
 	{% include 'application-toolbox.html' %}
-	<button type='button' id='IFCBSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
-	<div id='IFCBTargetContainer'>
-	</div>
+	<button type='button' id='MCSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
+	<div id='MCTargetContainer'></div>
 </html>
 
 <style>
@@ -18,12 +17,12 @@ body {
     -ms-user-select: none;
     user-select: none;
 }
-#IFCBTargetContainer {
+#MCTargetContainer {
 	position: absolute;
 	top: 7px;
 	left: 216px;
 }
-div.IFCBTarget {
+div.MCTarget {
 	outline-style: solid;
 	outline-color: black;
 	outline-width: 1px;
@@ -33,16 +32,22 @@ div.IFCBTarget {
 	display: inline-block;
 	position: relative;
 }
-div.IFCBNewClassification {
+div.MCNewClassification {
 	position: absolute;
 	top: 2px;
 	left: 2px;
 	color: red;
 }
-#IFCBSubmitUpdates {
+div.MCNewTag {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	color: blue;
+}
+#MCSubmitUpdates {
 	position: fixed;
 	width: 150px;
-	top: 182px;
+	top: 232px;
 	left: 25px;
 	text-align: center;
 }

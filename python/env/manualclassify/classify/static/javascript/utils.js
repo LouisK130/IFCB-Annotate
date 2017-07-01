@@ -1,5 +1,6 @@
 var target_img_sources = {};
 var zips = {};
+var queued_targets = {};
 
 // https://www.w3schools.com/js/js_cookies.asp
 function setCookie(cname, cvalue, exdays) {
@@ -67,9 +68,9 @@ function isClippedByBox(ele, box) {
 }
 
 function compareTargets(a, b) {
-	if (a['width'] > b['width'])
+	if (a['height'] > b['height'])
 		return -1;
-	else if(a['width'] < b['width'])
+	else if(a['height'] < b['height'])
 		return 1;
 	return 0;
 }
@@ -92,13 +93,16 @@ function getTargetsInCategory(classification, include_unclassified) {
 }
 
 function makeUpdatesToClassifications(updates) {
-	for (pid in updates) {
+	console.log(updates);
+	for (pid in updates['classifications']) {
 		if (pid in classifications) { // should be unnecessary...
+			console.log(updates['classifications'][pid])
 			var c = classifications[pid];
 			var h = c['height'];
 			var w = c['width'];
+			var update = updates['classifications'][pid]
 			if (!(c['classification_id'])) {
-				classifications[pid] = updates[pid];
+				classifications[pid] = update;
 				classifications[pid]['height'] = h;
 				classifications[pid]['width'] = w;
 				classifications[pid]['other_classifications'] = [];
@@ -107,23 +111,38 @@ function makeUpdatesToClassifications(updates) {
 				var time1 = c['time'];
 				if (c['verification_time'] && c['verification_time'] > time1)
 					time1 = c['verification_time'];
-				var time2 = updates[pid]['time'];
-				if (updates[pid]['verification_time'] && updates[pid]['verification_time'] > time2)
-					time2 = updates[pid]['verification_time'];
-				if (updates[pid]['user_power'] > c['user_power'] || (updates[pid]['user_power'] == c['user_power'] && time2 > time1)) {
+				var time2 = update['time'];
+				if (update['verification_time'] && update['verification_time'] > time2)
+					time2 = update['verification_time'];
+				if (update['user_power'] > c['user_power'] || (update['user_power'] == c['user_power'] && time2 > time1)) {
 					var oc = c['other_classifications'];
 					delete c['other_classifications']
 					oc.push(c);
-					classifications[pid] = updates[pid]
+					classifications[pid] = update
 					classifications[pid]['height'] = h;
 					classifications[pid]['width'] = w;
 					classifications[pid]['other_classifications'] = oc;
 				}
 				else {
-					classifications[pid]['other_classifications'].push(updates[pid]);
+					classifications[pid]['other_classifications'].push(update);
 				}
 			}
 
+		}
+	}
+	for (pid in updates['tags']) {
+		if (pid in classifications) {
+			var c = classifications[pid];
+			if (c['tags']) {
+				for (var i = 0; i < c['tags'].length; i++) {
+					var tag = c['tags'][i];
+					if (tag['tag_id'] == updates['tags']['tag_id'] && tag['user_id'] == updates['tags']['user_id']) {
+						c['tags'][i] = updates['tags'][pid]
+						continue;
+					}
+				}
+				c['tags'].push(updates['tags'][pid]);
+			}
 		}
 	}
 }
@@ -144,6 +163,12 @@ function downloadZip(bin) {
 	xhr.responseType = 'blob';
 	xhr.onload = function() {
 		zips[bin] = xhr.response;
+		if (queued_targets[bin]) {
+			for (pid in queued_targets[bin]) {
+				loadImageForPid(pid, queued_targets[bin][pid]);
+			}
+		}
+		delete queued_targets[bin];
 	}
 	xhr.onerror = function() {
 		console.log('something went wrong downloading zip');
@@ -154,10 +179,14 @@ function downloadZip(bin) {
 function loadImageForPid(pid, img) {
 	var k = pid.lastIndexOf('/')
 	pid = pid.substring(k+1, pid.length);
+	k = pid.lastIndexOf('_');
+	var bin = pid.substring(0, k);
 	if (!(target_img_sources[pid])) {
-		var zipFile = getZipForPid(pid);
+		var zipFile = zips[bin];
 		if (!(zipFile)) {
-			console.log('couldn\'t find zip file for pid: ' + pid);
+			if (!(queued_targets[bin]))
+				queued_targets[bin] = {};
+			queued_targets[bin][pid] = img;
 			return;
 		}
 		zip.createReader(new zip.BlobReader(zipFile), function(reader) {

@@ -1,14 +1,14 @@
 <html>
-	<div class='IFCBTarget' id='IFCBTarget_{{ pid }}'>
-		<small><a class='IFCBSeeFullSize' target='_black' href='{{ web_services_path }}{{ pid }}.png'>See full size</a></small>
-		<img id='IFCBImg_{{ pid }}' src='{{ web_services_path }}{{ pid }}.png'></img>
+	<div class='MCTarget' id='MCTarget_{{ pid }}'>
+		<small><a class='MCSeeFullSize' target='_black' href='{{ web_services_path }}{{ pid }}.png'>See full size</a></small>
+		<img id='MCImg_{{ pid }}' src='{{ web_services_path }}{{ pid }}.png'></img>
 	</div>
 </html>
 
 <script>
-	var target = document.getElementById('IFCBTarget_{{ pid }}');
+	var target = document.getElementById('MCTarget_{{ pid }}');
 	target.style.visibility = 'hidden';
-	var img = document.getElementById('IFCBImg_{{ pid }}');
+	var img = document.getElementById('MCImg_{{ pid }}');
 	img.onload = function() {
 		target.style.width = img.naturalWidth + 'px';
 		target.style.visibility = 'visible';
@@ -16,13 +16,13 @@
 </script>
 
 <style>
-div.IFCBTarget {
+div.MCTarget {
 	outline-style: solid;
 	outline-color: black;
 	outline-width: 1px;
 	background-color: #ffffff
 }
-a.IFCBSeeFullSize {
+a.MCSeeFullSize {
 	position: absolute;
 	right: 4px;
 	top: 2px;

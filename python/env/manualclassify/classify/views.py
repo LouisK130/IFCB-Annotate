@@ -47,12 +47,12 @@ class ClassifyPageView(TemplateView):
 					request.session['failed'] = request.session['failed'] + '\\n' + f
 				return redirect('/')
 			targets = utils.getTargets(bins)
-			classList = database.getClassificationList()
 			print(str(len(targets)) + ' total targets found')
-			classifications = json.dumps(database.getAllClassificationsForBins(bins, targets))
+			classifications = json.dumps(database.getAllDataForBins(bins, targets))
 		return render(request, 'classify.html', {
 			'timeseries' : utils.timeseries,
-			'classification_labels' : classList,
+			'classification_labels' : database.getClassificationList(),
+			'tag_labels' : database.getTagList(),
 			'classifications' : classifications,
 			'bins' : json.dumps(bins),
 			'user_id' : request.session.get('user_id', 1) # TO-DO: Make this real
@@ -63,8 +63,12 @@ class SubmitUpdatesPageView(TemplateView):
 		if request.method == 'POST':
 			if not request.user.is_authenticated:
 				return redirect(settings.LOGIN_URL)
-			updates = request.POST.get('updates', 'EMPTY')
-			result = database.insertUpdatesForPids(json.loads(updates))
+			utils.timeseries = request.POST.get('timeseries', '')
+			c_updates = json.loads(request.POST.get('classifications', ''))
+			t_updates = json.loads(request.POST.get('tags', ''))
+			result1 = database.insertUpdatesForPids(c_updates, True)
+			result2 = database.insertUpdatesForPids(t_updates, False)
+			result = json.dumps({**result1, **result2})
 			return HttpResponse(result)
 			
 class ZipDownloadPageView(TemplateView):

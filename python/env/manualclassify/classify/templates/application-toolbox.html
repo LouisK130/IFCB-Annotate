@@ -1,21 +1,31 @@
 <!-- howdy/templates/index.html -->
 <!DOCTYPE html>
 <html>
-	<div id='IFCBApplicationToolbox'>
+	<div id='MCApplicationToolbox'>
 		<div class='ClassificationSelectionLabel'><small><b>Select a classification to apply:</b></small></div>
 		<select id='ClassificationApplicationSelection'>
 			<option value=''></option>
+			<option value='CLEAR'>CLEAR</option>
 			{% for label in classification_labels %}
 				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
 			{% endfor %}
 		</select>
-		<small><div id='IFCBNumberAppliedLabel'>0 targets updated</div></small>
+		<div id='MCTagApplyLabel'><small><b>Select a tag to apply:</b></small></div>
+		<select id='TagApplicationSelection'>
+			<option value=''></option>
+			<option value='CLEAR'>CLEAR</option>
+			{% for label in tag_labels %}
+				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+			{% endfor %}
+		</select>
+		<small><div id='MCNumberAppliedLabel'>0 targets classified</div></small>
+		<small><div id='MCNumberTaggedLabel'>0 targets tagged</div></small>
 	</div>
 </html>
 
 <style>
-#IFCBApplicationToolbox {
-	height: 70px;
+#MCApplicationToolbox {
+	height: 120px;
 	width: 200px;
 	outline-style: solid;
 	outline-color: black;
@@ -30,11 +40,29 @@
 	left: 5px;
 	top: 7px;
 }
-#IFCBNumberAppliedLabel {
+#TagApplicationSelection {
+	width: 186px;
+	position:relative;
+	left: 5px;
+	top: 12px;
+}
+#MCNumberAppliedLabel {
 	position: absolute;
 	bottom: 2px;
 	left: 0px;
 	width: 200px;
 	text-align: center;
+}
+#MCNumberTaggedLabel {
+	position: absolute;
+	bottom: 17px;
+	left: 0px;
+	width: 200px;
+	text-align: center;
+}
+#MCTagApplyLabel {
+	position: relative;
+	top: 10px;
+	left: 5px;
 }
 </style>
