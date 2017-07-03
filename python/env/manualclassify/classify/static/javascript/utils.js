@@ -29,15 +29,15 @@ function getCookie(cname) {
 function addRecentBinToCookies(new_bin) {
 	new_bin = timeseries + new_bin
 	var bins = getRecentBins();
+	var new_bins = [];
 	for (var n = 0; n < bins.length; n++) {
-		if (bins[n] == new_bin)
-			bins.splice(n, 1);
+		if (bins[n] != new_bin)
+			new_bins.push(bins[n]);
 	}
-	if (bins.length == 10)
-		bins.splice(bins.length-1, 1);
-	bins.splice(0, 0, new_bin);
-	bins_string = bins.join();
-	setCookie('MCRecentBins', bins_string, 3650);
+	if (new_bins.length == 10)
+		new_bins.splice(bins.length-1, 1);
+	new_bins.splice(0, 0, new_bin);
+	setCookie('MCRecentBins', new_bins.join(), 3650);
 }
 
 function getRecentBins() {
@@ -46,6 +46,57 @@ function getRecentBins() {
 	if (bins_string.length == 0)
 		bins = [];
 	return bins;
+}
+
+function getRecentApplications() {
+	var combos_string = getCookie('MCRecentApplications');
+	var oldCombos = combos_string.split(',');
+	if (combos_string.length == 0)
+		oldCombos = [];
+	var combos = [];
+	for (var n = 0; n < oldCombos.length; n++) {
+		var s = oldCombos[n].split('/');
+		if (s[0] == 'BLANK')
+			s[0] = '';
+		if (s[1] == 'BLANK')
+			s[1] = '';
+		combos[n] = [s[0], s[1]];
+	}
+	return combos;
+}
+
+function addRecentApplicationToCookies(classification, tag) {
+	var combos = getRecentApplications();
+	var new_combos = [];
+	for (var n = 0; n < combos.length; n++) {
+		if (!(combos[n][0] == classification && combos[n][1] == tag)) {
+			new_combos.push(combos[n][0] + '/' + combos[n][1]);
+		}
+	}
+	if (new_combos.length == 10)
+		new_combos.splice(new_combos.length-1, 1);
+	if (classification == '')
+		classification = 'BLANK';
+	if (tag == '')
+		tag = 'BLANK';
+	new_combos.splice(0, 0, classification + '/' + tag);
+	setCookie('MCRecentApplications', new_combos.join(), 3650);
+}
+
+function getLabelsForCombo(classification, tag) {
+	var c;
+	var t;
+	var cSelect = document.getElementById('ClassificationApplicationSelection');
+	var tSelect = document.getElementById('TagApplicationSelection');
+	for (var n = 0; n < cSelect.options.length; n++) {
+		if (cSelect.options[n].value == classification)
+			c = cSelect.options[n].text;
+	}
+	for (var n = 0; n < tSelect.options.length; n++) {
+		if (tSelect.options[n].value == tag)
+			t = tSelect.options[n].text;
+	}
+	return [c, t];
 }
 
 function isClippedByBox(ele, box) {
@@ -145,14 +196,6 @@ function makeUpdatesToClassifications(updates) {
 			}
 		}
 	}
-}
-
-function getZipForPid(pid) {
-	var k = pid.lastIndexOf('_');
-	var bin = pid.substring(0, k);
-	if (zips[bin])
-		return zips[bin];
-	return null;
 }
 
 function downloadZip(bin) {

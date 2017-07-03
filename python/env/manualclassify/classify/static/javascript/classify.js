@@ -215,6 +215,7 @@ function applyToTile(tile) {
 		else
 			t_label.innerHTML = '<b>' + tag + '</b>';
 	}
+	addRecentApplicationToCookies(clas, tag);
 	updateAppliedCounter();
 }
 
