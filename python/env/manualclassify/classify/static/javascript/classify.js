@@ -334,8 +334,16 @@ function updateLoadedCounter() {
 }
 
 function updateAppliedCounter() {
+	var cl = Object.keys(classification_updates).length;
+	var tl = Object.keys(tag_updates).length;
 	var label = document.getElementById('MCNumberAppliedLabel');
-	label.innerHTML = Object.keys(classification_updates).length + ' targets classified';
+	label.innerHTML = cl + ' targets classified';
 	label = document.getElementById('MCNumberTaggedLabel');
-	label.innerHTML = Object.keys(tag_updates).length + ' targets tagged';
+	label.innerHTML = tl + ' targets tagged';
+	if (cl > 0 || tl > 0) {
+		window.onbeforeunload = function() { return "" }
+	}
+	else {
+		window.onbeforeunload = null;
+	}
 }
