@@ -13,30 +13,16 @@ for(var n = 0; n < bins.length; n++) {
 
 var target_counter = 0;
 var loaded = 0;
-var current_targets = getTargetsInCategory(1);
+var current_targets = [];
 
 // change current view to different classification
 var classSelect = document.getElementById('MCClassificationSelection');
 classSelect.value = 1;
-classSelect.onchange = function() {
-	classification_updates = {};
-	target_counter = 0;
-	loaded = 0;
-	var include_unclassified = this.options[this.selectedIndex].text.substring(0,5) == 'other';
-	current_targets = getTargetsInCategory(classSelect.value, include_unclassified);
-	updateLoadedCounter();
-	updateAppliedCounter();
-	var targets = document.getElementsByClassName('MCTarget');
-	var z = targets.length - 1; // don't update each loop
-	for (var z = z; z >= 0; z--) {
-		targets.item(z).outerHTML = '';
-	}
-	deleteLoadMoreButton();
-	var set = parseInt(document.getElementById('MCSetSize').value);
-	if (set <= 0)
-		set = 100;
-	loadMore(set);
-}
+classSelect.onchange = reloadTargets;
+
+var tagSelect = document.getElementById('MCTagSelection');
+tagSelect.value = 'ALL';
+tagSelect.onchange = reloadTargets;
 
 // redo layout when window is resized
 var timeout = setTimeout(layoutMosaic, 0); // define the timer and call layout once immediately
@@ -46,10 +32,7 @@ document.body.onresize = function() {
 }
 
 setTimeout(function() {
-	var set = parseInt(document.getElementById('MCSetSize').value);
-	if (set <= 0)
-		set = 100;
-	loadMore(set);
+	reloadTargets();
 }, 50); // delayed because container needs time to size properly first
 
 // load more when scrolled down
@@ -85,6 +68,28 @@ setSizeElement.onchange = function() {
 
 // Above this is initialization
 // Below this is function declarations
+
+function reloadTargets() {
+	var c_select = document.getElementById('MCClassificationSelection');
+	var t_select = document.getElementById('MCTagSelection');
+	classification_updates = {};
+	target_counter = 0;
+	loaded = 0;
+	var include_unclassified = c_select.options[c_select.selectedIndex].text.substring(0,5) == 'other';
+	current_targets = getTargetsInCategory(c_select.value, t_select.value, include_unclassified);
+	updateLoadedCounter();
+	updateAppliedCounter();
+	var targets = document.getElementsByClassName('MCTarget');
+	var z = targets.length - 1; // don't update each loop
+	for (var z = z; z >= 0; z--) {
+		targets.item(z).outerHTML = '';
+	}
+	deleteLoadMoreButton();
+	var set = parseInt(document.getElementById('MCSetSize').value);
+	if (set <= 0)
+		set = 100;
+	loadMore(set);
+}
 
 function layoutMosaic() {
 	var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
@@ -140,6 +145,11 @@ function createTile(pid, width, height) {
 	img.width = width;
 	loadImageForPid(pid, img);
 	img.draggable = false;
+	
+	img.onmousedown = function(e) {
+		if (e.preventDefault)
+			e.preventDefault();
+	}
 	
 	var newClassification = document.createElement('div');
 	newClassification.classList.add('MCNewClassification');

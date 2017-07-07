@@ -126,17 +126,25 @@ function compareTargets(a, b) {
 	return 0;
 }
 
-function getTargetsInCategory(classification, include_unclassified) {
+function getTargetsInCategory(classification, tag, include_unclassified) {
 	var targets = [];
 	for(var pid in classifications) {
 		if (classifications.hasOwnProperty(pid)) {
-			if (classifications[pid]['classification_id']) {
-				if (classifications[pid]['classification_id'] == classification)
-					targets.push(classifications[pid]);
+			var c = classifications[pid];
+			var c_ok = (c['classification_id'] && c['classification_id'] == classification) || (!(c['classification_id']) && include_unclassified) || classification == 'ALL';
+			var t_ok = tag == 'ALL';
+			if (!(t_ok)) {
+				if (c['tags'] && c['tags'].length > 0) {
+					for (var n = 0; n < c['tags'].length; n++) {
+						if (c['tags'][n]['tag_id'] && c['tags'][n]['tag_id'] == tag) {
+							t_ok = true;
+							break;
+						}
+					}
+				}
 			}
-			else if (include_unclassified) {
-				targets.push(classifications[pid]);
-			}
+			if (c_ok && t_ok)
+				targets.push(classifications[pid])
 		}
 	}
 	targets.sort(compareTargets);
@@ -144,10 +152,8 @@ function getTargetsInCategory(classification, include_unclassified) {
 }
 
 function makeUpdatesToClassifications(updates) {
-	console.log(updates);
 	for (pid in updates['classifications']) {
 		if (pid in classifications) { // should be unnecessary...
-			console.log(updates['classifications'][pid])
 			var c = classifications[pid];
 			var h = c['height'];
 			var w = c['width'];
@@ -157,6 +163,7 @@ function makeUpdatesToClassifications(updates) {
 				classifications[pid]['height'] = h;
 				classifications[pid]['width'] = w;
 				classifications[pid]['other_classifications'] = [];
+				classifications[pid]['tags'] = [];
 			}
 			else {
 				var time1 = c['time'];
@@ -167,9 +174,11 @@ function makeUpdatesToClassifications(updates) {
 					time2 = update['verification_time'];
 				if (update['user_power'] > c['user_power'] || (update['user_power'] == c['user_power'] && time2 > time1)) {
 					var oc = c['other_classifications'];
-					delete c['other_classifications']
+					delete c['other_classifications'];
 					oc.push(c);
+					var tags = c['tags'];
 					classifications[pid] = update
+					classifications[pid]['tags'] = tags;
 					classifications[pid]['height'] = h;
 					classifications[pid]['width'] = w;
 					classifications[pid]['other_classifications'] = oc;
@@ -181,21 +190,23 @@ function makeUpdatesToClassifications(updates) {
 
 		}
 	}
-	for (pid in updates['tags']) {
-		if (pid in classifications) {
-			var c = classifications[pid];
-			if (c['tags']) {
-				for (var i = 0; i < c['tags'].length; i++) {
-					var tag = c['tags'][i];
-					if (tag['tag_id'] == updates['tags']['tag_id'] && tag['user_id'] == updates['tags']['user_id']) {
-						c['tags'][i] = updates['tags'][pid]
-						continue;
+	outerLoop:
+		for (pid in updates['tags']) {
+			if (pid in classifications) {
+				var c = classifications[pid];
+				if (!(c['tags']))
+					c['tags'] = [];
+				innerLoop:
+					for (var i = 0; i < c['tags'].length; i++) {
+						var tag = c['tags'][i];
+						if (tag['tag_id'] == updates['tags'][pid]['tag_id'] && tag['user_id'] == updates['tags'][pid]['user_id']) {
+							c['tags'][i] = updates['tags'][pid]
+							continue outerLoop; // done with this tag update, don't add it to 'tags' again
+						}
 					}
-				}
 				c['tags'].push(updates['tags'][pid]);
 			}
 		}
-	}
 }
 
 function downloadZip(bin) {

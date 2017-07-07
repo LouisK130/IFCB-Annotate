@@ -4,7 +4,15 @@
 	<div id='MCFilterToolbox'>
 		<div class='ClassificationSelectionLabel'><small><b>Select a classification to view:</b></small></div>
 		<select id='MCClassificationSelection'>
+			<option value='ALL'>ALL</option>
 			{% for label in classification_labels %}
+				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+			{% endfor %}
+		</select>
+		<div id='MCTagSelectionLabel'><small><b>Select a tag to view:</b></small></div>
+		<select id='MCTagSelection'>
+			<option value='ALL'>ALL</option>
+			{% for label in tag_labels %}
 				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
 			{% endfor %}
 		</select>
@@ -18,7 +26,7 @@
 
 <style>
 #MCFilterToolbox {
-	height: 90px;
+	height: 130px;
 	width: 200px;
 	outline-style: solid;
 	outline-color: black;
@@ -36,17 +44,18 @@ div.ClassificationSelectionLabel {
 	position: relative;
 	left: 5px;
 	top: 2px;
+	display: inline-block;
 }
 #MCSetSize {
 	position: relative;
 	left: 3px;
-	top: 13px;
+	top: 18px;
 	width: 70px;
 	margin: 0;
 }
 #MCSetSizeLabel {
 	position: relative;
-	top: 13px;
+	top: 18px;
 	margin: 0;
 }
 #MCNumberLoadedLabel {
@@ -56,18 +65,16 @@ div.ClassificationSelectionLabel {
 	width: 200px;
 	text-align: center;
 }
-
-/*
-#MaxWidthInputLabel {
+#MCTagSelectionLabel {
 	position: relative;
 	left: 5px;
-	top: 7px;
+	top: 10px;
+	display: inline-block;
 }
-#MaxWidthInput {
-	width: 50px;
+#MCTagSelection {
+	width: 186px;
 	position: relative;
-	top: 7px;
 	left: 5px;
+	top: 12px;
 }
-*/
 </style>

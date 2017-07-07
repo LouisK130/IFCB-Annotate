@@ -32,7 +32,8 @@ def getAllDataForBins(bins, targets):
 		verification_time = row[8] # Might be None
 		pid = row[1] + '_' + utils.formatROI(row[2])
 		if not pid in data:
-			data[pid] = {'user_power' : -1,
+			data[pid] = {
+				'user_power' : -1,
 				'time' : 0, 
 				'width' : targets[pid]['width'], 
 				'height' : targets[pid]['height'],

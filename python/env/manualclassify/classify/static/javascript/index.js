@@ -50,12 +50,13 @@ document.getElementById('MCBinsRemoveBtn').onclick = clickRemoveBin;
 
 function clickRemoveBin() {
 	var options = document.getElementById('MCBins').options;
+	var ts = document.getElementById('MCTimeSeries').value;
 	for(var n = 0; n < options.length; n++) {
 		if (options[n].selected) {
-			if (recent_bins.indexOf(options[n].text) >= 0) {
+			if (recent_bins.indexOf(ts + options[n].text) >= 0) {
 				var option = document.createElement('option');
-				option.text = options[n].text;
-				option.value = options[n].text;
+				option.text = ts + options[n].text;
+				option.value = ts + options[n].text;
 				recentBinsEle.add(option);
 			}
 			options[n].outerHTML = '';
