@@ -1,9 +1,11 @@
 <html>
 	{% load staticfiles %}
 	{% csrf_token %}
-	{% include 'filter-toolbox.html' %}
-	{% include 'application-toolbox.html' %}
-	<button type='button' id='MCSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
+	<div id='MCToolboxContainer'>
+		{% include 'filter-toolbox.html' %}
+		{% include 'application-toolbox.html' %}
+		<button type='button' id='MCSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
+	</div>
 	<div id='MCTargetContainer'></div>
 </html>
 
@@ -16,6 +18,9 @@ body {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+#MCToolboxContainer {
+	position: fixed;
 }
 #MCTargetContainer {
 	position: absolute;
@@ -45,10 +50,10 @@ div.MCNewTag {
 	color: blue;
 }
 #MCSubmitUpdates {
-	position: fixed;
+	margin:0 auto;
+	margin-top: 10px;
+	display: block;
 	width: 150px;
-	top: 272px;
-	left: 25px;
 	text-align: center;
 }
 </style>

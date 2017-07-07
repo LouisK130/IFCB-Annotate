@@ -2,16 +2,16 @@
 <!DOCTYPE html>
 <html>
 	<div id='MCApplicationToolbox'>
-		<div class='ClassificationSelectionLabel'><small><b>Select a classification to apply:</b></small></div>
-		<select id='ClassificationApplicationSelection'>
+		<div class='MCSelectLabel'><small><b>Select a classification to apply:</b></small></div>
+		<select class='MCSelectBox' id='ClassificationApplicationSelection'>
 			<option value=''></option>
 			<option value='CLEAR'>CLEAR</option>
 			{% for label in classification_labels %}
 				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
 			{% endfor %}
 		</select>
-		<div id='MCTagApplyLabel'><small><b>Select a tag to apply:</b></small></div>
-		<select id='TagApplicationSelection'>
+		<div class='MCSelectLabel'><small><b>Select a tag to apply:</b></small></div>
+		<select class='MCSelectBox' id='TagApplicationSelection'>
 			<option value=''></option>
 			<option value='CLEAR'>CLEAR</option>
 			{% for label in tag_labels %}
@@ -25,47 +25,24 @@
 
 <style>
 #MCApplicationToolbox {
-	height: 120px;
+	height: auto;
 	width: 200px;
 	outline-style: solid;
 	outline-color: black;
 	outline-width: 2px;
 	background-color: #ffffff;
-	position: fixed;
-	top: 145px;
-}
-#ClassificationApplicationSelection {
-	width: 186px;
-	position: relative;
-	left: 5px;
-	top: 7px;
-}
-#TagApplicationSelection {
-	width: 186px;
-	position:relative;
-	left: 5px;
-	top: 12px;
+	margin-top: 10px;
 }
 #MCNumberAppliedLabel {
-	position: absolute;
-	bottom: 2px;
-	left: 0px;
-	width: 200px;
+	width: 100%;
 	text-align: center;
 	display: inline-block;
+	margin-top: 3px;
 }
 #MCNumberTaggedLabel {
-	position: absolute;
-	bottom: 17px;
-	left: 0px;
-	width: 200px;
+	width: 100%;
 	text-align: center;
 	display: inline-block;
-}
-#MCTagApplyLabel {
-	position: relative;
-	top: 10px;
-	left: 5px;
-	display: inline-block;
+	margin-bottom: 3px;
 }
 </style>
