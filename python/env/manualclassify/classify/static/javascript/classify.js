@@ -230,6 +230,8 @@ function applyToTile(tile) {
 }
 
 function submitUpdates() {
+	if (loaded == current_targets.length)
+		moveToNextView();
 	if (Object.keys(classification_updates).length == 0 && Object.keys(tag_updates).length == 0)
 		return;
 	disablePage();
@@ -356,4 +358,24 @@ function updateAppliedCounter() {
 	else {
 		window.onbeforeunload = null;
 	}
+}
+
+function moveToNextView() {
+	var c = document.getElementById('MCClassificationSelection');
+	var t = document.getElementById('MCTagSelection');
+	if (t.selectedIndex == t.options.length-1) {
+		if (c.selectedIndex != c.options.length-1) {
+			c.selectedIndex = c.selectedIndex + 1;
+			t.value = 'NONE';
+		}
+		else {
+			return;
+		}
+	}
+	else {
+		t.selectedIndex = t.selectedIndex + 1;
+	}
+	reloadTargets();
+	if (current_targets.length == 0)
+		moveToNextView();
 }

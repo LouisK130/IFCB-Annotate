@@ -12,6 +12,7 @@
 		<div class='MCSelectLabel'><small><b>Select a tag to view:</b></small></div>
 		<select class='MCSelectBox' id='MCTagSelection'>
 			<option value='ALL'>ALL</option>
+			<option value='NONE'>NONE</option>
 			{% for label in tag_labels %}
 				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
 			{% endfor %}
@@ -52,6 +53,6 @@ div.MCSelectLabel {
 	width: 100%;
 	text-align: center;
 	margin-top: 3px;
-	margin-bottom: 2px;
+	margin-bottom: 3px;
 }
 </style>

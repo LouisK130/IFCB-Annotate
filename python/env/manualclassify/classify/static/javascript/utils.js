@@ -142,6 +142,9 @@ function getTargetsInCategory(classification, tag, include_unclassified) {
 						}
 					}
 				}
+				else {
+					t_ok = tag == 'NONE';
+				}
 			}
 			if (c_ok && t_ok)
 				targets.push(classifications[pid])
@@ -249,12 +252,13 @@ function loadImageForPid(pid, img) {
 					if (entries[i].filename == pid + '.png') {
 						entries[i].getData(new zip.BlobWriter('text/plain'), function(data) {
 							var src = URL.createObjectURL(data);
+							target_img_sources[pid] = src;
 							if (img) {
-								img.src = src;
+								img.src = target_img_sources[pid]
 								loaded++;
 								updateLoadedCounter();
 							}
-							target_img_sources[pid] = src;
+							reader.close();
 						});
 						return;
 					}

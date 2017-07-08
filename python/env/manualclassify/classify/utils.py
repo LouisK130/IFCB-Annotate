@@ -11,6 +11,36 @@ import os
 if not os.path.exists('classify/zip_cache'):
 	os.mkdir('classify/zip_cache')
 	
+NEEDS_CLARIFICATION = 'fdgsgdfgsdfg'
+	
+CLASSIFIER_CONVERSION_TABLE = {
+	'Asterionellopsis' : 'Asterionellopsis glacialis',
+	'Corethron' : 'Corethron hystrix',
+	'DactFragCerataul' : 'Dactyliosolen fragilissimus',
+	'Dactyliosolen' : 'Dactyliosolen blavyanus',
+	'Ditylum' : 'Ditylum brightwellii',
+	'Eucampia' : 'Eucampia cornuta',
+	'Guinardia' : 'Guinardia delicatula',
+	'Pseudonitzschia' : 'Pseudo-nitzschia',
+	'Thalassiosira_dirty' : 'Thalassiosira', # EXCEPTION HERE: INSERT 'external detritus' TAG ALSO!
+	'mix' : NEEDS_CLARIFICATION,
+	'na' : NEEDS_CLARIFICATION,
+	'dino30' : NEEDS_CLARIFICATION,
+	'Lauderia' : 'Lauderia annulata',
+	'Cerataulina' : 'Cerataulina pelagica',
+	'Paralia' : 'Paralia sulcata',
+	'Chaetoceros' : NEEDS_CLARIFICATION,
+	'Phaeocystis' : 'Parvicorbicula socialis',
+	'ciliate_mix' : NEEDS_CLARIFICATION,
+	'Laboea' : 'Laboea strobila',
+	'Myrionecta' : 'Mesodinium sp',
+	'tintinnid' : 'Tintinnida',
+	'Gyrodinium' : NEEDS_CLARIFICATION,
+	'Pyramimonas' : 'Pyramimonas longicauda',
+	'pennate' : 'pennate morphotype1',
+	'bad' : NEEDS_CLARIFICATION,
+}
+	
 def verifyBins(str):
 	list = re.split(',', str)
 	if not list:
