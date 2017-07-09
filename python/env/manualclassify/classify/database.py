@@ -221,3 +221,58 @@ def insertUpdatesForPids(updates, is_classifications):
 	if cur.statusmessage != 'INSERT 0 ' + str(len(updates)):
 		return_updates['failure'] = True
 	return return_updates
+	
+def isBinImported(bin):
+	conn = getDBConnection()
+	cur = conn.cursor()
+	query = 'SELECT * FROM classifications WHERE bin = \'' + bin + '\' AND user_id = -1 LIMIT 1;'
+	cur.execute(query)
+	row = cur.fetchone()
+	conn.close()
+	if row:
+		return True
+	else:
+		return False
+		
+def insertAutoResultsForBin(bin, classes, tags):
+	query_c = 'INSERT INTO classifications (bin, roi, user_id, classification_id, timeseries_id) VALUES '
+	query_t = 'INSERT INTO tags (bin, roi, user_id, tag_id, timeseries_id) VALUES '
+	needing_tags = 0
+	auto_results = utils.getAutoResultsForBin(bin)
+	if not auto_results:
+		return False
+	for pid, classification in auto_results.items():
+		i = pid.rfind('_')
+		roi = pid[i+1:]
+		if classification == 'Thalassiosira_dirty':
+			needing_tags += 1
+			for t in tags:
+				if t['name'] == 'external detritus':
+					query_t = query_t + '(\'' + bin + '\', ' + roi + ', -1, ' + str(t['id']) + ', \'' + getTimeseriesId(utils.timeseries) + '\'), '
+					break
+		if classification == 'dino30':
+			needing_tags += 1
+			for t in tags:
+				if t['name'] == 'nano':
+					query_t = query_t + '(\'' + bin + '\', ' + roi + ', -1, ' + str(t['id']) + ', \'' + getTimeseriesId(utils.timeseries) + '\'), '
+					break
+		if classification in utils.CLASSIFIER_CONVERSION_TABLE:
+			classification = utils.CLASSIFIER_CONVERSION_TABLE[classification]
+		else:
+			classification = classification.replace('_', ' ')
+		for c in classes:
+			if c['name'] == classification:
+				classification = c['id']
+				break
+		query_c = query_c + '(\'' + bin + '\', ' + roi + ', -1, ' + str(classification) + ', \'' + getTimeseriesId(utils.timeseries) + '\'), '
+	query_c = query_c[:-2]
+	query_t = query_t[:-2]
+	conn = getDBConnection()
+	cur = conn.cursor()
+	cur.execute(query_c)
+	conn.commit()
+	msg1 = cur.statusmessage
+	cur.execute(query_t)
+	conn.commit()
+	msg2 = cur.statusmessage
+	return msg1 == 'INSERT 0 ' + str(len(auto_results)) and msg2 == 'INSERT 0 ' + str(needing_tags)

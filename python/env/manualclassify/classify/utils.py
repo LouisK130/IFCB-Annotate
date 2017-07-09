@@ -11,8 +11,6 @@ import os
 if not os.path.exists('classify/zip_cache'):
 	os.mkdir('classify/zip_cache')
 	
-NEEDS_CLARIFICATION = 'fdgsgdfgsdfg'
-	
 CLASSIFIER_CONVERSION_TABLE = {
 	'Asterionellopsis' : 'Asterionellopsis glacialis',
 	'Corethron' : 'Corethron hystrix',
@@ -23,22 +21,19 @@ CLASSIFIER_CONVERSION_TABLE = {
 	'Guinardia' : 'Guinardia delicatula',
 	'Pseudonitzschia' : 'Pseudo-nitzschia',
 	'Thalassiosira_dirty' : 'Thalassiosira', # EXCEPTION HERE: INSERT 'external detritus' TAG ALSO!
-	'mix' : NEEDS_CLARIFICATION,
-	'na' : NEEDS_CLARIFICATION,
-	'dino30' : NEEDS_CLARIFICATION,
+	'mix' : 'mix',
+	'dino30' : 'Dinoflagellata', # Tag: 'nano'
 	'Lauderia' : 'Lauderia annulata',
 	'Cerataulina' : 'Cerataulina pelagica',
 	'Paralia' : 'Paralia sulcata',
-	'Chaetoceros' : NEEDS_CLARIFICATION,
+	'Chaetoceros' : 'Chaetoceros',
 	'Phaeocystis' : 'Parvicorbicula socialis',
-	'ciliate_mix' : NEEDS_CLARIFICATION,
+	'ciliate_mix' : 'Ciliate mix',
 	'Laboea' : 'Laboea strobila',
 	'Myrionecta' : 'Mesodinium sp',
 	'tintinnid' : 'Tintinnida',
-	'Gyrodinium' : NEEDS_CLARIFICATION,
 	'Pyramimonas' : 'Pyramimonas longicauda',
 	'pennate' : 'pennate morphotype1',
-	'bad' : NEEDS_CLARIFICATION,
 }
 	
 def verifyBins(str):
@@ -107,3 +102,29 @@ def downloadZipForBin(bin):
 	with open('classify/zip_cache/' + bin + '.zip', 'wb') as f:
 		f.write(r.content)
 	print('finished downloading: ' + timeseries + bin + '.zip')
+	
+def getAutoResultsForBin(bin):
+	classifications = {}
+	path = timeseries + bin + '_class_scores.csv'
+	with closing(requests.get(path, stream=True)) as r:
+		reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
+		headers = next(reader)
+		try:
+			pid_index = headers.index('pid')
+		except:
+			return None
+		for row in reader:
+			i = 0
+			winner = None
+			for col in row:
+				if i == pid_index:
+					i += 1
+					continue
+				if not winner:
+					winner = (headers[i], col)
+				else:
+					if col > winner[1]:
+						winner = (headers[i], col)
+				i += 1
+			classifications[row[pid_index]] = winner[0]
+	return classifications

@@ -53,11 +53,13 @@ function clickRemoveBin() {
 	var ts = document.getElementById('MCTimeSeries').value;
 	for(var n = 0; n < options.length; n++) {
 		if (options[n].selected) {
-			if (recent_bins.indexOf(ts + options[n].text) >= 0) {
-				var option = document.createElement('option');
-				option.text = ts + options[n].text;
-				option.value = ts + options[n].text;
-				recentBinsEle.add(option);
+			for (var i = 0; i < recent_bins.length; i++) {
+				if (recent_bins[i].indexOf(options[n].text) >= 0) {
+					var option = document.createElement('option');
+					option.text = recent_bins[i];
+					option.value = recent_bins[i];
+					recentBinsEle.add(option);
+				}
 			}
 			options[n].outerHTML = '';
 			return;
@@ -65,16 +67,23 @@ function clickRemoveBin() {
 	}
 }
 
-document.getElementById('MCBinsSubmit').onclick = submitForm;
+document.getElementById('MCBinsSubmit').onclick = function() {
+	submitForm(true);
+}
 
-function submitForm() {
+document.getElementById('MCBinsSubmitAndImport').onclick = function() {
+	submitForm(false);
+}
+
+function submitForm(raw) {
 	var bins_string = '';
 	var options = document.getElementById('MCBins').options;
 	for (var n = 0; n < options.length; n++) {
 		bins_string += options[n].text + ',';
 	}
 	bins_string = bins_string.substring(0, bins_string.length - 1);
-	console.log(bins_string);
+	if (bins_string == '')
+		return;
 	var form = document.createElement('form');
 	form.action = '/classify/';
 	form.method = 'POST';
@@ -86,8 +95,13 @@ function submitForm() {
 	input2.type = 'hidden';
 	input2.name = 'timeseries';
 	input2.value = document.getElementById('MCTimeSeries').value;
+	var input3 = document.createElement('input');
+	input3.type = 'hidden';
+	input3.name = 'import';
+	input3.value = !raw
 	form.appendChild(input1);
 	form.appendChild(input2);
+	form.appendChild(input3);
 	form.insertAdjacentHTML('beforeend', csrf_token_form);
 	document.body.appendChild(form);
 	form.submit();
