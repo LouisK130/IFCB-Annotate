@@ -143,7 +143,6 @@ function createTile(pid, width, height) {
 	img.id = 'MCImg_' + pid;
 	img.height = height;
 	img.width = width;
-	loadImageForPid(pid, img);
 	img.draggable = false;
 	
 	img.onmousedown = function(e) {
@@ -299,16 +298,23 @@ function enablePage() {
 }
 
 function loadMore(n) {
+	var bins = [];
 	deleteLoadMoreButton();
 	for (target_counter = target_counter; target_counter < current_targets.length; target_counter++) {
 		if (target_counter >= n) {
 			break;
 		}
 		var pid = current_targets[target_counter]['pid'];
+		var bin = pid.substring(0, pid.lastIndexOf('_'))
+		if (bins.indexOf(bin) == -1)
+			bins.push(bin);
 		createTile(pid, current_targets[target_counter]['width'], current_targets[target_counter]['height']);
 	}
 	if (target_counter != current_targets.length)
 		createLoadMoreButton();
+	for (var n = 0; n < bins.length; n++) {
+		loadImagesFromZip(bins[n]);
+	}
 }
 
 function createLoadMoreButton() {

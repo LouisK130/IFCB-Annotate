@@ -220,12 +220,7 @@ function downloadZip(bin) {
 	xhr.responseType = 'blob';
 	xhr.onload = function() {
 		zips[bin] = xhr.response;
-		if (queued_targets[bin]) {
-			for (pid in queued_targets[bin]) {
-				loadImageForPid(pid, queued_targets[bin][pid]);
-			}
-		}
-		delete queued_targets[bin];
+		loadImagesFromZip(bin);
 	}
 	xhr.onerror = function() {
 		console.log('something went wrong downloading zip');
@@ -233,44 +228,40 @@ function downloadZip(bin) {
 	xhr.send(params);
 }
 
-function loadImageForPid(pid, img) {
-	var k = pid.lastIndexOf('/')
-	pid = pid.substring(k+1, pid.length);
-	k = pid.lastIndexOf('_');
-	var bin = pid.substring(0, k);
-	if (!(target_img_sources[pid])) {
-		var zipFile = zips[bin];
-		if (!(zipFile)) {
-			if (!(queued_targets[bin]))
-				queued_targets[bin] = {};
-			queued_targets[bin][pid] = img;
+function loadImagesFromZip(bin) {
+	var zipFile = zips[bin];
+	if (!(zipFile))
+		return; // // this function will be called again when downloadZip is finished
+	zip.createReader(new zip.BlobReader(zipFile), function(reader) {
+		reader.getEntries(function(entries) {
+			for (var i = 0; i < entries.length; i++) {
+				var pid = entries[i].filename.replace('.png', '');
+				loadImage(pid, entries[i]);
+			}
+			//reader.close();
+			// not sure when to close this, so we'll just hope it gets garbage collected :)
+		})
+	}, function(error) {
+		console.log('error reading zip');
+	});
+}
+
+function loadImage(pid, entry) {
+	var img = document.getElementById('MCImg_' + pid);
+	if (img && !img.src) {
+		if (target_img_sources[pid]) {
+			img.src = target_img_sources[pid];
+			loaded++;
+			updateLoadedCounter();
 			return;
 		}
-		zip.createReader(new zip.BlobReader(zipFile), function(reader) {
-			reader.getEntries(function(entries) {
-				for (var i = 0; i < entries.length; i++) {
-					if (entries[i].filename == pid + '.png') {
-						entries[i].getData(new zip.BlobWriter('text/plain'), function(data) {
-							var src = URL.createObjectURL(data);
-							target_img_sources[pid] = src;
-							if (img) {
-								img.src = target_img_sources[pid]
-								loaded++;
-								updateLoadedCounter();
-							}
-							reader.close();
-						});
-						return;
-					}
-				}
-			});
-		}, function(error) {
-			console.log('error reading zip');
+		entry.getData(new zip.BlobWriter('text/plain'), function(data) {
+			target_img_sources[pid] = URL.createObjectURL(data);
+			if (img) {
+				img.src = target_img_sources[pid];
+				loaded++;
+				updateLoadedCounter();
+			}
 		});
-	}
-	else if (img) {
-		img.src = target_img_sources[pid];
-		loaded++;
-		updateLoadedCounter();
 	}
 }
