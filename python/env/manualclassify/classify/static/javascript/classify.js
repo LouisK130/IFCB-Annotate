@@ -15,13 +15,18 @@ var target_counter = 0;
 var loaded = 0;
 var current_targets = [];
 
-// change current view to different classification
+
 var classSelect = document.getElementById('MCClassificationSelection');
-classSelect.value = 1;
+var tagSelect = document.getElementById('MCTagSelection');
+
+sortSelectBoxes(); // stuck this in a function since it's more complex than I expected
+
+// select first classification
+classSelect.selectedIndex = 1;
 classSelect.onchange = reloadTargets;
 
-var tagSelect = document.getElementById('MCTagSelection');
-tagSelect.value = 'ALL';
+// select 'NONE' tags
+tagSelect.value = 'NONE';
 tagSelect.onchange = reloadTargets;
 
 // redo layout when window is resized
@@ -65,6 +70,7 @@ setSizeElement.onchange = function() {
 		set = 100;
 	setCookie('MCSetSize', set, 3650); // 10 years expiration...
 }
+
 
 // Above this is initialization
 // Below this is function declarations
@@ -229,8 +235,6 @@ function applyToTile(tile) {
 }
 
 function submitUpdates() {
-	if (loaded == current_targets.length)
-		moveToNextView();
 	if (Object.keys(classification_updates).length == 0 && Object.keys(tag_updates).length == 0)
 		return;
 	disablePage();
@@ -366,22 +370,42 @@ function updateAppliedCounter() {
 	}
 }
 
-function moveToNextView() {
+function sortOptions(a,b) {
+	if (a.text > b.text) return 1;
+	if (a.text < b.text) return -1;
+	return 0;
+}
+
+// sort select options alphabetically
+// I want to keep ALL And NONE on top
+// probably not the most elegant way to do this but meh
+function sortSelectBoxes() {
 	var c = document.getElementById('MCClassificationSelection');
 	var t = document.getElementById('MCTagSelection');
-	if (t.selectedIndex == t.options.length-1) {
-		if (c.selectedIndex != c.options.length-1) {
-			c.selectedIndex = c.selectedIndex + 1;
-			t.value = 'NONE';
-		}
-		else {
-			return;
-		}
-	}
-	else {
-		t.selectedIndex = t.selectedIndex + 1;
-	}
-	reloadTargets();
-	if (current_targets.length == 0)
-		moveToNextView();
+	var c_array = Array.apply(null, c.options);
+	var t_array = Array.apply(null, t.options);
+	
+	// remove ALL and NONE
+	var classALL = c_array.shift();
+	var tagALL = t_array.shift();
+	var tagNONE = t_array.shift();
+	
+	// sort
+	c_array.sort(sortOptions);
+	t_array.sort(sortOptions);
+	
+	// put ALL and NONE back
+	c_array.unshift(classALL);
+	t_array.unshift(tagNONE);
+	t_array.unshift(tagALL);
+	
+	// empty current options array
+	c.innerHTML = '';
+	t.innerHTML = '';
+	
+	// add sorted options
+	for (var n = 0; n < c_array.length; n++)
+		c.add(c_array[n]);
+	for (var n = 0; n < t_array.length; n++)
+		t.add(t_array[n]);
 }

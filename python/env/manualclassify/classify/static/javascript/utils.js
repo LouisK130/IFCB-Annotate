@@ -257,6 +257,7 @@ function loadImage(pid, entry) {
 		}
 		entry.getData(new zip.BlobWriter('text/plain'), function(data) {
 			target_img_sources[pid] = URL.createObjectURL(data);
+			var img = document.getElementById('MCImg_' + pid); // refresh reference in case this image has been deleted
 			if (img) {
 				img.src = target_img_sources[pid];
 				loaded++;

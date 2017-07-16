@@ -1,5 +1,3 @@
-var keyCode = 67; // this is C
-
 var mouse_x = 0;
 var mouse_y = 0;
 
@@ -8,20 +6,6 @@ document.addEventListener('mousemove', updateMousePos, false);
 function updateMousePos(e) {
 	mouse_x = e.clientX;
 	mouse_y = e.clientY;
-}
-
-document.addEventListener('keydown', contextMenuKeyDown, false);
-
-function contextMenuKeyDown(e) {
-	if (e.keyCode == keyCode) {
-		var menu = document.getElementById('MCContextMenu');
-		if (menu) {
-			menu.outerHTML = '';
-		}
-		else if (document.activeElement == document.body) {
-			createContextMenu()
-		}
-	}
 }
 
 document.addEventListener('mouseup', deleteContextMenu, false);
@@ -44,7 +28,7 @@ function createContextMenu() {
 	menu.id = 'MCContextMenu';
 	menu.style.width = '200px'
 	menu.style.height = '296px';
-	menu.style.position = 'absolute';
+	menu.style.position = 'fixed';
 	menu.style.left = mouse_x;
 	menu.style.top = mouse_y;
 	menu.style.backgroundColor = 'white';
