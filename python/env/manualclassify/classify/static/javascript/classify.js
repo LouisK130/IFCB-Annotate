@@ -38,6 +38,8 @@ document.body.onresize = function() {
 
 setTimeout(function() {
 	reloadTargets();
+	if (current_targets.length == 0)
+		moveToNextView();
 }, 50); // delayed because container needs time to size properly first
 
 // load more when scrolled down

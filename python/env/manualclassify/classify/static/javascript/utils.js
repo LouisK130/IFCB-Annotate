@@ -34,7 +34,7 @@ function addRecentBinToCookies(new_bin) {
 		if (bins[n] != new_bin)
 			new_bins.push(bins[n]);
 	}
-	if (new_bins.length == 10)
+	while (new_bins.length >= 10)
 		new_bins.splice(bins.length-1, 1);
 	new_bins.splice(0, 0, new_bin);
 	setCookie('MCRecentBins', new_bins.join(), 3650);
@@ -73,7 +73,7 @@ function addRecentApplicationToCookies(classification, tag) {
 			new_combos.push(combos[n][0] + '/' + combos[n][1]);
 		}
 	}
-	if (new_combos.length == 10)
+	while (new_combos.length >= 9)
 		new_combos.splice(new_combos.length-1, 1);
 	if (classification == '')
 		classification = 'BLANK';

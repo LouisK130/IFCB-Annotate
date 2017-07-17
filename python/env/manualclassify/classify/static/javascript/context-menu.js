@@ -60,9 +60,25 @@ function createContextMenu() {
 	
 	var recents = getRecentApplications();
 
-	for (var n = 0; n < recents.length; n++) {
-		var r = recents[n];
-		var option = createApplicationOption(r[0], r[1], n == 0);
+	for (var n = -1; n < recents.length; n++) {
+		var option;
+		
+		if (n == -1) {
+			var verify_c = document.getElementById('MCClassificationSelection').value;
+			if (verify_c == 'ALL')
+				verify_c = '';
+			var verify_t = document.getElementById('MCTagSelection').value;
+			if (verify_t == 'ALL' || verify_t == 'NONE')
+				verify_t = '';
+			option = createApplicationOption(verify_c, verify_t);
+			option.style.borderTop = '2px solid';
+			option.style.marginTop = '-2px';
+		}
+		else {
+			var r = recents[n];
+			option = createApplicationOption(r[0], r[1]);
+		}
+		
 		menu.appendChild(option);
 		var clas = option.children[0];
 		var tag = option.children[1];
@@ -87,7 +103,7 @@ function createContextMenu() {
 	
 }
 
-function createApplicationOption(c, t, first) {
+function createApplicationOption(c, t) {
 	var div = document.createElement('div');
 	div.style.borderBottom = '1px solid';
 	div.style.borderTop = '1px solid';
@@ -112,12 +128,7 @@ function createApplicationOption(c, t, first) {
 		document.getElementById('MCContextMenu').outerHTML = "";
 	}
 	
-	if (first) {
-		div.style.borderTop = '2px solid';
-		div.style.marginTop = '-2px';
-	}
-	
-	[cl, tl] = getLabelsForCombo(c, t);
+	var [cl, tl] = getLabelsForCombo(c, t);
 	
 	var clas = document.createElement('div');
 	clas.style.width = '50%';
