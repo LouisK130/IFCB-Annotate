@@ -1,6 +1,6 @@
 var FORWARD_KEY = 78; // N
 var PREVIOUS_KEY = 80; // P
-var CONTEXT_MENU_KEY = 67; // C
+var CONTEXT_MENU_KEY = 76; // L
 var SUBMIT_UPDATES_KEY = 13; // ENTER
 
 document.addEventListener('keydown', generalKeyDown, false);

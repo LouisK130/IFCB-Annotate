@@ -17,6 +17,13 @@
 				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
 			{% endfor %}
 		</select>
+		<div class='MCSelectLabel'><small><b>Filter by completion:</b></small></div>
+		<select class='MCSelectBox' id='MCFilterByCompletionSelection'>
+			<option value='ALL'>ALL</option>
+			<option value='ME'>Classified by me</option>
+			<option value='OTHERS'>Classified by others</option>
+			<option value='NONE'>Not classified by anyone</option>
+		</select>
 		<center><small><b><a id='MCSetSizeLabel'>Set size: </a></b></small>
 		<input type='number' min='1' name='MCSetSize' id='MCSetSize'></input></center>
 		<!--<div id='MaxWidthInputLabel'><small><b>Max image width:</b></small></div>

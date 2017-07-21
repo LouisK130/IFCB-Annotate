@@ -18,8 +18,13 @@ var current_targets = [];
 
 var classSelect = document.getElementById('MCClassificationSelection');
 var tagSelect = document.getElementById('MCTagSelection');
+var filterSelect = document.getElementById('MCFilterByCompletionSelection');
 
-sortSelectBoxes(); // stuck this in a function since it's more complex than I expected
+var classApplySelect = document.getElementById('ClassificationApplicationSelection');
+var tagApplySelect = document.getElementById('TagApplicationSelection');
+
+sortSelectBoxes(classApplySelect, tagApplySelect, 1, 2); // stuck this in a function since it's more complex than I expected
+sortSelectBoxes(classSelect, tagSelect, 2, 2);
 
 // select first classification
 classSelect.selectedIndex = 1;
@@ -28,6 +33,19 @@ classSelect.onchange = reloadTargets;
 // select 'NONE' tags
 tagSelect.value = 'NONE';
 tagSelect.onchange = reloadTargets;
+
+// see all completion levels by default
+filterSelect.value = 'ALL';
+filterSelect.onchange = reloadTargets;
+
+// select blank applications
+classApplySelect.value = '';
+tagApplySelect.value = '';
+
+// choosing a new classification to apply resets tag application
+classApplySelect.onchange = function() {
+	document.getElementById('TagApplicationSelection').value = '';
+}
 
 // redo layout when window is resized
 var timeout = setTimeout(layoutMosaic, 0); // define the timer and call layout once immediately
@@ -80,11 +98,12 @@ setSizeElement.onchange = function() {
 function reloadTargets() {
 	var c_select = document.getElementById('MCClassificationSelection');
 	var t_select = document.getElementById('MCTagSelection');
+	var f_select = document.getElementById('MCFilterByCompletionSelection');
 	classification_updates = {};
 	target_counter = 0;
 	loaded = 0;
 	var include_unclassified = c_select.options[c_select.selectedIndex].text.substring(0,5) == 'other';
-	current_targets = getTargetsInCategory(c_select.value, t_select.value, include_unclassified);
+	current_targets = getTargetsInCategory(c_select.value, t_select.value, f_select.value, include_unclassified);
 	updateLoadedCounter();
 	updateAppliedCounter();
 	var targets = document.getElementsByClassName('MCTarget');
@@ -280,6 +299,8 @@ function submitUpdates() {
 			updateAppliedCounter();
 		}
 		enablePage();
+		if (current_targets.length == 0)
+			moveToNextView();
 	}
 }
 
@@ -306,6 +327,24 @@ function enablePage() {
 function loadMore(n) {
 	var bins = [];
 	deleteLoadMoreButton();
+	if (target_counter == 0) {
+		var markers = document.getElementsByClassName('MCEndSetMarker');
+		for (var z = 0; z < markers.length; z++) {
+			markers[z].outerHTML = '';
+		}
+	}
+	else {
+		var container = document.getElementById('MCTargetContainer');
+		
+		var marker = document.createElement('div');
+		marker.classList.add('MCEndSetMarker');
+
+		var markerLine = document.createElement('div');
+		markerLine.classList.add('MCEndSetMarkerInner');
+
+		marker.appendChild(markerLine);
+		container.appendChild(marker);
+	}
 	for (target_counter = target_counter; target_counter < current_targets.length; target_counter++) {
 		if (target_counter >= n) {
 			break;
@@ -373,33 +412,39 @@ function updateAppliedCounter() {
 }
 
 function sortOptions(a,b) {
-	if (a.text > b.text) return 1;
-	if (a.text < b.text) return -1;
+	var a = a.text.toLowerCase();
+	var b = b.text.toLowerCase();
+	if (a > b) return 1;
+	if (a < b) return -1;
 	return 0;
 }
 
 // sort select options alphabetically
 // I want to keep ALL And NONE on top
 // probably not the most elegant way to do this but meh
-function sortSelectBoxes() {
-	var c = document.getElementById('MCClassificationSelection');
-	var t = document.getElementById('MCTagSelection');
+function sortSelectBoxes(c, t, cSpecial, tSpecial) {
 	var c_array = Array.apply(null, c.options);
 	var t_array = Array.apply(null, t.options);
 	
-	// remove ALL and NONE
-	var classALL = c_array.shift();
-	var tagALL = t_array.shift();
-	var tagNONE = t_array.shift();
+	// pull out all special options we want to remain at the top
+	var c_preserve = [];
+	for (var n = 1; n < cSpecial; n++)
+		c_preserve.push(c_array.shift());
+	
+	var t_preserve = [];
+	for (var n = 1; n < tSpecial; n++)
+		t_preserve.push(t_array.shift());
 	
 	// sort
 	c_array.sort(sortOptions);
 	t_array.sort(sortOptions);
 	
-	// put ALL and NONE back
-	c_array.unshift(classALL);
-	t_array.unshift(tagNONE);
-	t_array.unshift(tagALL);
+	// put special options back in
+	for (var n = 0; n < c_preserve.length; n++)
+		c_array.unshift(c_preserve[n]);
+	
+	for (var n = 0; n < t_preserve.length; n++)
+		t_array.unshift(t_preserve[n]);
 	
 	// empty current options array
 	c.innerHTML = '';

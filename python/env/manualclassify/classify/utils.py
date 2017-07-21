@@ -20,9 +20,9 @@ CLASSIFIER_CONVERSION_TABLE = {
 	'Eucampia' : 'Eucampia cornuta',
 	'Guinardia' : 'Guinardia delicatula',
 	'Pseudonitzschia' : 'Pseudo-nitzschia',
-	'Thalassiosira_dirty' : 'Thalassiosira', # EXCEPTION HERE: INSERT 'external detritus' TAG ALSO!
+	'Thalassiosira_dirty' : 'Thalassiosira', # TAGGED: 'external detritus'
 	'mix' : 'mix',
-	'dino30' : 'Dinoflagellata', # Tag: 'nano'
+	'dino30' : 'Dinoflagellata',
 	'Lauderia' : 'Lauderia annulata',
 	'Cerataulina' : 'Cerataulina pelagica',
 	'Paralia' : 'Paralia sulcata',
@@ -128,3 +128,36 @@ def getAutoResultsForBin(bin):
 				i += 1
 			classifications[row[pid_index]] = winner[0]
 	return classifications
+	
+def addClassifierData(bins, classes, tags, data):
+	for bin in bins:
+		auto_results = getAutoResultsForBin(bin)
+		if not auto_results:
+			continue;
+		for pid, classification in auto_results.items():
+			classification_id = None
+			if classification in CLASSIFIER_CONVERSION_TABLE:
+				classification = CLASSIFIER_CONVERSION_TABLE[classification]
+			else:
+				classification = classification.replace('_', ' ')
+			for c in classes:
+				if c['name'] == classification:
+					classification_id = c['id']
+			if classification_id and data[pid] and not 'classification_id' in data[pid]:
+				data[pid]['classification_id'] = classification_id
+				data[pid]['user_id']  = -1;
+				data[pid]['user_power'] = -1;
+				if classification == 'Thalassiosira_dirty':
+					tag_id = None
+					for t in tags:
+						if t['name'] == 'external detritus':
+							tag_id = t['id']
+					data[pid]['tags'] = [{
+						'pid' : pid,
+						'user_id' : -1,
+						'user_power' : -1,
+						'time' : 0,
+						'tag_id' : tag_id,
+						'level' : 1
+					}]
+	return data

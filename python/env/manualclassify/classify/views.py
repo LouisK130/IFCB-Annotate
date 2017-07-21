@@ -39,7 +39,7 @@ class ClassifyPageView(TemplateView):
 			if not request.user.is_authenticated:
 				return redirect(settings.LOGIN_URL)
 			binsInput = request.POST.get('bins', '')
-			shouldImport = request.POST.get('import', False)
+			shouldImport = json.loads(request.POST.get('import', False)) # boolean conversion with json lib
 			utils.timeseries = request.POST.get('timeseries', '')
 			(bins, failures) = utils.verifyBins(binsInput)
 			if len(failures) > 0:
@@ -49,23 +49,17 @@ class ClassifyPageView(TemplateView):
 				return redirect('/')
 			classList = database.getClassificationList()
 			tagList = database.getTagList()
-			if shouldImport:
-				for bin in bins:
-					if not database.isBinImported(bin):
-						print('importing classifier results for: ' + bin)
-						r = database.insertAutoResultsForBin(bin, classList, tagList)
-						if r:
-							print('success')
-						else:
-							print('failure')
 			targets = utils.getTargets(bins)
+			classifications = database.getAllDataForBins(bins, targets)
 			print(str(len(targets)) + ' total targets found')
-			classifications = json.dumps(database.getAllDataForBins(bins, targets))
+			if shouldImport:
+				print('including auto results')
+				classifications = utils.addClassifierData(bins, classList, tagList, classifications)
 		return render(request, 'classify.html', {
 			'timeseries' : utils.timeseries,
 			'classification_labels' : classList,
 			'tag_labels' : tagList,
-			'classifications' : classifications,
+			'classifications' : json.dumps(classifications),
 			'bins' : json.dumps(bins),
 			'user_id' : request.session.get('user_id', 1) # TO-DO: Make this real
 		})
