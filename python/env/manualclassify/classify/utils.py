@@ -21,19 +21,15 @@ CLASSIFIER_CONVERSION_TABLE = {
 	'Guinardia' : 'Guinardia delicatula',
 	'Pseudonitzschia' : 'Pseudo-nitzschia',
 	'Thalassiosira_dirty' : 'Thalassiosira', # TAGGED: 'external detritus'
-	'mix' : 'mix',
 	'dino30' : 'Dinoflagellata',
 	'Lauderia' : 'Lauderia annulata',
 	'Cerataulina' : 'Cerataulina pelagica',
 	'Paralia' : 'Paralia sulcata',
-	'Chaetoceros' : 'Chaetoceros',
-	'Phaeocystis' : 'Parvicorbicula socialis',
 	'ciliate_mix' : 'Ciliate mix',
 	'Laboea' : 'Laboea strobila',
 	'Myrionecta' : 'Mesodinium sp',
 	'tintinnid' : 'Tintinnida',
 	'Pyramimonas' : 'Pyramimonas longicauda',
-	'pennate' : 'pennate morphotype1',
 }
 	
 def verifyBins(str):
@@ -136,18 +132,20 @@ def addClassifierData(bins, classes, tags, data):
 			continue;
 		for pid, classification in auto_results.items():
 			classification_id = None
+			new_name = None
 			if classification in CLASSIFIER_CONVERSION_TABLE:
-				classification = CLASSIFIER_CONVERSION_TABLE[classification]
+				new_name = CLASSIFIER_CONVERSION_TABLE[classification]
 			else:
-				classification = classification.replace('_', ' ')
+				new_name = classification.replace('_', ' ')
 			for c in classes:
-				if c['name'] == classification:
+				if c['name'] == new_name:
 					classification_id = c['id']
 			if classification_id and data[pid] and not 'classification_id' in data[pid]:
 				data[pid]['classification_id'] = classification_id
 				data[pid]['user_id']  = -1;
 				data[pid]['user_power'] = -1;
 				if classification == 'Thalassiosira_dirty':
+					print('adding dirty tag')
 					tag_id = None
 					for t in tags:
 						if t['name'] == 'external detritus':

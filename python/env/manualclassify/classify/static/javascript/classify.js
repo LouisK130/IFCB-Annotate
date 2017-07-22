@@ -23,8 +23,9 @@ var filterSelect = document.getElementById('MCFilterByCompletionSelection');
 var classApplySelect = document.getElementById('ClassificationApplicationSelection');
 var tagApplySelect = document.getElementById('TagApplicationSelection');
 
-sortSelectBoxes(classApplySelect, tagApplySelect, 1, 2); // stuck this in a function since it's more complex than I expected
-sortSelectBoxes(classSelect, tagSelect, 2, 2);
+sortSelectBoxes(classSelect, tagSelect, 1, 2); // stuck this in a function since it's more complex than I expected
+sortSelectBoxes(classApplySelect, tagApplySelect, 2, 2); 
+
 
 // select first classification
 classSelect.selectedIndex = 1;
@@ -428,11 +429,11 @@ function sortSelectBoxes(c, t, cSpecial, tSpecial) {
 	
 	// pull out all special options we want to remain at the top
 	var c_preserve = [];
-	for (var n = 1; n < cSpecial; n++)
+	for (var n = 0; n < cSpecial; n++)
 		c_preserve.push(c_array.shift());
 	
 	var t_preserve = [];
-	for (var n = 1; n < tSpecial; n++)
+	for (var n = 0; n < tSpecial; n++)
 		t_preserve.push(t_array.shift());
 	
 	// sort
@@ -440,10 +441,10 @@ function sortSelectBoxes(c, t, cSpecial, tSpecial) {
 	t_array.sort(sortOptions);
 	
 	// put special options back in
-	for (var n = 0; n < c_preserve.length; n++)
+	for (var n = c_preserve.length-1; n >= 0; n--)
 		c_array.unshift(c_preserve[n]);
 	
-	for (var n = 0; n < t_preserve.length; n++)
+	for (var n = t_preserve.length-1; n >= 0; n--)
 		t_array.unshift(t_preserve[n]);
 	
 	// empty current options array
