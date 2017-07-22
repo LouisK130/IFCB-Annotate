@@ -281,3 +281,16 @@ function loadImage(pid, entry) {
 		});
 	}
 }
+
+function keepElementOnScreen(ele) {
+	var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+	width -= 10;
+	var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+	height -= 10;
+	var rect = ele.getBoundingClientRect();
+	
+	if (rect.right >= width)
+		ele.style.left = width - ele.offsetWidth + 'px';
+	if (rect.bottom >= height)
+		ele.style.top = height - ele.offsetHeight + 'px';
+}

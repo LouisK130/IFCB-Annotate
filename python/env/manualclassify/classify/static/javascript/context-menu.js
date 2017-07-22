@@ -90,16 +90,7 @@ function createContextMenu() {
 	if (menu.offsetWidth > 200)
 		menu.style.width = (menu.offsetWidth + 30) + 'px';
 	
-	var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-	width -= 10;
-	var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-	height -= 10;
-	var rect = menu.getBoundingClientRect();
-	
-	if (rect.right >= width)
-		menu.style.left = width - menu.offsetWidth + 'px';
-	if (rect.bottom >= height)
-		menu.style.top = height - menu.offsetHeight + 'px';
+	keepElementOnScreen(menu);
 	
 }
 

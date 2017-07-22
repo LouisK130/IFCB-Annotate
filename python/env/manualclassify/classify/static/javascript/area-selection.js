@@ -3,7 +3,11 @@ var mouseX1;
 var mouseY1;
 window.addEventListener('mousedown', function(event) {
 	var ele = event.target || event.srcElement;
+	if (ele.id != 'MCRightClickMenu')
+		deleteRightClickMenu();
 	if (!(ele.classList))
+		return;
+	if (event.button != 0) // left click
 		return;
 	if (!(ele == document.body ||
 		ele.classList.contains('MCTarget') ||

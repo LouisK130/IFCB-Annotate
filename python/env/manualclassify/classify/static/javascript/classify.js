@@ -178,6 +178,12 @@ function createTile(pid, width, height) {
 			e.preventDefault();
 	}
 	
+	img.oncontextmenu = function(e) {
+		if (e.preventDefault)
+			e.preventDefault();
+		createRightClickMenu(pid);
+	}
+	
 	var newClassification = document.createElement('div');
 	newClassification.classList.add('MCNewClassification');
 	newClassification.id = 'MCNewClassification_' + pid;
