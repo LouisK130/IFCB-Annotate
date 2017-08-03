@@ -149,16 +149,12 @@ function getTargetsInCategory(classification, tag, filter, include_unclassified)
 					break;
 			}
 			if (!(t_ok)) {
-				if (c['tags'] && c['tags'].length > 0) {
-					for (var n = 0; n < c['tags'].length; n++) {
-						if (c['tags'][n]['tag_id'] && c['tags'][n]['tag_id'] == tag) {
-							t_ok = true;
-							break;
-						}
-					}
+				var acceptedTags = getAcceptedTagsForPid(pid);
+				if (tag == 'NONE') {
+					t_ok = (acceptedTags.length == 0);
 				}
 				else {
-					t_ok = tag == 'NONE';
+					t_ok = (acceptedTags.indexOf(parseInt(tag)) >= 0);
 				}
 			}
 			if (c_ok && t_ok && f_ok)
@@ -167,6 +163,18 @@ function getTargetsInCategory(classification, tag, filter, include_unclassified)
 	}
 	targets.sort(compareTargets);
 	return targets;
+}
+
+function getAcceptedTagsForPid(pid) {
+	var results = [];
+	if (pid in classifications && 'tags' in classifications[pid]) {
+		var tags = classifications[pid]['tags'];
+		for (var n = 0; n < tags.length; n++) {
+			if (tags[n]['accepted'] == true && (!('negation' in tags[n]) || tags[n]['negation'] == false))
+				results.push(tags[n]['tag_id']);
+		}
+	}
+	return results;
 }
 
 function makeUpdatesToClassifications(updates) {
@@ -208,23 +216,30 @@ function makeUpdatesToClassifications(updates) {
 
 		}
 	}
-	outerLoop:
-		for (pid in updates['tags']) {
-			if (pid in classifications) {
-				var c = classifications[pid];
-				if (!(c['tags']))
-					c['tags'] = [];
-				innerLoop:
+	for (pid in updates['tags']) {
+		console.log('updating: ' + pid);
+		if (pid in classifications) {
+			outerLoop:
+				for (var n = 0; n < updates['tags'][pid].length; n++) {
+					console.log('update: ');
+					var c = classifications[pid];
+					var u = updates['tags'][pid][n];
+					console.log(u);
+					if (!(c['tags']))
+						c['tags'] = [];
 					for (var i = 0; i < c['tags'].length; i++) {
 						var tag = c['tags'][i];
-						if (tag['tag_id'] == updates['tags'][pid]['tag_id'] && tag['user_id'] == updates['tags'][pid]['user_id']) {
-							c['tags'][i] = updates['tags'][pid]
+						if (tag['tag_id'] == u['tag_id'] && tag['user_id'] == u['user_id'] && tag['negation'] == u['negation']) {
+							c['tags'][i] = u;
+							console.log('replacing existing tag');
 							continue outerLoop; // done with this tag update, don't add it to 'tags' again
 						}
 					}
-				c['tags'].push(updates['tags'][pid]);
-			}
+					c['tags'].push(u);
+				}
+			labelAcceptedTagsForPid(pid);
 		}
+	}
 }
 
 function downloadZip(bin) {
@@ -293,4 +308,68 @@ function keepElementOnScreen(ele) {
 		ele.style.left = width - ele.offsetWidth + 'px';
 	if (rect.bottom >= height)
 		ele.style.top = height - ele.offsetHeight + 'px';
+}
+
+function getLabelById(id, tag) {
+	var options;
+	if (tag) {
+		options = document.getElementById('MCTagSelection').options;
+	}
+	else {
+		options = document.getElementById('MCClassificationSelection').options;
+	}
+	for (var n = 0; n < options.length; n++) {
+		var o = options[n];
+		if (o.value == id)
+			return o.text.replace(' (' + id + ')', '');
+	}
+	return 'NULL';
+}
+
+function isDescendant(parent, child) {
+     var node = child.parentNode;
+     while (node != null) {
+         if (node == parent) {
+             return true;
+         }
+         node = node.parentNode;
+     }
+     return false;
+}
+
+function labelAcceptedTagsForPid(pid) {
+	if (pid in classifications) {
+		if ('tags' in classifications[pid]) {
+			var temp_tags = {};
+			var tags = classifications[pid]['tags'];
+			for (var n = 0; n < tags.length; n++) {
+				var t = tags[n];
+				var id = t['tag_id'];
+				if (!(id in temp_tags)) {
+					temp_tags[id] = t;
+				}
+				else {
+					var existing = temp_tags[id];
+					var new_time = t['time'];
+					var power = t['user_power'];
+					if ('verification_time' in t && t['verification_time'] > t['time']) {
+						new_time = t['verification_time'];
+					}
+					var old_time = existing['time'];
+					if ('verification_time' in existing && existing['verification_time'] > existing['time'])
+						old_time = existing['verification_time'];
+					if (power > existing['user_power'] || (power == existing['user_power'] && new_time > old_time)) {
+						temp_tags[id]['accepted'] = false;
+						temp_tags[id] = t;
+					}
+					else {
+						t['accepted'] = false;
+					}
+				}
+			}
+			for (var id in temp_tags) {
+				temp_tags[id]['accepted'] = true;
+			}
+		}
+	}
 }

@@ -140,22 +140,30 @@ def addClassifierData(bins, classes, tags, data):
 			for c in classes:
 				if c['name'] == new_name:
 					classification_id = c['id']
-			if classification_id and data[pid] and not 'classification_id' in data[pid]:
-				data[pid]['classification_id'] = classification_id
-				data[pid]['user_id']  = -1;
-				data[pid]['user_power'] = -1;
+			if classification_id and data[pid]:
+				dict = {}
+				dict['classification_id'] = classification_id
+				dict['user_id'] = -1;
+				dict['user_power'] = -1;
+				if not 'classification_id' in data[pid]:
+					data[pid] = {**data[pid], **dict}
+				else:
+					if not 'other_classifications' in data[pid]:
+						data[pid]['other_classifications'] = []
+					data[pid]['other_classifications'].append(dict)
 				if classification == 'Thalassiosira_dirty':
-					print('adding dirty tag')
 					tag_id = None
 					for t in tags:
 						if t['name'] == 'external detritus':
 							tag_id = t['id']
-					data[pid]['tags'] = [{
-						'pid' : pid,
-						'user_id' : -1,
-						'user_power' : -1,
-						'time' : 0,
-						'tag_id' : tag_id,
-						'level' : 1
-					}]
+					tag_dict = {}
+					tag_dict['pid'] = pid
+					tag_dict['user_id'] = -1
+					tag_dict['user_power'] = -1
+					tag_dict['time'] = 0
+					tag_dict['tag_id'] = tag_id
+					tag_dict['level'] = 1
+					if not 'tags' in data[pid]:
+						data[pid]['tags'] = []
+					data[pid]['tags'].append(tag_dict)
 	return data

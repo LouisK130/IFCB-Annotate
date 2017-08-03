@@ -1,5 +1,6 @@
 var classification_updates = {};
 var tag_updates = {};
+var tag_negations = {};
 
 var set_size = getCookie('MCSetSize');
 if (set_size == "")
@@ -56,6 +57,8 @@ document.body.onresize = function() {
 }
 
 setTimeout(function() {
+	for (var pid in classifications)
+		labelAcceptedTagsForPid(pid);
 	reloadTargets();
 	if (current_targets.length == 0)
 		moveToNextView();
@@ -101,6 +104,8 @@ function reloadTargets() {
 	var t_select = document.getElementById('MCTagSelection');
 	var f_select = document.getElementById('MCFilterByCompletionSelection');
 	classification_updates = {};
+	tag_updates = {};
+	tag_negations = {};
 	target_counter = 0;
 	loaded = 0;
 	var include_unclassified = c_select.options[c_select.selectedIndex].text.substring(0,5) == 'other';
@@ -263,13 +268,17 @@ function applyToTile(tile) {
 }
 
 function submitUpdates() {
-	if (Object.keys(classification_updates).length == 0 && Object.keys(tag_updates).length == 0)
+	if (Object.keys(classification_updates).length == 0 && Object.keys(tag_updates).length == 0 && Object.keys(tag_negations).length == 0)
 		return;
 	disablePage();
 	var http = new XMLHttpRequest();
 	http.open('POST', '/submitupdates/', true);
 	http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-	var params = 'csrfmiddlewaretoken=' + csrf_token + '&classifications=' + JSON.stringify(classification_updates) +'&tags=' + JSON.stringify(tag_updates) + '&timeseries=' + timeseries;
+	var params = 'csrfmiddlewaretoken=' + csrf_token +
+					'&classifications=' + JSON.stringify(classification_updates) +
+					'&tags=' + JSON.stringify(tag_updates) +
+					'&tagnegations=' + JSON.stringify(tag_negations) +
+					'&timeseries=' + timeseries;
 	http.send(params);
 	http.onload = function() {
 		var response;
@@ -302,6 +311,7 @@ function submitUpdates() {
 			current_targets = new_targets;
 			classification_updates = {};
 			tag_updates = {};
+			tag_negations = {};
 			updateLoadedCounter();
 			updateAppliedCounter();
 		}

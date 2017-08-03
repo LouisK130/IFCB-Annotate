@@ -95,12 +95,14 @@ def getAllDataForBins(bins, targets):
 			'id' : row[0],
 			'pid' : pid,
 			'user_id' : row[3],
+			'user_power' : getUserPower(row[3]),
 			'time' : row[4].isoformat(),
 			'tag_id' : row[5],
 			'level' : row[6],
 			'verifications' : row[7],
 			'verification_time' : row[8],
 			'timeseries_id' : row[9],
+			'negation' : row[10],
 		}
 		if dict['verification_time']:
 			dict['verification_time'] = dict['verification_time'].isoformat()
@@ -177,9 +179,10 @@ def getTagList():
 	conn.close()
 	return data
 
-def insertUpdatesForPids(updates, is_classifications):
+def insertUpdatesForPids(updates, is_classifications, negations):
 	if not updates:
 		return {}
+	expected_inserts = 0;
 	return_updates = {}
 	table = 'classifications'
 	col = 'classification_id'
@@ -189,14 +192,26 @@ def insertUpdatesForPids(updates, is_classifications):
 		return_updates['tags'] = {}
 		table = 'tags'
 		col = 'tag_id'
-	query = 'INSERT INTO ' + table + ' (bin, roi, ' + col + ', timeseries_id) VALUES '
+	query = 'INSERT INTO ' + table + ' (bin, roi, ' + col + ', timeseries_id'
+	if negations:
+		query = query + ', negation'
+	query = query + ') VALUES '
 	for pid,id in updates.items():
 		i = pid.rfind('_')
 		bin = pid[:i]
 		roi = pid[i+1:]
-		query = query + '(\'' + bin + '\', ' + roi + ', ' + id + ', \'' + getTimeseriesId(utils.timeseries) + '\'), '
+		if negations:
+			for trueID in id:
+				query = query + '(\'' + bin + '\', ' + roi + ', ' + trueID + ', \'' + getTimeseriesId(utils.timeseries) + '\', true), '
+				expected_inserts += 1
+		else:
+			query = query + '(\'' + bin + '\', ' + roi + ', ' + id + ', \'' + getTimeseriesId(utils.timeseries) + '\'), '
+			expected_inserts += 1
 	query = query[:-2]
-	query = query + ' ON CONFLICT (bin, roi, user_id, ' + col + ') DO UPDATE SET (verifications, verification_time) = (' + table + '.verifications + 1, now()) RETURNING *;'
+	query = query + ' ON CONFLICT (bin, roi, user_id, ' + col + ''
+	if not is_classifications:
+		query = query + ', negation'
+	query = query + ') DO UPDATE SET (verifications, verification_time) = (' + table + '.verifications + 1, now()) RETURNING *;'
 	conn = getDBConnection()
 	cur = conn.cursor()
 	cur.execute(query)
@@ -222,8 +237,11 @@ def insertUpdatesForPids(updates, is_classifications):
 			return_updates['classifications'][pid] = dict
 		else:
 			dict['tag_id'] = row[5]
-			return_updates['tags'][pid] = dict
+			dict['negation'] = row[10]
+			if not pid in return_updates['tags']:
+				return_updates['tags'][pid] = []
+			return_updates['tags'][pid].append(dict)
 	conn.close()
-	if cur.statusmessage != 'INSERT 0 ' + str(len(updates)):
+	if cur.statusmessage != 'INSERT 0 ' + str(expected_inserts):
 		return_updates['failure'] = True
 	return return_updates

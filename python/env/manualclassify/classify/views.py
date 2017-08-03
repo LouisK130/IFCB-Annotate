@@ -72,9 +72,11 @@ class SubmitUpdatesPageView(TemplateView):
 			utils.timeseries = request.POST.get('timeseries', '')
 			c_updates = json.loads(request.POST.get('classifications', ''))
 			t_updates = json.loads(request.POST.get('tags', ''))
-			result1 = database.insertUpdatesForPids(c_updates, True)
-			result2 = database.insertUpdatesForPids(t_updates, False)
-			result = json.dumps({**result1, **result2})
+			t_n_updates = json.loads(request.POST.get('tagnegations', ''))
+			result1 = database.insertUpdatesForPids(c_updates, True, False)
+			result2 = database.insertUpdatesForPids(t_updates, False, False)
+			result3 = database.insertUpdatesForPids(t_n_updates, False, True)
+			result = json.dumps({**{**result1, **result2}, **result3})
 			return HttpResponse(result)
 			
 class ZipDownloadPageView(TemplateView):

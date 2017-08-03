@@ -24,7 +24,7 @@ function clickAddRecent() {
 	var options = document.getElementById('MCRecentBinsSelect').options;
 	for(var n = 0; n < options.length; n++) {
 		if (options[n].selected) {
-			addBin(options[n].value);
+			addBins(options[n].value);
 			options[n].outerHTML = '';
 			return;
 		}
@@ -41,7 +41,7 @@ function clickAddManual() {
 	var ele = document.getElementById('MCBinsText');
 	var text = ele.value;
 	if (text.length > 0) {
-		addBin(text);
+		addBins(text);
 	}
 	ele.value = '';
 }
@@ -107,18 +107,23 @@ function submitForm(raw) {
 	form.submit();
 }
 
-function addBin(bin) {
+function addBins(text) {
 	var container = document.getElementById('MCBins');
-	for (var n = 0; n < container.options.length; n++) {
-		if (container.options[n].value == bin)
-			return
-	}
-	var i = bin.lastIndexOf('/');
-	var url = bin.substring(0, i+1);
-	bin = bin.substring(i+1, bin.length);
-	var option = document.createElement('option');
-	option.text = bin;
-	option.value = bin;
-	document.getElementById('MCBins').add(option);
-	document.getElementById('MCTimeSeries').value = url;
+	var bins = text.split(',');
+	outerLoop:
+		for (var j = 0; j < bins.length; j++) {
+			var bin = bins[j].trim();
+			var i = bin.lastIndexOf('/');
+			var url = bin.substring(0, i+1);
+			bin = bin.substring(i+1, bin.length);
+			for (var n = 0; n < container.options.length; n++) {
+				if (container.options[n].value == bin)
+					continue outerLoop;
+			}
+			var option = document.createElement('option');
+			option.text = bin;
+			option.value = bin;
+			document.getElementById('MCBins').add(option);
+			document.getElementById('MCTimeSeries').value = url;
+		}
 }

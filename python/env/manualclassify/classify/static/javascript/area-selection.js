@@ -3,7 +3,7 @@ var mouseX1;
 var mouseY1;
 window.addEventListener('mousedown', function(event) {
 	var ele = event.target || event.srcElement;
-	if (ele.id != 'MCRightClickMenu')
+	if (!(isDescendant(document.getElementById('MCRightClickMenu'), ele)))
 		deleteRightClickMenu();
 	if (!(ele.classList))
 		return;
