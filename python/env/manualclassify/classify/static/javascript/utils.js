@@ -200,9 +200,12 @@ function makeUpdatesToClassifications(updates) {
 					time2 = update['verification_time'];
 				if (update['user_power'] > c['user_power'] || (update['user_power'] == c['user_power'] && time2 > time1)) {
 					var oc = c['other_classifications'];
-					delete c['other_classifications'];
-					oc.push(c);
 					var tags = c['tags'];
+					if (c['user_id'] != update['user_id'] || c['classification_id'] != update['classification_id']) {
+						delete c['other_classifications'];
+						delete c['tags'];
+						oc.push(c);
+					}
 					classifications[pid] = update
 					classifications[pid]['tags'] = tags;
 					classifications[pid]['height'] = h;
@@ -210,14 +213,17 @@ function makeUpdatesToClassifications(updates) {
 					classifications[pid]['other_classifications'] = oc;
 				}
 				else {
-					var clist = classifications[pid]['other_classifications'];
+					var clist = c['other_classifications'];
+					var replaced = false;
 					for (var n = 0; n < clist.length; n++) {
 						if (clist[n]['user_id'] == update['user_id'] && clist[n]['classification_id'] == update['classification_id']) {
 							clist[n] = update;
-							return; // don't append again below
+							replaced = true;
+							break;
 						}
 					}
-					classifications[pid]['other_classifications'].push(update);
+					if (!replaced)
+						classifications[pid]['other_classifications'].push(update);
 				}
 			}
 
@@ -227,7 +233,6 @@ function makeUpdatesToClassifications(updates) {
 		if (pid in classifications) {
 			outerLoop:
 				for (var n = 0; n < updates['tags'][pid].length; n++) {
-					console.log('update: ');
 					var c = classifications[pid];
 					var u = updates['tags'][pid][n];
 					if (!(c['tags']))
@@ -236,7 +241,6 @@ function makeUpdatesToClassifications(updates) {
 						var tag = c['tags'][i];
 						if (tag['tag_id'] == u['tag_id'] && tag['user_id'] == u['user_id'] && tag['negation'] == u['negation']) {
 							c['tags'][i] = u;
-							console.log('replacing existing tag');
 							continue outerLoop; // done with this tag update, don't add it to 'tags' again
 						}
 					}
