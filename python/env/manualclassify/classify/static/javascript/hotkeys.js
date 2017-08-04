@@ -43,8 +43,11 @@ function generalKeyDown(e) {
 					verify_t = '';
 				c.value = verify_c;
 				t.value = verify_t;
-				for (var n = 0; n < targets.length; n++)
-					targets[n].click();
+				for (var n = 0; n < targets.length; n++) {
+					var pid = targets[n].id.replace('MCTarget_', '');
+					if (!(pid in classification_updates) && !(pid in tag_updates))
+						targets[n].click();
+				}
 				c.value = old_c;
 				t.value = old_t;
 				break;
