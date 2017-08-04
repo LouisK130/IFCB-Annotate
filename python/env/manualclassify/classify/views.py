@@ -5,6 +5,7 @@ from django import forms
 import json
 from classify import utils, database, config
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 from django.conf import settings
 
 # Create your views here.
@@ -12,21 +13,45 @@ class HomePageView(TemplateView):
 	def get(self, request, **kwargs):
 		if not request.user.is_authenticated:
 			return redirect(settings.LOGIN_URL)
-		return render(request, 'index.html', {'failed' : request.session.pop('failed', '')})
+		return render(request, 'index.html', {
+			'failed' : request.session.pop('failed', ''),
+			'username' : request.user.username,
+		})
 		
 class LoginPageView(TemplateView):
 	def get(self, request, **kwargs):
-		return render(request, 'login.html')
+		return render(request, 'login.html', {'needs_approval' : request.session.pop('needs_approval', '')})
 	def post(self, request, **kwargs):
 		if request.method == 'POST':
 			username = request.POST.get('username')
 			password = request.POST.get('password')
 			user = authenticate(request=request, username=username, password=password)
 			if user is not None:
-				login(request, user)
-				return redirect('/')
+				if (user.is_active):
+					login(request, user)
+					return redirect('/')
+				else:
+					request.session['needs_approval'] = True
+					return redirect('/login/')
 			else:
 				return render(request, 'login.html', {'failed' : True})
+				
+class RegisterPageView(TemplateView):
+	def get(self, request, **kwargs):
+		return render(request, 'register.html')
+	def post(self, request, **kwargs):
+		username = request.POST.get('username')
+		password = request.POST.get('password')
+		email = request.POST.get('email')
+		if User.objects.filter(username=username).exists():
+			return render(request, 'register.html', {'user_taken' : True})
+		if User.objects.filter(email=email).exists():
+			return render(request, 'register.html', {'email_taken' : True})
+		user = User.objects.create_user(username, email, password)
+		user.is_active = False
+		user.save()
+		request.session['needs_approval'] = True
+		return redirect('/login/')
 
 class LogoutPageView(TemplateView):
 	def get(self, request, **kwargs):
@@ -61,7 +86,8 @@ class ClassifyPageView(TemplateView):
 			'tag_labels' : tagList,
 			'classifications' : json.dumps(classifications),
 			'bins' : json.dumps(bins),
-			'user_id' : request.session.get('user_id', 1) # TO-DO: Make this real
+			'user_id' : request.user.pk,
+			'username' : request.user.username,
 		})
 
 class SubmitUpdatesPageView(TemplateView):
@@ -73,9 +99,10 @@ class SubmitUpdatesPageView(TemplateView):
 			c_updates = json.loads(request.POST.get('classifications', ''))
 			t_updates = json.loads(request.POST.get('tags', ''))
 			t_n_updates = json.loads(request.POST.get('tagnegations', ''))
-			result1 = database.insertUpdatesForPids(c_updates, True, False)
-			result2 = database.insertUpdatesForPids(t_updates, False, False)
-			result3 = database.insertUpdatesForPids(t_n_updates, False, True)
+			id = request.user.pk
+			result1 = database.insertUpdatesForPids(c_updates, id, True, False)
+			result2 = database.insertUpdatesForPids(t_updates, id, False, False)
+			result3 = database.insertUpdatesForPids(t_n_updates, id, False, True)
 			result = json.dumps({**{**result1, **result2}, **result3})
 			return HttpResponse(result)
 			

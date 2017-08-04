@@ -26,7 +26,7 @@ function createRightClickMenu(pid) {
 	
 	for (var n = 0; n < entries.length; n++) {
 		var c = entries[n];
-		if (c['user'] == -1) {
+		if (c['user'] == 'auto') {
 			c['time'] = 'N/A';
 			c['verifications'] = 'N/A';
 		}
@@ -41,7 +41,7 @@ function createRightClickMenu(pid) {
 	var delayed = [];
 	for (var n = 0; n < entries.length; n++) {
 		var c = entries[n];
-		if (c['user'] == -1) {
+		if (c['user'] == 'auto') {
 			c['time'] = 'N/A';
 			c['verifications'] = 'N/A';
 		}
@@ -149,7 +149,7 @@ function disagreeTag() {
 	if (tn.indexOf(e.id) < 0) {
 		tn.push(e.id);
 		var action = createActionButton('Cancel', cancelPendingEntry);
-		var entry = createDetailEntry('T', user_id, 'PENDING', 'N/A', 'NO: ' + getLabelById(e.id, true), action, 'blue')
+		var entry = createDetailEntry('T', username, 'PENDING', 'N/A', 'NO: ' + getLabelById(e.id, true), action, 'blue')
 		entry.type = 'tagNegation';
 		entry.labelID = e.id;
 		document.getElementById('MCRightClickMenu').appendChild(entry);
@@ -272,7 +272,7 @@ function getPendingClassificationsForPid(pid) {
 	var results = [];
 	if (classification_updates[pid]) {
 		var dict = {};
-		dict['user'] = user_id;
+		dict['user'] = username;
 		dict['time'] = 'PENDING';
 		dict['verifications'] = 'N/A';
 		dict['label'] = getLabelById(classification_updates[pid], false)
@@ -287,7 +287,7 @@ function getPendingTagsForPid(pid) {
 	var results = [];
 	if (tag_updates[pid]) {
 		var dict = {};
-		dict['user'] = user_id;
+		dict['user'] = username;
 		dict['time'] = 'PENDING';
 		dict['verifications'] = 'N/A';
 		dict['label'] = getLabelById(tag_updates[pid], true)
@@ -299,7 +299,7 @@ function getPendingTagsForPid(pid) {
 		var tn = tag_negations[pid];
 		for (var n = 0; n < tn.length; n++) {
 			var dict = {};
-			dict['user'] = user_id;
+			dict['user'] = username;
 			dict['time'] = 'PENDING';
 			dict['verifications'] = 'N/A';
 			dict['label'] = 'NO: ' + getLabelById(tn[n], true)
@@ -319,7 +319,7 @@ function buildEntryLabels(c, tag) {
 		d = new Date(c['verification_time']);
 	}
 	dict['time'] = d.toLocaleDateString();
-	dict['user'] = c['user_id'];
+	dict['user'] = c['username'] || 'auto';
 	dict['verifications'] = (c['verifications'] || 0) + ' times';
 	dict['id'] = c['tag_id'];
 	if (tag) {

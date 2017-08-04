@@ -210,6 +210,13 @@ function makeUpdatesToClassifications(updates) {
 					classifications[pid]['other_classifications'] = oc;
 				}
 				else {
+					var clist = classifications[pid]['other_classifications'];
+					for (var n = 0; n < clist.length; n++) {
+						if (clist[n]['user_id'] == update['user_id'] && clist[n]['classification_id'] == update['classification_id']) {
+							clist[n] = update;
+							return; // don't append again below
+						}
+					}
 					classifications[pid]['other_classifications'].push(update);
 				}
 			}
@@ -217,14 +224,12 @@ function makeUpdatesToClassifications(updates) {
 		}
 	}
 	for (pid in updates['tags']) {
-		console.log('updating: ' + pid);
 		if (pid in classifications) {
 			outerLoop:
 				for (var n = 0; n < updates['tags'][pid].length; n++) {
 					console.log('update: ');
 					var c = classifications[pid];
 					var u = updates['tags'][pid][n];
-					console.log(u);
 					if (!(c['tags']))
 						c['tags'] = [];
 					for (var i = 0; i < c['tags'].length; i++) {

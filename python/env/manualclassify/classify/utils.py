@@ -4,9 +4,9 @@ import csv
 import json
 import codecs
 from contextlib import closing
-from xml.etree import ElementTree
 from classify import database, config
 import os
+from django.contrib.auth.models import User
 
 if not os.path.exists('classify/zip_cache'):
 	os.mkdir('classify/zip_cache')
@@ -86,6 +86,18 @@ def formatROI(roi):
 	while len(roi_s) != 5:
 		roi_s = '0' + roi_s
 	return roi_s
+	
+def getUserPower(user_id):
+	user = User.objects.get(id=user_id)
+	if user is None:
+		return -1
+	return user.get_user_power()
+	
+def getUserName(user_id):
+	user = User.objects.get(id=user_id)
+	if user is None:
+		return None
+	return user.username
 	
 def getZipForBin(bin):
 	if not os.path.isfile('classify/zip_cache/' + bin + '.zip'):

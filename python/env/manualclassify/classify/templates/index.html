@@ -1,28 +1,36 @@
 {% load staticfiles %}
 <html>
 	<body>
-		<b>Enter bin manually: </b>
-		<br>
-		<input type="textarea" id ='MCBinsText' style='margin-top:3px;margin-bottom:3px;';>
-		<input type="button" id='MCBinsAddBtn' value="Add">
-		<div id='MCRecentBinsDiv'>
-			<b>Recent bins viewed:</b><br>
-			<select id='MCRecentBinsSelect' size='10'></select>
-			<input type='button' id='MCRecentBinsAddBtn' value='Add'>
+		<div id="MCIndexDiv">
+			<b>Enter bin manually: </b>
+			<br>
+			<input type="textarea" id ='MCBinsText' style='margin-top:3px;margin-bottom:3px;';>
+			<input type="button" id='MCBinsAddBtn' value="Add">
+			<div id='MCRecentBinsDiv'>
+				<b>Recent bins viewed:</b><br>
+				<select id='MCRecentBinsSelect' size='10'></select>
+				<input type='button' id='MCRecentBinsAddBtn' value='Add'>
+			</div>
+			<div>
+				<b>Chosen bins:</b><br>
+				<select id='MCBins' size='10'></select>
+				<input type='button' id='MCBinsRemoveBtn' value='Remove'>
+			</div>
+			<div>
+				<b>Chosen Timeseries:</b><br>
+				<input type='text' id='MCTimeSeries'>
+			</div>
+			<input type='button' id='MCBinsSubmit' value='Begin Classifying Raw'>
+			<br>
+			<input type='button' id='MCBinsSubmitAndImport' value='Begin Classifying and Import Auto Data'>
 		</div>
-		<div>
-			<b>Chosen bins:</b><br>
-			<select id='MCBins' size='10'></select>
-			<input type='button' id='MCBinsRemoveBtn' value='Remove'>
-		</div>
-		<div>
-			<b>Chosen Timeseries:</b><br>
-			<input type='text' id='MCTimeSeries'>
-		</div>
-		<input type='button' id='MCBinsSubmit' value='Begin Classifying Raw'>
-		<br>
-		<input type='button' id='MCBinsSubmitAndImport' value='Begin Classifying and Import Auto Data'>
-		<p id='MCLogout'><a href='/logout/'>Logout</a></p>
+		<p id='MCLinks'>
+			You are signed in as: <b>{{ username }}</b>
+			<br>
+			<a href='/logout/'>Logout</a>
+			<br>
+			<a href='/admin/'>Admin</a>
+		</p>
     </body>
 </html>
 
@@ -69,14 +77,16 @@ body {
 	margin-bottom: 5px;
 	width: 358px;
 }
-#MCLogout {
+#MCLinks {
 	margin: 0;
-	position: absolute;
-	top: 10px;
-	right: 10px;
+	float: right;
+	text-align: right;
 }
 #MCBinsSubmit {
 	margin-top: 5px;
 	margin-bottom: 5px;
+}
+#MCIndexDiv {
+	display: inline-block;
 }
 </style>

@@ -40,7 +40,7 @@ def getAllDataForBins(bins, targets):
 				'other_classifications' : [],
 				'tags' : [],
 			}
-		power = getUserPower(user_id)
+		power = utils.getUserPower(user_id)
 		time1 = time_val.isoformat()
 		if verification_time and verification_time > time_val:
 			time1 = verification_time.isoformat()
@@ -52,6 +52,7 @@ def getAllDataForBins(bins, targets):
 			'pid' : pid, # so that dict key is unecessary later on
 			'user_power' : power,
 			'user_id' : user_id,
+			'username' : utils.getUserName(user_id),
 			'time' : time_val.isoformat(),
 			'level' : row[6],
 			'classification_id' : row[5],
@@ -95,7 +96,8 @@ def getAllDataForBins(bins, targets):
 			'id' : row[0],
 			'pid' : pid,
 			'user_id' : row[3],
-			'user_power' : getUserPower(row[3]),
+			'user_power' : utils.getUserPower(row[3]),
+			'username' : utils.getUserName(row[3]),
 			'time' : row[4].isoformat(),
 			'tag_id' : row[5],
 			'level' : row[6],
@@ -109,21 +111,6 @@ def getAllDataForBins(bins, targets):
 		data[pid]['tags'].append(dict)
 	conn.close()
 	return data
-
-user_powers = {}
-def getUserPower(user_id):
-	if not user_id in user_powers:
-		conn = getDBConnection()
-		cur = conn.cursor()
-		cur.execute('SELECT power FROM roles WHERE id = (SELECT role FROM users WHERE id = ' + str(user_id) + ');')
-		row = cur.fetchone()
-		if row != None:
-			power = int(row[0])
-		else:
-			power = 0
-		user_powers[user_id] = power
-		conn.close()
-	return user_powers[user_id]
 	
 timeseries_ids = {}
 def getTimeseriesId(url):
@@ -179,7 +166,7 @@ def getTagList():
 	conn.close()
 	return data
 
-def insertUpdatesForPids(updates, is_classifications, negations):
+def insertUpdatesForPids(updates, user_id, is_classifications, negations):
 	if not updates:
 		return {}
 	expected_inserts = 0;
@@ -192,7 +179,7 @@ def insertUpdatesForPids(updates, is_classifications, negations):
 		return_updates['tags'] = {}
 		table = 'tags'
 		col = 'tag_id'
-	query = 'INSERT INTO ' + table + ' (bin, roi, ' + col + ', timeseries_id'
+	query = 'INSERT INTO ' + table + ' (bin, roi, ' + col + ', user_id, timeseries_id'
 	if negations:
 		query = query + ', negation'
 	query = query + ') VALUES '
@@ -202,10 +189,10 @@ def insertUpdatesForPids(updates, is_classifications, negations):
 		roi = pid[i+1:]
 		if negations:
 			for trueID in id:
-				query = query + '(\'' + bin + '\', ' + roi + ', ' + trueID + ', \'' + getTimeseriesId(utils.timeseries) + '\', true), '
+				query = query + '(\'' + bin + '\', ' + roi + ', ' + trueID + ', ' + str(user_id) + ', \'' + getTimeseriesId(utils.timeseries) + '\', true), '
 				expected_inserts += 1
 		else:
-			query = query + '(\'' + bin + '\', ' + roi + ', ' + id + ', \'' + getTimeseriesId(utils.timeseries) + '\'), '
+			query = query + '(\'' + bin + '\', ' + roi + ', ' + id + ', ' + str(user_id) + ', \'' + getTimeseriesId(utils.timeseries) + '\'), '
 			expected_inserts += 1
 	query = query[:-2]
 	query = query + ' ON CONFLICT (bin, roi, user_id, ' + col + ''
@@ -227,7 +214,8 @@ def insertUpdatesForPids(updates, is_classifications, negations):
 			'level' : row[6],
 			'verifications' : row[7],
 			'verification_time' : row[8],
-			'user_power' : getUserPower(row[3]),
+			'user_power' : utils.getUserPower(row[3]),
+			'username' : utils.getUserName(row[3]),
 			'timeseries_id' : row[9],
 		}
 		if dict['verification_time']:

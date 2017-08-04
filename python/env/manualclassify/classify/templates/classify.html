@@ -2,6 +2,7 @@
 	{% load staticfiles %}
 	{% csrf_token %}
 	<div id='MCToolboxContainer'>
+		<center><a href='/'>Manual Classify</a></center>
 		{% include 'filter-toolbox.html' %}
 		{% include 'application-toolbox.html' %}
 		<button type='button' id='MCSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
@@ -101,6 +102,7 @@ div.MCDetailEntryPiece {
 	var csrf_token = '{{ csrf_token }}'
 	var bins = {{ bins|safe }}
 	var user_id = '{{ user_id }}'
+	var username = '{{ username }}'
 	zip.workerScriptsPath = "{% static 'javascript/lib/' %}";
 </script>
 <script type='text/javascript' src="{% static 'javascript/utils.js' %}"></script>

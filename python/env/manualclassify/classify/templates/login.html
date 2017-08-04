@@ -3,19 +3,26 @@
 <html>
 	<body>
 		<div id='MCLoginDiv'>
-			<center><h1 id='MCLoginHeader'>Manual Classify Login</h1>
-			<form action="/login/" method="post">
-				{% csrf_token %}
+			<center>
+				<h1 id='MCLoginHeader'>Manual Classify Login</h1>
+				<form id="MCLoginForm" action="/login/" method="post">
+					{% csrf_token %}
+					<p>
+						<label for="MCLoginUsername">Username:</label>
+						<input id="MCLoginUsername" type="text" name="username">
+					</p>
+					<p>
+						<label for="MCLoginPassword">Password:</label>
+						<input id="MCLoginPassowrd" type="password" name="password">
+					</p>
+				</form>
 				<p>
-					Username: 
-					<input type="text" name="username">
+					<button id="MCLoginSubmit" onclick="submitForm()">Login</button>
 				</p>
 				<p>
-					Password:
-					<input type="password" name="password">
+					<a href='/register/'>Need an account?</a>
 				</p>
-				<input type="submit" value="Login">
-			</form></center>
+			</center>
 		</div>
 	</body>
 </html>
@@ -23,6 +30,24 @@
 <style>
 body {
 	background-color: #79b7e0;
+}
+form {
+	display: table;
+	line-height: 30px;
+}
+p {
+	display: table-row;
+}
+label {
+	display: table-cell;
+	text-align: right;
+}
+input {
+	display: table-cell;
+}
+#MCLoginSubmit {
+	margin-top: 10px;
+	margin-bottom: 10px;
 }
 #MCLoginDiv {
 	position: absolute;
@@ -36,11 +61,24 @@ body {
 </style>
 
 <script>
+	var old = document.getElementById('MCLoginFailure');
+	if (old)
+		old.outerHTML = '';
 	if ('{{ failed }}' == 'True') {
+		showError('Invalid username or password');
+	}
+	if ('{{ needs_approval }}' == 'True') {
+		showError('This account needs to be enabled by an administrator');
+	}
+	function showError(text) {
 		var failure = document.createElement('div')
+		failure.id = 'MCLoginFailure'
 		var center = document.getElementById('MCLoginDiv').children[0];
-		failure.innerHTML = 'Invalid username or password'
+		failure.innerHTML = text;
 		failure.style.color = 'red';
 		center.insertBefore(failure, center.children[1]);
+	}
+	function submitForm() {
+		document.getElementById("MCLoginForm").submit();
 	}
 </script>
