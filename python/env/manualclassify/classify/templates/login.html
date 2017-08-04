@@ -68,7 +68,7 @@ input {
 		showError('Invalid username or password');
 	}
 	if ('{{ needs_approval }}' == 'True') {
-		showError('This account needs to be enabled by an administrator');
+		showError('This account needs to be enabled by an administrator, please email epeacock@whoi.edu');
 	}
 	function showError(text) {
 		var failure = document.createElement('div')
