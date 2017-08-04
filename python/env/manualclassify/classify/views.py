@@ -49,6 +49,7 @@ class RegisterPageView(TemplateView):
 			return render(request, 'register.html', {'email_taken' : True})
 		user = User.objects.create_user(username, email, password)
 		user.is_active = False
+		user.is_staff = True
 		user.save()
 		request.session['needs_approval'] = True
 		return redirect('/login/')
