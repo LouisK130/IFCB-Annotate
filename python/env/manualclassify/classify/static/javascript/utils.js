@@ -133,21 +133,6 @@ function getTargetsInCategory(classification, tag, filter, include_unclassified)
 			var c = classifications[pid];
 			var c_ok = (c['classification_id'] && c['classification_id'] == classification) || (!(c['classification_id']) && include_unclassified) || classification == 'ALL';
 			var t_ok = tag == 'ALL';
-			var f_ok = false;
-			switch (filter) {
-				case 'ALL':
-					f_ok = true;
-					break;
-				case 'ME':
-					f_ok = c['user_id'] == user_id;
-					break;
-				case 'NOTME':
-					f_ok = c['user_id'] && c['user_id'] > 0 && c['user_id'] != user_id;
-					break;
-				case 'NONE':
-					f_ok = !(c['user_id']) || c['user_id'] < 0;
-					break;
-			}
 			if (!(t_ok)) {
 				var acceptedTags = getAcceptedTagsForPid(pid);
 				if (tag == 'NONE') {
@@ -156,6 +141,21 @@ function getTargetsInCategory(classification, tag, filter, include_unclassified)
 				else {
 					t_ok = (acceptedTags.indexOf(parseInt(tag)) >= 0);
 				}
+			}
+			var f_ok = false;
+			switch (filter) {
+				case 'ALL':
+					f_ok = true;
+					break;
+				case 'ME':
+					f_ok = c['user_id'] == user_id;
+					break;
+				case 'OTHERS':
+					f_ok = c['user_id'] && c['user_id'] > 0 && c['user_id'] != user_id;
+					break;
+				case 'NONE':
+					f_ok = !c['user_id'] || c['user_id'] < 0;
+					break;
 			}
 			if (c_ok && t_ok && f_ok)
 				targets.push(classifications[pid])

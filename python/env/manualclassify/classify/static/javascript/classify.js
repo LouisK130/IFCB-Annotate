@@ -2,6 +2,10 @@ var classification_updates = {};
 var tag_updates = {};
 var tag_negations = {};
 
+var target_counter = 0;
+var loaded = 0;
+var current_targets = [];
+
 var set_size = getCookie('MCSetSize');
 if (set_size == "")
 	set_size = 100;
@@ -11,11 +15,6 @@ for(var n = 0; n < bins.length; n++) {
 	addRecentBinToCookies(bins[n]);
 	downloadZip(bins[n]);
 }
-
-var target_counter = 0;
-var loaded = 0;
-var current_targets = [];
-
 
 var classSelect = document.getElementById('MCClassificationSelection');
 var tagSelect = document.getElementById('MCTagSelection');

@@ -101,7 +101,7 @@ div.MCDetailEntryPiece {
 	var csrf_token_form = "{% csrf_token %}"
 	var csrf_token = '{{ csrf_token }}'
 	var bins = {{ bins|safe }}
-	var user_id = '{{ user_id }}'
+	var user_id = {{ user_id|safe }}
 	var username = '{{ username }}'
 	zip.workerScriptsPath = "{% static 'javascript/lib/' %}";
 </script>
