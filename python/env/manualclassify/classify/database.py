@@ -3,6 +3,7 @@ import time
 import json
 import uuid
 from classify import utils, config
+from classify.models import TagLabel, ClassLabel, Timeseries
 
 db = config.db
 username = config.username
@@ -15,6 +16,30 @@ server = config.server
 def getDBConnection():
 	return sql.connect(database=db, user=username, password=password, host=server)
 	# This needs to be closed at the end of each function that uses it
+	
+# one-time-user function to migrate manually stored labels to django model objects
+def migrateLabels():
+	conn = getDBConnection()
+	cur = conn.cursor()
+	cur.execute('SELECT * FROM classification_labels')
+	rows = cur.fetchall()
+	for row in rows:
+		print('saving CL: ' + row[1])
+		cl = ClassLabel(id=row[0], name=row[1], international_id=row[2])
+		cl.save()
+	cur.execute('SELECT * FROM tag_labels')
+	rows = cur.fetchall()
+	for row in rows:
+		print('saving TL ' + row[1])
+		tl = TagLabel(id=row[0], name=row[1])
+		tl.save()
+	cur.execute('SELECT * FROM timeseries')
+	rows = cur.fetchall()
+	for row in rows:
+		if len(row[1]) > 0:
+			print('saving TS: ' + row[1])
+			ts = Timeseries(id=row[0], url=row[1])
+			ts.save()
 
 def getAllDataForBins(bins, targets):
 	conn = getDBConnection()
@@ -113,58 +138,40 @@ def getAllDataForBins(bins, targets):
 	return data
 	
 timeseries_ids = {}
+for ts in Timeseries.objects.all():
+	timeseries_ids[ts.url] = ts.pk
+	
 def getTimeseriesId(url):
 	if not url in timeseries_ids:
-		conn = getDBConnection()
-		cur = conn.cursor()
-		cur.execute("SELECT id FROM timeseries WHERE url = '" + url + "';")
-		row = cur.fetchone()
-		if row != None:
-			timeseries_ids[url] = row[0]
-		else:
-			createTimeseries(url)
-		conn.close()
+		createTimeseries(url)
 	return timeseries_ids[url]
 
 def createTimeseries(url):
 	print('creating new timeseries: ' + url)
-	conn = getDBConnection()
-	cur = conn.cursor()
-	id = str(uuid.uuid4())
-	cur.execute("INSERT INTO timeseries (id, url) VALUES ('" + id + "', '" + url + "');")
-	conn.commit()
-	conn.close()
-	print('id: ' + id)
+	id = str(uuid.uuid1())
+	ts = Timeseries(id=id, url=url)
+	ts.save()
 	timeseries_ids[url] = id
+	print('id: ' + id)
 
 def getClassificationList():
-	conn = getDBConnection()
-	cur = conn.cursor()
-	cur.execute('SELECT * FROM classification_labels')
-	rows = cur.fetchall()
 	data = []
-	for row in rows:
+	for cl in ClassLabel.objects.all():
 		c = {}
-		c['id'] = row[0]
-		c['name'] = row[1]
-		c['international_id'] = row[2]
+		c['id'] = cl.pk
+		c['name'] = cl.name
+		c['international_id'] = cl.international_id
 		data.append(c)
-	conn.close()
 	return data
 
 def getTagList():
-	conn = getDBConnection()
-	cur = conn.cursor()
-	cur.execute('SELECT * FROM tag_labels')
-	rows = cur.fetchall()
 	data = []
-	for row in rows:
+	for tl in TagLabel.objects.all():
 		c = {}
-		c['id'] = row[0]
-		c['name'] = row[1]
+		c['id'] = tl.pk
+		c['name'] = tl.name
 		data.append(c)
-	conn.close()
-	return data
+	return data;
 
 def insertUpdatesForPids(updates, user_id, is_classifications, negations):
 	if not updates:
