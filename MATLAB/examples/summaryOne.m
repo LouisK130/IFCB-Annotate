@@ -7,7 +7,7 @@ if ~isopen(conn)
     return;
 end
 
-query = 'SELECT * FROM classification_labels';
+query = 'SELECT * FROM classify_classlabel';
 cursor = exec(conn, query);
 cursor = fetch(cursor);
 label_data = cursor.Data;
@@ -15,7 +15,7 @@ label_data = cursor.Data;
 labels = label_data{:,2}';
 label_ids = label_data{:,1}';
 
-query = 'SELECT * FROM classifications;';
+query = 'SELECT * FROM classify_classification;';
 cursor = exec(conn, query);
 cursor = fetch(cursor);
 data = cursor.Data;

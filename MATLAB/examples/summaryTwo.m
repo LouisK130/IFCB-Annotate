@@ -7,7 +7,7 @@ function summaryTwo(class, tag)
         return;
     end
     
-    query = 'SELECT id FROM classification_labels WHERE name = ''%s'';';
+    query = 'SELECT id FROM classify_classlabel WHERE name = ''%s'';';
     query = sprintf(query, class);
     cursor = exec(conn, query);
     cursor = fetch(cursor);
@@ -18,7 +18,7 @@ function summaryTwo(class, tag)
         return;
     end
     
-    query = 'SELECT * FROM classifications WHERE classification_id = %d;';
+    query = 'SELECT * FROM classify_classification WHERE classification_id = %d;';
     query = sprintf(query, class_id);
     cursor = exec(conn, query);
     cursor = fetch(cursor);
@@ -28,7 +28,7 @@ function summaryTwo(class, tag)
     
     if tag
         
-        query = 'SELECT id from tag_labels WHERE name = ''%s'';';
+        query = 'SELECT id from classify_taglabel WHERE name = ''%s'';';
         query = sprintf(query, tag);
         cursor = exec(conn, query);
         cursor = fetch(cursor);
@@ -39,7 +39,7 @@ function summaryTwo(class, tag)
             return;
         end
         
-        query = 'SELECT * FROM tags WHERE tag_id = %d';
+        query = 'SELECT * FROM classify_tag WHERE tag_id = %d';
         query = sprintf(query, tag_id);
         cursor = exec(conn, query);
         cursor = fetch(cursor);
