@@ -2,7 +2,7 @@ conn = getDBConnection();
 
 load('class_table_mvco.mat')
     
-query = 'INSERT INTO classification_labels (name, international_id) VALUES ';
+query = 'INSERT INTO classify_classlabel (name, international_id) VALUES ';
 
 for i = 1:height(class_table_mvco)
     if ~isnan(class_table_mvco{i,4}{1})

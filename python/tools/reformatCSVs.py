@@ -1,5 +1,5 @@
 import os
-for root, dirs, filenames in os.walk('C:/Users/Louis/Desktop/Whoi Dashboard/csv/bins,rois'):
+for root, dirs, filenames in os.walk('D:/GitHub/Manual-Classify/python/tools/annotations_csv_May2017/'):
 	for f in filenames:
 		fn = os.path.join(root, f)
 		with open(fn, 'r') as file:
@@ -7,7 +7,8 @@ for root, dirs, filenames in os.walk('C:/Users/Louis/Desktop/Whoi Dashboard/csv/
 		newdata = []
 		for line in data:
 			k = line.rfind('_')
-			line = line[:k] + ',' + line[k+1:]
+			i = line.rfind('/')
+			line = line[i+1:k] + ',' + line[k+1:]
 			newdata.append(line)
 		with open(fn, 'w') as file:
 			file.writelines(newdata)

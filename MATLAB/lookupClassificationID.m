@@ -8,7 +8,7 @@ function [classification_id, error] = lookupClassificationID(conn, name)
         return;
     end
 
-    query = sprintf('SELECT id FROM classification_labels WHERE name = ''%s'';', name);
+    query = sprintf('SELECT id FROM classify_classlabel WHERE name = ''%s'';', name);
     cursor = exec(conn, query);
 
     if ~isempty(cursor.Message)

@@ -3,59 +3,30 @@ import time
 import json
 import uuid
 from classify import utils, config
-from classify.models import TagLabel, ClassLabel, Timeseries
+from classify.models import TagLabel, ClassLabel, Timeseries, Classification, Tag
+from django.utils import timezone
+from django.db import transaction
+from django.db.models import F
 
-db = config.db
-username = config.username
-password = config.password
-server = config.server
-
-# For simplicity, we'll open a new connection for every operation
-# In the future it may or may not be more efficient to maintain an open connection
-# for some amount of time to handle multiple operations
-def getDBConnection():
-	return sql.connect(database=db, user=username, password=password, host=server)
-	# This needs to be closed at the end of each function that uses it
+# load all timeseries into memory right off the bat, in one query
+timeseries_ids = {}
+for ts in Timeseries.objects.all():
+	timeseries_ids[ts.url] = ts.pk
 	
-# one-time-user function to migrate manually stored labels to django model objects
-def migrateLabels():
-	conn = getDBConnection()
-	cur = conn.cursor()
-	cur.execute('SELECT * FROM classification_labels')
-	rows = cur.fetchall()
-	for row in rows:
-		print('saving CL: ' + row[1])
-		cl = ClassLabel(id=row[0], name=row[1], international_id=row[2])
-		cl.save()
-	cur.execute('SELECT * FROM tag_labels')
-	rows = cur.fetchall()
-	for row in rows:
-		print('saving TL ' + row[1])
-		tl = TagLabel(id=row[0], name=row[1])
-		tl.save()
-	cur.execute('SELECT * FROM timeseries')
-	rows = cur.fetchall()
-	for row in rows:
-		if len(row[1]) > 0:
-			print('saving TS: ' + row[1])
-			ts = Timeseries(id=row[0], url=row[1])
-			ts.save()
+# NOTE: Throughout this application, PIDs and bins are stored and transferred WITHOUT the timeseries url prepended
 
+# Param 1: an array of strings, representing bins
+# Param 2: a dictionary, indexed by PID, with values that are dictionaries containing keys 'width' and 'height'
+# 	for all PIDs in the given bins
+# Output: a dictionary, indexed by PID, with values that are dictionaries containing all data for all classifications
+#	relevant to the given bins, ready to be passed to JS or to another function that will add the auto classifier data
 def getAllDataForBins(bins, targets):
-	conn = getDBConnection()
-	cur = conn.cursor()
-	formatted_list = ["('" + bin + "')" for bin in bins]
-	formatted_string = ','.join(formatted_list)
 	timeseries_id = getTimeseriesId(utils.timeseries)
-	query = "SELECT * FROM classifications WHERE bin = ANY (VALUES " + formatted_string + ") AND timeseries_id = '" + timeseries_id + "';"
-	cur.execute(query)
-	rows = cur.fetchall()
 	data = {}
-	for row in rows:
-		user_id = row[3]
-		time_val = row[4]
-		verification_time = row[8] # Might be None
-		pid = row[1] + '_' + utils.formatROI(row[2])
+	for c in Classification.objects.filter(bin__in=bins, timeseries_id=timeseries_id):
+		pid = c.bin + '_' + utils.formatROI(c.roi)
+		
+		# if we haven't already seen this PID, input some defaults and dumby data
 		if not pid in data:
 			data[pid] = {
 				'user_power' : -1,
@@ -65,46 +36,59 @@ def getAllDataForBins(bins, targets):
 				'other_classifications' : [],
 				'tags' : [],
 			}
-		power = utils.getUserPower(user_id)
-		time1 = time_val.isoformat()
-		if verification_time and verification_time > time_val:
-			time1 = verification_time.isoformat()
-		time2 = data[pid]['time']
+		
+		# define some values for comparing whether or not this entry is "accepted"
+		old_power = data[pid]['user_power']
+		new_power = utils.getUserPower(c.user_id)
+		new_time = c.time.isoformat()
+		if c.verification_time and c.verification_time.isoformat() > new_time:
+			new_time = c.verification_time.isoformat()
+		old_time = data[pid]['time']
 		if 'verification_time' in data[pid] and data[pid]['verification_time'] and data[pid]['verification_time'] > data[pid]['time']:
-			time2 = data[pid]['verification_time']
+			old_time = data[pid]['verification_time']
+		
+		# build the dictionary that contains this entry's data, in the format JS will expect
 		dict = {
-			'id' : row[0],
-			'pid' : pid, # so that dict key is unecessary later on
-			'user_power' : power,
-			'user_id' : user_id,
-			'username' : utils.getUserName(user_id),
-			'time' : time_val.isoformat(),
-			'level' : row[6],
-			'classification_id' : row[5],
-			'verifications' : row[7],
-			'verification_time' : verification_time,
-			'timeseries_id' : row[9],
+			'id' : c.pk,
+			'pid' : pid,
+			'user_power' : new_power,
+			'user_id' : c.user_id,
+			'username' : utils.getUserName(c.user_id),
+			'time' : c.time.isoformat(),
+			'level' : c.level,
+			'classification_id' : c.classification_id,
+			'verifications' : c.verifications,
+			'timeseries_id' : c.timeseries_id,
 		}
-		if dict['verification_time']:
-			dict['verification_time'] = dict['verification_time'].isoformat()
-		# (user is more important) or (equally important and this data is newer)
-		if (power > data[pid]['user_power']) or (power == data[pid]['user_power'] and time1 > time2):
-			if data[pid]['time'] != 0: # 0 is a dumby value placed above, means this key doesn't actually exist yet
-				# if it previously existed, we need to move it to 'other_classifications'
-				# first clone
+		
+		dict['verification_time'] = c.verification_time.isoformat() if c.verification_time else None
+		
+		# if user is more important, or equally important but this entry is more recent than the old accepted one
+		if new_power > old_power or (new_power == old_power and new_time > old_time):
+			# if the existing entry is a real classification (not dumby data from above)
+			if data[pid]['time'] != 0:
+				# we need to move this classification to the 'other_classifications' array before overwriting it
+				# first clone the old entry
 				to_move = data[pid].copy()
-				# then remove keys only necesary in top-level classification data
+				# then remove keys only needed in the top-level classification data
 				to_move.pop('width', None)
 				to_move.pop('height', None)
 				to_move.pop('other_classifications', None)
 				to_move.pop('tags', None)
+				# finally move to the non-accepted array
 				data[pid]['other_classifications'].append(to_move)
-			# finally merge new data with old
+			# now merge and overwrite with new data
 			data[pid] = {**data[pid], **dict}
+		# if user isn't more important, or this annotation is older than the currently accepted one
 		else:
+			# we simply stick this data into 'other_classifications'
 			data[pid]['other_classifications'].append(dict)
+	
+	# now loop all targets given by Param 2
 	for pid,dims in targets.items():
+		# if we didn't already find any annotations for this pid
 		if not pid in data:
+			# insert some default values and height/width
 			data[pid] = {
 				'pid' : pid, 
 				'width' : dims['width'],
@@ -112,34 +96,149 @@ def getAllDataForBins(bins, targets):
 				'other_classifications' : [],
 				'tags' : [],
 			}
-	query = "SELECT * FROM tags WHERE bin = ANY (VALUES " + formatted_string + ") AND timeseries_id = '" + timeseries_id + "';"
-	cur.execute(query)
-	rows = cur.fetchall()
-	for row in rows:
-		pid = row[1] + '_' + utils.formatROI(row[2])
-		dict = {
-			'id' : row[0],
-			'pid' : pid,
-			'user_id' : row[3],
-			'user_power' : utils.getUserPower(row[3]),
-			'username' : utils.getUserName(row[3]),
-			'time' : row[4].isoformat(),
-			'tag_id' : row[5],
-			'level' : row[6],
-			'verifications' : row[7],
-			'verification_time' : row[8],
-			'timeseries_id' : row[9],
-			'negation' : row[10],
-		}
-		if dict['verification_time']:
-			dict['verification_time'] = dict['verification_time'].isoformat()
-		data[pid]['tags'].append(dict)
-	conn.close()
-	return data
 	
-timeseries_ids = {}
-for ts in Timeseries.objects.all():
-	timeseries_ids[ts.url] = ts.pk
+	# now we need to find tag data
+	for t in Tag.objects.filter(bin__in=bins, timeseries_id=timeseries_id):
+		pid = t.bin + '_' + utils.formatROI(t.roi)
+		
+		# build the dictionary
+		dict = {
+			'id' : t.pk,
+			'pid' : pid,
+			'user_id' : t.user_id,
+			'user_power' : utils.getUserPower(t.user_id),
+			'username' : utils.getUserName(t.user_id),
+			'time' : t.time,
+			'tag_id' : t.tag_id,
+			'level' : t.level,
+			'verifications' : t.verifications,
+			'timeseries_id' : t.timeseries_id,
+			'negation' : t.negation,
+		}
+		
+		dict['verification_time'] = t.verification_time.isoformat() if t.verification_time else None
+		
+		# and stick it in the tags array for this PID
+		data[pid]['tags'].append(dict)
+	
+	return data
+
+# Param 1: a dictionary, indexed by PID, with integer values representing a new classification_id to assign the PID to
+# Param 2: an integer, representing the id of the user who is submitting these updates
+# Output: a dictionary, with format:
+#		'classifications' : {
+#			PID : {...}
+#		}
+#	where ... represents data for a newly created or updated entry
+def insertClassificationUpdates(updates, user_id):
+
+	changed_objects = []
+	return_updates = {
+		'classifications' : {}
+	}
+	
+	# create a new database transaction explicity, so we don't autocommit for every single update
+	with transaction.atomic():
+		for pid,id in updates.items():
+			# parse out the bin and roi from PID
+			i = pid.rfind('_')
+			bin = pid[:i]
+			roi = int(pid[i+1:])
+			
+			# see if this entry already exists
+			try:
+				# if so, update verifications and verification_time
+				c = Classification.objects.get(bin=bin, roi=roi, user_id=user_id, classification_id=id)
+				c.verifications = c.verifications + 1
+				c.verification_time = timezone.now()
+				c.save()
+				changed_objects.append(c)
+			except Classification.DoesNotExist:
+				# if not, create a new one
+				c = Classification(bin=bin, roi=roi, user_id=user_id, classification_id=id, timeseries_id=getTimeseriesId(utils.timeseries))
+				c.save()
+				changed_objects.append(c)
+	transaction.commit()
+	
+	# loop over changed objects and build a result dictionary
+	for o in changed_objects:
+		pid = o.bin + '_' + utils.formatROI(o.roi)
+		# data for entry
+		dict = {
+			'id' : o.pk,
+			'pid' : pid,
+			'user_id' : o.user_id,
+			'time' : o.time.isoformat(),
+			'level' : o.level,
+			'classification_id' : o.classification_id,
+			'verifications' : o.verifications,
+			'user_power' : utils.getUserPower(o.user_id),
+			'username' : utils.getUserName(o.user_id),
+			'timeseries_id' : o.timeseries_id,
+		}
+		dict['verification_time'] = o.verification_time.isoformat() if o.verification_time else None
+		return_updates['classifications'][pid] = dict;
+	
+	return return_updates
+
+# Param 1: a dictionary, indexed by PID, with integer values representing a new classification_id to assign the PID to
+# Param 2: an integer, representing the id of the user who is submitting these updates
+# Param 3: a boolean, representing whether or not these updates are tag negations
+# Output: a dictionary, with format:
+#		'tags' : {
+#			PID : {...}
+#		}
+#	where ... represents data for a newly created or updated entry
+def insertTagUpdates(updates, user_id, negations):
+
+	return_updates = {
+		'tags' : {}
+	}
+	changed_objects = []
+	
+	# create a new database transaction explicity, so we don't autocommit for every single update
+	with transaction.atomic():
+		for pid,id in updates.items():
+			# parse out the bin and roi from PID
+			i = pid.rfind('_')
+			bin = pid[:i]
+			roi = int(pid[i+1:])
+			
+			# see if this entry already exists
+			try:
+				# if so, update verifications and verification_time
+				c = Tag.objects.get(bin=bin, roi=roi, user_id=user_id, tag_id=id, negation=negations)
+				c.verifications = c.verifications + 1
+				c.verification_time = timezone.now()
+				c.save()
+				changed_objects.append(c)
+			except Tag.DoesNotExist:
+				# if not, create a new one
+				c = Tag(bin=bin, roi=roi, user_id=user_id, classification_id=id, timeseries_id=getTimeseriesId(utils.timeseries), negation=negations)
+				c.save()
+				changed_objects.append(c)
+	
+	# loop over changed objects and build a result dictionary
+	for o in changed_objects:
+		pid = o.bin + '_' + utils.formatROI(o.roi)
+		# data for entry
+		dict = {
+			'id' : o.pk,
+			'pid' : pid,
+			'user_id' : o.user_id,
+			'time' : o.time.isoformat(),
+			'level' : o.level,
+			'tag_id' : o.tag_id,
+			'verifications' : o.verifications,
+			'user_power' : utils.getUserPower(o.user_id),
+			'username' : utils.getUserName(o.user_id),
+			'timeseries_id' : o.timeseries_id,
+			'negation' : o.negation,
+		}
+		dict['verification_time'] = o.verification_time.isoformat() if o.verification_time else None
+		return_updates['tags'][pid] = dict;
+	
+	return return_updates
 	
 def getTimeseriesId(url):
 	if not url in timeseries_ids:
@@ -172,71 +271,3 @@ def getTagList():
 		c['name'] = tl.name
 		data.append(c)
 	return data;
-
-def insertUpdatesForPids(updates, user_id, is_classifications, negations):
-	if not updates:
-		return {}
-	expected_inserts = 0;
-	return_updates = {}
-	table = 'classifications'
-	col = 'classification_id'
-	if is_classifications:
-		return_updates['classifications'] = {}
-	else:
-		return_updates['tags'] = {}
-		table = 'tags'
-		col = 'tag_id'
-	query = 'INSERT INTO ' + table + ' (bin, roi, ' + col + ', user_id, timeseries_id'
-	if negations:
-		query = query + ', negation'
-	query = query + ') VALUES '
-	for pid,id in updates.items():
-		i = pid.rfind('_')
-		bin = pid[:i]
-		roi = pid[i+1:]
-		if negations:
-			for trueID in id:
-				query = query + '(\'' + bin + '\', ' + roi + ', ' + trueID + ', ' + str(user_id) + ', \'' + getTimeseriesId(utils.timeseries) + '\', true), '
-				expected_inserts += 1
-		else:
-			query = query + '(\'' + bin + '\', ' + roi + ', ' + id + ', ' + str(user_id) + ', \'' + getTimeseriesId(utils.timeseries) + '\'), '
-			expected_inserts += 1
-	query = query[:-2]
-	query = query + ' ON CONFLICT (bin, roi, user_id, ' + col + ''
-	if not is_classifications:
-		query = query + ', negation'
-	query = query + ') DO UPDATE SET (verifications, verification_time) = (' + table + '.verifications + 1, now()) RETURNING *;'
-	conn = getDBConnection()
-	cur = conn.cursor()
-	cur.execute(query)
-	conn.commit()
-	rows = cur.fetchall()
-	for row in rows:
-		pid = row[1] + '_' + utils.formatROI(row[2])
-		dict = {
-			'id' : row[0],
-			'pid' : pid,
-			'user_id' : row[3],
-			'time' : row[4].isoformat(),
-			'level' : row[6],
-			'verifications' : row[7],
-			'verification_time' : row[8],
-			'user_power' : utils.getUserPower(row[3]),
-			'username' : utils.getUserName(row[3]),
-			'timeseries_id' : row[9],
-		}
-		if dict['verification_time']:
-			dict['verification_time'] = dict['verification_time'].isoformat()
-		if is_classifications:
-			dict['classification_id'] = row[5]
-			return_updates['classifications'][pid] = dict
-		else:
-			dict['tag_id'] = row[5]
-			dict['negation'] = row[10]
-			if not pid in return_updates['tags']:
-				return_updates['tags'][pid] = []
-			return_updates['tags'][pid].append(dict)
-	conn.close()
-	if cur.statusmessage != 'INSERT 0 ' + str(expected_inserts):
-		return_updates['failure'] = True
-	return return_updates

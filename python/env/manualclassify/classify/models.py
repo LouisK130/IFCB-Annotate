@@ -14,6 +14,33 @@ class Timeseries(models.Model):
 	class Meta:
 		verbose_name_plural = 'Timeseries'
 
+class Classification(models.Model):
+	bin = models.CharField(max_length=100)
+	roi = models.IntegerField()
+	user_id = models.IntegerField()
+	time = models.DateTimeField(auto_now_add=True)
+	classification_id = models.IntegerField()
+	level = models.IntegerField(default=1)
+	verifications = models.IntegerField(default=0)
+	verification_time = models.DateTimeField(null=True, blank=True)
+	timeseries_id = models.CharField(max_length=36)
+	class Meta:
+		unique_together = (('bin', 'roi', 'user_id', 'classification_id'),)
+	
+class Tag(models.Model):
+	bin = models.CharField(max_length=100)
+	roi = models.IntegerField()
+	user_id = models.IntegerField()
+	time = models.DateTimeField(auto_now_add=True)
+	tag_id = models.IntegerField()
+	level = models.IntegerField(default=1)
+	verifications = models.IntegerField(default=0)
+	verification_time = models.DateTimeField(null=True, blank=True)
+	timeseries_id = models.CharField(max_length=36)
+	negation = models.BooleanField(default=False)
+	class Meta:
+		unique_together = (('bin', 'roi', 'user_id', 'tag_id', 'negation'),)
+
 # add some fields and methods to User and Group
 
 Group.add_to_class('power', models.IntegerField(default=0))

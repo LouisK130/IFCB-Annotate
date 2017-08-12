@@ -101,9 +101,9 @@ class SubmitUpdatesPageView(TemplateView):
 			t_updates = json.loads(request.POST.get('tags', ''))
 			t_n_updates = json.loads(request.POST.get('tagnegations', ''))
 			id = request.user.pk
-			result1 = database.insertUpdatesForPids(c_updates, id, True, False)
-			result2 = database.insertUpdatesForPids(t_updates, id, False, False)
-			result3 = database.insertUpdatesForPids(t_n_updates, id, False, True)
+			result1 = database.insertClassificationUpdates(c_updates, id)
+			result2 = database.insertTagUpdates(t_updates, id, False)
+			result3 = database.insertTagUpdates(t_n_updates, id, True)
 			result = json.dumps({**{**result1, **result2}, **result3})
 			return HttpResponse(result)
 			

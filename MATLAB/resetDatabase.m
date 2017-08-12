@@ -1,11 +1,11 @@
 conn = getDBConnection();
 
-a = 'TRUNCATE classifications, classification_labels, tag_labels, tags, timeseries';
-b = 'ALTER SEQUENCE classification_labels_id_seq RESTART';
-c = 'ALTER SEQUENCE classifications_id_seq RESTART';
-d = 'ALTER SEQUENCE tags_id_seq RESTART';
-e = 'ALTER SEQUENCE tag_labels_id_seq RESTART';
-f = 'INSERT INTO timeseries (id, url) VALUES (''341fae31-89d7-4f27-ba25-27d2c9216dc0'', ''http://ifcb-data.whoi.edu/mvco/'')';
+a = 'TRUNCATE classify_classification, classify_classlabel, classify_taglabel, classify_tag, classify_timeseries';
+b = 'ALTER SEQUENCE classify_classlabel_id_seq RESTART';
+c = 'ALTER SEQUENCE classify_classification_id_seq RESTART';
+d = 'ALTER SEQUENCE classify_tag_id_seq RESTART';
+e = 'ALTER SEQUENCE classify_taglabel_id_seq RESTART';
+f = 'INSERT INTO classify_timeseries (id, url) VALUES (''341fae31-89d7-4f27-ba25-27d2c9216dc0'', ''http://ifcb-data.whoi.edu/mvco/'')';
 
 exec(conn, a);
 exec(conn, b);

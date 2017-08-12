@@ -8,7 +8,7 @@ function [tag_id, error] = lookupTagID(conn, tag_name)
         return;
     end
 
-    query = sprintf('SELECT * FROM tag_labels WHERE name = ''%s'';', tag_name);
+    query = sprintf('SELECT * FROM classify_taglabel WHERE name = ''%s'';', tag_name);
     cursor = exec(conn, query);
 
     if ~isempty(cursor.Message)
