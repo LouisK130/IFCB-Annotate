@@ -4,14 +4,14 @@ import json
 import uuid
 from classify import utils, config
 from classify.models import TagLabel, ClassLabel, Timeseries, Classification, Tag
-from django.utils import timezone
-from django.db import transaction
-from django.db.models import F
 
 # load all timeseries into memory right off the bat, in one query
 timeseries_ids = {}
-for ts in Timeseries.objects.all():
-	timeseries_ids[ts.url] = ts.pk
+try:
+	for ts in Timeseries.objects.all():
+		timeseries_ids[ts.url] = ts.pk
+except:
+	print('Failed to load timeseries IDs, does the table exist?')
 	
 # NOTE: Throughout this application, PIDs and bins are stored and transferred WITHOUT the timeseries url prepended
 
@@ -108,7 +108,7 @@ def getAllDataForBins(bins, targets):
 			'user_id' : t.user_id,
 			'user_power' : utils.getUserPower(t.user_id),
 			'username' : utils.getUserName(t.user_id),
-			'time' : t.time,
+			'time' : t.time.isoformat(),
 			'tag_id' : t.tag_id,
 			'level' : t.level,
 			'verifications' : t.verifications,
@@ -123,121 +123,123 @@ def getAllDataForBins(bins, targets):
 	
 	return data
 
-# Param 1: a dictionary, indexed by PID, with integer values representing a new classification_id to assign the PID to
-# Param 2: an integer, representing the id of the user who is submitting these updates
+# Unfortunately, Django doesn't seem to have a good way to do many UPSERTs at once (I tried just looping objects, and it's PAINFULLY slow)
+# 	so we have to drop back down to SQL for this
+# Since this function is practically identical for classifications/tags (with only minor SQL differences), it handles both use cases
+# This may make the function overly complex and hard to maintain, so I may change it in the future, but it works for now
+
+# Param 1: a dinctionary, indexed by PID, with integer values representing the new classification/tag id to assign that PID to
+# Param 2: an integer, representing the user id of the user submitting these updates
+# Param 3: a boolean, representing whether these updates are classifications (True) or tags (False)
+# Param 4: a boolean, representing whether these updates are negations (True) or not (False) -- only relevant if Param 3 is False
+#	if this value is True, then Param 1's dictionary values are actually arrays of integers, instead of single integers
 # Output: a dictionary, with format:
-#		'classifications' : {
-#			PID : {...}
-#		}
-#	where ... represents data for a newly created or updated entry
-def insertClassificationUpdates(updates, user_id):
+#	'classifications' : {
+#		PID : {...}
+#	}
+#	'tags' : {
+#		PID : [
+#			{...},
+#			{...},
+#		]
+#	}
+# where ... represents all data for an entry that was updated or inserted
+def insertUpdates(updates, user_id, is_classifications, negations):
 
-	changed_objects = []
-	return_updates = {
-		'classifications' : {}
-	}
+	# if we don't have any updates, just stop
+	if not updates or len(updates) == 0:
+		return {}
+
+	return_updates = {}
+
+	# set some values, depending on whether these are classification or tag updates
+	table = 'classify_classification'
+	col = 'classification_id'
+	if is_classifications:
+		return_updates['classifications'] = {}
+	else:
+		return_updates['tags'] = {}
+		table = 'classify_tag'
+		col = 'tag_id'
 	
-	# create a new database transaction explicity, so we don't autocommit for every single update
-	with transaction.atomic():
-		for pid,id in updates.items():
-			# parse out the bin and roi from PID
-			i = pid.rfind('_')
-			bin = pid[:i]
-			roi = int(pid[i+1:])
-			
-			# see if this entry already exists
-			try:
-				# if so, update verifications and verification_time
-				c = Classification.objects.get(bin=bin, roi=roi, user_id=user_id, classification_id=id)
-				c.verifications = c.verifications + 1
-				c.verification_time = timezone.now()
-				c.save()
-				changed_objects.append(c)
-			except Classification.DoesNotExist:
-				# if not, create a new one
-				c = Classification(bin=bin, roi=roi, user_id=user_id, classification_id=id, timeseries_id=getTimeseriesId(utils.timeseries))
-				c.save()
-				changed_objects.append(c)
-	transaction.commit()
+	# begin to build the query string
+	# unfortunately it seems Django Model defaults aren't actually set as defaults in the database
+	# so because we are doing a manual insert, we need to provide a value for every single column
+	query = 'INSERT INTO ' + table + ' (bin, roi, user_id, time, ' + col + ', level, verifications, verification_time, timeseries_id'
 	
-	# loop over changed objects and build a result dictionary
-	for o in changed_objects:
-		pid = o.bin + '_' + utils.formatROI(o.roi)
-		# data for entry
+	# the tag table also has a `negation` column that needs to be handled
+	if not is_classifications:
+		query = query + ', negation'
+		
+	# loop updates and build the VALUES portion of the query string
+	query = query + ') VALUES '
+	for pid,id in updates.items():
+	
+		# parse out the bin and roi from pid
+		i = pid.rfind('_')
+		bin = pid[:i]
+		roi = pid[i+1:]
+		
+		if negations:
+			# if these are negations, each `id` is actually an array of ids
+			for trueID in id:
+				query = query + '(\'' + bin + '\', ' + roi + ', ' + str(user_id) + ', now(), ' + trueID + ', 1, 0, null, \'' + str(getTimeseriesId(utils.timeseries)) + '\', true), '
+		else:
+			query = query + '(\'' + bin + '\', ' + roi + ', ' + str(user_id) + ', now(), ' + id + ', 1, 0, null, \'' + str(getTimeseriesId(utils.timeseries)) + '\''
+			# if these are tags, we have to specificy 'false' for negation column
+			if is_classifications:
+				query = query + '), '
+			else:
+				query = query + ', false), '
+
+	# trim off the trailing space and comma
+	query = query[:-2]
+	
+	# handle conflicts that require an update instead of an insert
+	query = query + ' ON CONFLICT (bin, roi, user_id, ' + col + ''
+	if not is_classifications:
+		query = query + ', negation'
+	query = query + ') DO UPDATE SET (verifications, verification_time) = (' + table + '.verifications + 1, now()) RETURNING *;'
+	
+	conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
+	cur = conn.cursor()
+	cur.execute(query)
+	conn.commit()
+	rows = cur.fetchall()
+	
+	# loop returned (affected) rows and build dictionaries to be passed to JS
+	for row in rows:
+	
+		# I'm not sure if there's a better way to access columns
+		# This is risky because if the schema changes, the indices are all thrown off
+		pid = row[1] + '_' + utils.formatROI(row[2])
 		dict = {
-			'id' : o.pk,
+			'id' : row[0],
 			'pid' : pid,
-			'user_id' : o.user_id,
-			'time' : o.time.isoformat(),
-			'level' : o.level,
-			'classification_id' : o.classification_id,
-			'verifications' : o.verifications,
-			'user_power' : utils.getUserPower(o.user_id),
-			'username' : utils.getUserName(o.user_id),
-			'timeseries_id' : o.timeseries_id,
+			'user_id' : row[3],
+			'time' : row[4].isoformat(),
+			'level' : row[6],
+			'verifications' : row[7],
+			'verification_time' : row[8],
+			'user_power' : utils.getUserPower(row[3]),
+			'username' : utils.getUserName(row[3]),
+			'timeseries_id' : row[9],
 		}
-		dict['verification_time'] = o.verification_time.isoformat() if o.verification_time else None
-		return_updates['classifications'][pid] = dict;
-	
-	return return_updates
-
-# Param 1: a dictionary, indexed by PID, with integer values representing a new classification_id to assign the PID to
-# Param 2: an integer, representing the id of the user who is submitting these updates
-# Param 3: a boolean, representing whether or not these updates are tag negations
-# Output: a dictionary, with format:
-#		'tags' : {
-#			PID : {...}
-#		}
-#	where ... represents data for a newly created or updated entry
-def insertTagUpdates(updates, user_id, negations):
-
-	return_updates = {
-		'tags' : {}
-	}
-	changed_objects = []
-	
-	# create a new database transaction explicity, so we don't autocommit for every single update
-	with transaction.atomic():
-		for pid,id in updates.items():
-			# parse out the bin and roi from PID
-			i = pid.rfind('_')
-			bin = pid[:i]
-			roi = int(pid[i+1:])
+		
+		if dict['verification_time']:
+			dict['verification_time'] = dict['verification_time'].isoformat()
 			
-			# see if this entry already exists
-			try:
-				# if so, update verifications and verification_time
-				c = Tag.objects.get(bin=bin, roi=roi, user_id=user_id, tag_id=id, negation=negations)
-				c.verifications = c.verifications + 1
-				c.verification_time = timezone.now()
-				c.save()
-				changed_objects.append(c)
-			except Tag.DoesNotExist:
-				# if not, create a new one
-				c = Tag(bin=bin, roi=roi, user_id=user_id, classification_id=id, timeseries_id=getTimeseriesId(utils.timeseries), negation=negations)
-				c.save()
-				changed_objects.append(c)
-	
-	# loop over changed objects and build a result dictionary
-	for o in changed_objects:
-		pid = o.bin + '_' + utils.formatROI(o.roi)
-		# data for entry
-		dict = {
-			'id' : o.pk,
-			'pid' : pid,
-			'user_id' : o.user_id,
-			'time' : o.time.isoformat(),
-			'level' : o.level,
-			'tag_id' : o.tag_id,
-			'verifications' : o.verifications,
-			'user_power' : utils.getUserPower(o.user_id),
-			'username' : utils.getUserName(o.user_id),
-			'timeseries_id' : o.timeseries_id,
-			'negation' : o.negation,
-		}
-		dict['verification_time'] = o.verification_time.isoformat() if o.verification_time else None
-		return_updates['tags'][pid] = dict;
-	
+		if is_classifications:
+			dict['classification_id'] = row[5]
+			return_updates['classifications'][pid] = dict
+		else:
+			dict['tag_id'] = row[5]
+			dict['negation'] = row[10]
+			if not pid in return_updates['tags']:
+				return_updates['tags'][pid] = []
+			return_updates['tags'][pid].append(dict)
+			
+	conn.close()
 	return return_updates
 	
 def getTimeseriesId(url):

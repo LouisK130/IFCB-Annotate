@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import Group, User
+import uuid
 
 class ClassLabel(models.Model):
 	name = models.CharField(max_length=300)
@@ -9,7 +10,7 @@ class TagLabel(models.Model):
 	name = models.CharField(max_length=300)
 	
 class Timeseries(models.Model):
-	id = models.CharField(max_length=36, primary_key=True)
+	id = models.UUIDField(primary_key=True, default=uuid.uuid1)
 	url = models.CharField(max_length=1000)
 	class Meta:
 		verbose_name_plural = 'Timeseries'
