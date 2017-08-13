@@ -48,6 +48,14 @@ function getRecentBins() {
 	return bins;
 }
 
+function setLastTimeseries(ts) {
+	setCookie('MCLastTimeseries', ts, 3650)
+}
+
+function getLastTimeseries() {
+	return getCookie('MCLastTimeseries')
+}
+
 function getRecentApplications() {
 	var combos_string = getCookie('MCRecentApplications');
 	var oldCombos = combos_string.split(',');

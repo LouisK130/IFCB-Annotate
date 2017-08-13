@@ -4,14 +4,6 @@ import json
 import uuid
 from classify import utils, config
 from classify.models import TagLabel, ClassLabel, Timeseries, Classification, Tag
-
-# load all timeseries into memory right off the bat, in one query
-timeseries_ids = {}
-try:
-	for ts in Timeseries.objects.all():
-		timeseries_ids[ts.url] = ts.pk
-except:
-	print('Failed to load timeseries IDs, does the table exist?')
 	
 # NOTE: Throughout this application, PIDs and bins are stored and transferred WITHOUT the timeseries url prepended
 
@@ -241,19 +233,28 @@ def insertUpdates(updates, user_id, is_classifications, negations):
 			
 	conn.close()
 	return return_updates
-	
-def getTimeseriesId(url):
-	if not url in timeseries_ids:
-		createTimeseries(url)
-	return timeseries_ids[url]
 
-def createTimeseries(url):
-	print('creating new timeseries: ' + url)
-	id = str(uuid.uuid1())
-	ts = Timeseries(id=id, url=url)
-	ts.save()
-	timeseries_ids[url] = id
-	print('id: ' + id)
+# we cache timeseries info here, so we don't make the same call to the database thousands of times
+# format:
+#	URL : UUID
+timeseries_ids = {}
+
+def getTimeseriesId(url):
+	if url in timeseries_ids:
+		return timeseries_ids[url]
+	else:
+		ts = Timeseries.objects.get(url=url).pk
+		timeseries_ids[url] = ts
+		return ts
+
+def loadAllTimeseries():
+	global timeseries_ids
+	timeseries_ids = {}
+	try:
+		for ts in Timeseries.objects.all():
+			timeseries_ids[ts.url] = ts.pk
+	except:
+		print('Failed to load timeseries IDs, does the table exist?')
 
 def getClassificationList():
 	data = []

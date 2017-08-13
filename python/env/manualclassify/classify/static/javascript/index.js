@@ -9,6 +9,15 @@ if (failed != '') {
 	document.body.insertBefore(failure, children[children.length-1]); // not working as expected
 }
 
+var last_ts = getLastTimeseries();
+var ts = document.getElementById('MCTimeSeries');
+for (var n = 0; n < ts.options.length; n++) {
+	if (ts.options[n].value == last_ts) {
+		ts.selectedIndex = n;
+		break;
+	}
+}
+
 var recent_bins = getRecentBins();
 var recentBinsEle = document.getElementById('MCRecentBinsSelect');
 for (var n = 0; n < recent_bins.length; n++) {
@@ -50,7 +59,6 @@ document.getElementById('MCBinsRemoveBtn').onclick = clickRemoveBin;
 
 function clickRemoveBin() {
 	var options = document.getElementById('MCBins').options;
-	var ts = document.getElementById('MCTimeSeries').value;
 	for(var n = 0; n < options.length; n++) {
 		if (options[n].selected) {
 			for (var i = 0; i < recent_bins.length; i++) {
@@ -65,6 +73,26 @@ function clickRemoveBin() {
 			return;
 		}
 	}
+}
+
+function addBins(text) {
+	var container = document.getElementById('MCBins');
+	var bins = text.split(',');
+	var ts = document.getElementById('MCTimeSeries');
+	ts = ts.options[ts.selectedIndex].value;
+	outerLoop:
+		for (var j = 0; j < bins.length; j++) {
+			var bin = bins[j].trim();
+			bin = bin.replace(ts, '')
+			for (var n = 0; n < container.options.length; n++) {
+				if (container.options[n].value == bin)
+					continue outerLoop;
+			}
+			var option = document.createElement('option');
+			option.text = bin;
+			option.value = bin;
+			document.getElementById('MCBins').add(option);
+		}
 }
 
 document.getElementById('MCBinsSubmit').onclick = function() {
@@ -84,6 +112,9 @@ function submitForm(raw) {
 	bins_string = bins_string.substring(0, bins_string.length - 1);
 	if (bins_string == '')
 		return;
+	var ts = document.getElementById('MCTimeSeries');
+	ts = ts.options[ts.selectedIndex].value;
+	setLastTimeseries(ts);
 	var form = document.createElement('form');
 	form.action = '/classify/';
 	form.method = 'POST';
@@ -94,7 +125,7 @@ function submitForm(raw) {
 	var input2 = document.createElement('input');
 	input2.type = 'hidden';
 	input2.name = 'timeseries';
-	input2.value = document.getElementById('MCTimeSeries').value;
+	input2.value = ts;
 	var input3 = document.createElement('input');
 	input3.type = 'hidden';
 	input3.name = 'import';
@@ -105,25 +136,4 @@ function submitForm(raw) {
 	form.insertAdjacentHTML('beforeend', csrf_token_form);
 	document.body.appendChild(form);
 	form.submit();
-}
-
-function addBins(text) {
-	var container = document.getElementById('MCBins');
-	var bins = text.split(',');
-	outerLoop:
-		for (var j = 0; j < bins.length; j++) {
-			var bin = bins[j].trim();
-			var i = bin.lastIndexOf('/');
-			var url = bin.substring(0, i+1);
-			bin = bin.substring(i+1, bin.length);
-			for (var n = 0; n < container.options.length; n++) {
-				if (container.options[n].value == bin)
-					continue outerLoop;
-			}
-			var option = document.createElement('option');
-			option.text = bin;
-			option.value = bin;
-			document.getElementById('MCBins').add(option);
-			document.getElementById('MCTimeSeries').value = url;
-		}
 }

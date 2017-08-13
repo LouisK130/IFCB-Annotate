@@ -13,9 +13,11 @@ class HomePageView(TemplateView):
 	def get(self, request, **kwargs):
 		if not request.user.is_authenticated:
 			return redirect(settings.LOGIN_URL)
+		database.loadAllTimeseries()
 		return render(request, 'index.html', {
 			'failed' : request.session.pop('failed', ''),
 			'username' : request.user.username,
+			'timeseries_list' : database.timeseries_ids.keys(),
 		})
 		
 class LoginPageView(TemplateView):

@@ -18,7 +18,11 @@
 			</div>
 			<div>
 				<b>Chosen Timeseries:</b><br>
-				<input type='text' id='MCTimeSeries'>
+				<select id='MCTimeSeries'>
+					{% for timeseries in timeseries_list %}
+						<option value='{{ timeseries }}'>{{ timeseries }}</option>
+					{% endfor %}
+				</select>
 			</div>
 			<input type='button' id='MCBinsSubmit' value='Begin Classifying Raw'>
 			<br>
