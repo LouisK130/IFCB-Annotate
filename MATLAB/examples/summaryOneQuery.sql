@@ -1,5 +1,5 @@
 WITH
-	CA AS (
+    CA AS (
         SELECT DISTINCT ON (c.bin, c.roi) c.*, p.power
             FROM classify_classification c, auth_user_groups g, auth_group p
             WHERE c.user_id = g.user_id
@@ -8,5 +8,5 @@ WITH
     )
 
 SELECT bin, classification_id, COUNT(id)
-	FROM CA
-	GROUP BY (bin, classification_id)
+    FROM CA
+    GROUP BY (bin, classification_id)
