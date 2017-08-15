@@ -1,15 +1,22 @@
 import requests
-import re
 import csv
-import json
 import codecs
 from contextlib import closing
-from classify import database, config
 import os
+from classify import database
 from django.contrib.auth.models import User
+import json
 
-if not os.path.exists('classify/zip_cache'):
-	os.mkdir('classify/zip_cache')
+ZIP_CACHE_PATH = 'classify/cache/zips'
+TARGETS_CACHE_PATH = 'classify/cache/targets'
+AUTO_RESULTS_CACHE_PATH = 'classify/cache/class_scores'
+
+if not os.path.exists(ZIP_CACHE_PATH):
+	os.mkdir(ZIP_CACHE_PATH)
+if not os.path.exists(TARGETS_CACHE_PATH):
+	os.mkdir(TARGETS_CACHE_PATH)
+if not os.path.exists(AUTO_RESULTS_CACHE_PATH):
+	os.mkdir(AUTO_RESULTS_CACHE_PATH)
 	
 CLASSIFIER_CONVERSION_TABLE = {
 	'Asterionellopsis' : 'Asterionellopsis glacialis',
@@ -32,34 +39,12 @@ CLASSIFIER_CONVERSION_TABLE = {
 	'Pyramimonas' : 'Pyramimonas longicauda',
 }
 	
-def verifyBins(str):
-	list = re.split(',', str)
-	if not list:
-		list = [str]
-	bins = []
-	failures = []
-	for s in list:
-		if len(s) == 0:
-			continue
-		if s[0] == 'I' and len(s) == 21:
-			bins.append(s)
-		elif s[0] == 'D' and len(s) == 24:
-			bins.append(s)
-		else:
-			failures.append(s)
-	for bin in bins:
-		url = timeseries + bin
-		try:
-			r = requests.get(url)
-			if r.status_code == 404:
-				failures.append(bin)
-		except:
-			failures.append(bin)
-	return (bins, failures)
-	
 def parseBinToTargets(bin):
 	targets = {}
+	
 	with closing(requests.get(timeseries + bin + '.csv', stream=True)) as r:
+		if r.status_code == 404:
+			return False
 		reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
 		headers = next(reader)
 		pid_index = headers.index('pid')
@@ -70,6 +55,8 @@ def parseBinToTargets(bin):
 			data = {'width' : int(row[width_index]), 'height' : int(row[height_index])}
 			pid = row[pid_index].replace(timeseries, '')
 			targets[pid] = data
+	with open(TARGETS_CACHE_PATH + '/' + bin, 'w') as f:
+		json.dump(targets, f)
 	return targets
 	
 # dictionary with key = values:
@@ -77,7 +64,15 @@ def parseBinToTargets(bin):
 def getTargets(bins):
 	targets = {}
 	for bin in bins:
-		print('parsing bin: ' + bin)
+		if os.path.isfile(TARGETS_CACHE_PATH + '/' + bin):
+			print('loading targets from cache: ' + bin)
+			with open(TARGETS_CACHE_PATH + '/' + bin) as f:
+				new_targets = json.load(f)
+		else:
+			print('fetching bin from dashboard: ' + bin)
+			new_targets = parseBinToTargets(bin)
+		if new_targets == False:
+			return False
 		targets = {**targets, **parseBinToTargets(bin)}
 	return targets
 
@@ -99,44 +94,70 @@ def getUserName(user_id):
 		return None
 	return user.username
 	
+def isZipDownloaded(bin):
+	return os.path.isfile(ZIP_CACHE_PATH + '/' + bin + '.zip')
+	
 def getZipForBin(bin):
-	if not os.path.isfile('classify/zip_cache/' + bin + '.zip'):
+	if not isZipDownloaded(bin):
 		downloadZipForBin(bin)
-	return open('classify/zip_cache/' + bin + '.zip', 'rb').read()
+	return open(ZIP_CACHE_PATH + '/' + bin + '.zip', 'rb').read()
 	
 def downloadZipForBin(bin):
 	print('started downloading: ' + timeseries + bin + '.zip')
 	r = requests.get(timeseries + bin + '.zip')
-	with open('classify/zip_cache/' + bin + '.zip', 'wb') as f:
+	with open(ZIP_CACHE_PATH + '/' + bin + '.zip', 'wb') as f:
 		f.write(r.content)
 	print('finished downloading: ' + timeseries + bin + '.zip')
-	
+
+# reads class scores csv file and interprets the highest score as being the "auto classifier's choice"
+
+# Param 1: a string, representing the name of the bin to read scores for
+# Output: a dictionary, indexed by pid, with string values representing the name of the winner class for that pid
+
 def getAutoResultsForBin(bin):
 	classifications = {}
 	path = timeseries + bin + '_class_scores.csv'
-	with closing(requests.get(path, stream=True)) as r:
-		reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
-		headers = next(reader)
-		try:
-			pid_index = headers.index('pid')
-		except:
-			return None
-		for row in reader:
-			i = 0
-			winner = None
-			for col in row:
-				if i == pid_index:
-					i += 1
-					continue
-				if not winner:
-					winner = (headers[i], col)
-				else:
-					if col > winner[1]:
+	if os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin):
+		print('loading auto results from cache: ' + bin)
+		with open(AUTO_RESULTS_CACHE_PATH + '/' + bin) as f:
+			classifications = json.load(f)
+	else:
+		print('fetching auto results from dashboard: ' + bin)
+		with closing(requests.get(path, stream=True)) as r:
+			reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
+			headers = next(reader)
+			try:
+				pid_index = headers.index('pid')
+			except:
+				return None
+			for row in reader:
+				i = 0
+				winner = None
+				for col in row:
+					if i == pid_index:
+						i += 1
+						continue
+					if not winner:
 						winner = (headers[i], col)
-				i += 1
-			classifications[row[pid_index]] = winner[0]
+					else:
+						if col > winner[1]:
+							winner = (headers[i], col)
+					i += 1
+				classifications[row[pid_index]] = winner[0]
+		with open(AUTO_RESULTS_CACHE_PATH + '/' + bin, 'w') as f:
+			json.dump(classifications, f)
 	return classifications
-	
+
+# adds annotations based on the auto classifier results to the data being prepared for passing to the client
+
+# Param 1: an array of strings, each representing a bin that's included in the data
+# Param 2: an array with dictionary values; in each dictionary are "name", "id", and "international_id" keys representing values
+# 	for a given classification label
+# Param 3: an array with dictionary values; in each dictionary are "name" and "id" keys representing values
+#	for a given tag label
+# Param 4: a dictionary, indexed by pid and produced by database.getAllDataForBins(), containing all annotations for the given bins
+# Output: the same dictionary given in Param 4, modified to include annotations from the auto classifier
+
 def addClassifierData(bins, classes, tags, data):
 	for bin in bins:
 		auto_results = getAutoResultsForBin(bin)
@@ -152,30 +173,35 @@ def addClassifierData(bins, classes, tags, data):
 			for c in classes:
 				if c['name'] == new_name:
 					classification_id = c['id']
-			if classification_id and data[pid]:
-				dict = {}
-				dict['classification_id'] = classification_id
-				dict['user_id'] = -1;
-				dict['user_power'] = -1;
-				if not 'classification_id' in data[pid]:
-					data[pid] = {**data[pid], **dict}
+			if pid in data:
+				dict = {
+					'user_id' : -1,
+					'classification_id' : classification_id,
+					'level' : 1,
+					'timeseries_id' : database.getTimeseriesId(timeseries),
+					'user_power' : -1,
+					'username' : 'auto',
+				}
+				if not 'accepted_classification' in data[pid]:
+					data[pid]['accepted_classification'] = dict
 				else:
-					if not 'other_classifications' in data[pid]:
-						data[pid]['other_classifications'] = []
 					data[pid]['other_classifications'].append(dict)
+				# this is a special case, where the classifier also annotates an 'external detritus' tag
 				if classification == 'Thalassiosira_dirty':
 					tag_id = None
 					for t in tags:
 						if t['name'] == 'external detritus':
 							tag_id = t['id']
-					tag_dict = {}
-					tag_dict['pid'] = pid
-					tag_dict['user_id'] = -1
-					tag_dict['user_power'] = -1
-					tag_dict['time'] = 0
-					tag_dict['tag_id'] = tag_id
-					tag_dict['level'] = 1
-					if not 'tags' in data[pid]:
-						data[pid]['tags'] = []
-					data[pid]['tags'].append(tag_dict)
+					if tag_id:
+						dict = {
+							'user_id' : -1,
+							'tag_id' : tag_id,
+							'user_power' : -1,
+							'level' : 1,
+							'timeseries_id' : database.getTimeseriesId(timeseries),
+							'username' : 'auto',
+						}
+						data[pid]['tags'].append(dict)
+					else:
+						print('[WARNING] Classifier attempted to annotate Thalassiosira_dirty but no external_detritus tag was found!')
 	return data

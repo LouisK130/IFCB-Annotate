@@ -247,8 +247,8 @@ function getClassificationsForPid(pid) {
 	var results = [];
 	var c = classifications[pid];
 	
-	if (c['classification_id'])
-		results.push(buildEntryLabels(c));
+	if (c['accepted_classification'])
+		results.push(buildEntryLabels(c['accepted_classification']));
 	if (c['other_classifications']) {
 		for (var n = 0; n < c['other_classifications'].length; n++)
 			results.push(buildEntryLabels(c['other_classifications'][n]));
@@ -314,14 +314,16 @@ function getPendingTagsForPid(pid) {
 
 function buildEntryLabels(c, tag) {
 	var dict = {};
-	var d = new Date(c['time']);
-	if (c['verification_time'] && c['verification_time'] > c['time']) {
-		d = new Date(c['verification_time']);
+	if (c['time']) {
+		var d = c['verification_time'] ? new Date(c['verification_time']) : new Date(c['time']);
+		dict['time'] = d.toLocaleDateString();
 	}
-	dict['time'] = d.toLocaleDateString();
-	dict['user'] = c['username'] || 'auto';
-	dict['verifications'] = (c['verifications'] || 0) + ' times';
+	else {
+		dict['time'] = 'N/A';
+	}
+	dict['verifications'] = c['user'] == -1 ? 'N/A' : (c['verifications'] || 0) + ' times';
 	dict['id'] = c['tag_id'];
+	dict['user'] = c['username'];
 	if (tag) {
 		dict['label'] = getLabelById(c['tag_id'], true);
 		dict['negation'] = c['negation'];

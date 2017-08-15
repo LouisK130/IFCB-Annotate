@@ -4,8 +4,12 @@ import json
 import uuid
 from classify import utils, config
 from classify.models import TagLabel, ClassLabel, Timeseries, Classification, Tag
-	
+import time
+
 # NOTE: Throughout this application, PIDs and bins are stored and transferred WITHOUT the timeseries url prepended
+
+# Filtering using django objects is fast, but then iterating through them is slow
+# so instead we'll use lower level SQL to sort the results ahead of time (seems to be about 70x faster!)
 
 # Param 1: an array of strings, representing bins
 # Param 2: a dictionary, indexed by PID, with values that are dictionaries containing keys 'width' and 'height'
@@ -13,110 +17,113 @@ from classify.models import TagLabel, ClassLabel, Timeseries, Classification, Ta
 # Output: a dictionary, indexed by PID, with values that are dictionaries containing all data for all classifications
 #	relevant to the given bins, ready to be passed to JS or to another function that will add the auto classifier data
 def getAllDataForBins(bins, targets):
+
+	# since timeseries_id should already be held in memory, no point in joining that table again in below query
 	timeseries_id = getTimeseriesId(utils.timeseries)
+	
+	params = [timeseries_id]
+	
+	# result column order:
+	# 0   1    2    3        4     5                  6      7              8                  9              10     11        12
+	# id, bin, roi, user_id, time, classification_id, level, verifications, verification_time, timeseries_id, power, username, pid
+	query = ('SELECT c.*, p.power, u.username, c.bin || \'_\' || LPAD(c.roi::text, 5, \'0\') as pid '
+		'FROM classify_classification c, auth_user_groups g, auth_group p, auth_user u '
+		'WHERE c.user_id = g.user_id '
+		'AND c.user_id = u.id '
+		'AND p.id = g.group_id '
+		'AND c.timeseries_id::uuid = %s '
+		'AND c.bin in (')
+	for bin in bins:
+		query += '%s, '
+		params.append(bin)
+	query = query[:-2] + ') '
+	query += 'ORDER BY pid, p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC;'
+	
+	conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
+	cur = conn.cursor()
+	cur.execute(query, params)
+	rows = cur.fetchall()
+	
 	data = {}
-	for c in Classification.objects.filter(bin__in=bins, timeseries_id=timeseries_id):
-		pid = c.bin + '_' + utils.formatROI(c.roi)
-		
-		# if we haven't already seen this PID, input some defaults and dumby data
-		if not pid in data:
-			data[pid] = {
-				'user_power' : -1,
-				'time' : 0, 
-				'width' : targets[pid]['width'], 
-				'height' : targets[pid]['height'],
+	
+	for row in rows:
+		dict = {
+			'id' : row[0],
+			'user_id' : row[3],
+			'time' : row[4].isoformat(),
+			'classification_id' : row[5],
+			'level' : row[6],
+			'verifications' : row[7],
+			'verification_time' : row[8].isoformat() if row[8] else None,
+			'timeseries_id' : row[9],
+			'user_power' : row[10],
+			'username' : row[11]
+		}
+		# since rows are already sorted by power and time, the first time we see a pid, we know the classification is accepted
+		if not row[12] in data:
+			data[row[12]] = {
+				'pid' : row[12], # sometimes in Javascript these dictionaries are disassociated from their keys, but we still need to know their PID
+				'accepted_classification' : dict,
+				'width' : targets[row[12]]['width'],
+				'height' : targets[row[12]]['height'],
 				'other_classifications' : [],
 				'tags' : [],
 			}
-		
-		# define some values for comparing whether or not this entry is "accepted"
-		old_power = data[pid]['user_power']
-		new_power = utils.getUserPower(c.user_id)
-		new_time = c.time.isoformat()
-		if c.verification_time and c.verification_time.isoformat() > new_time:
-			new_time = c.verification_time.isoformat()
-		old_time = data[pid]['time']
-		if 'verification_time' in data[pid] and data[pid]['verification_time'] and data[pid]['verification_time'] > data[pid]['time']:
-			old_time = data[pid]['verification_time']
-		
-		# build the dictionary that contains this entry's data, in the format JS will expect
-		dict = {
-			'id' : c.pk,
-			'pid' : pid,
-			'user_power' : new_power,
-			'user_id' : c.user_id,
-			'username' : utils.getUserName(c.user_id),
-			'time' : c.time.isoformat(),
-			'level' : c.level,
-			'classification_id' : c.classification_id,
-			'verifications' : c.verifications,
-			'timeseries_id' : c.timeseries_id,
-		}
-		
-		dict['verification_time'] = c.verification_time.isoformat() if c.verification_time else None
-		
-		# if user is more important, or equally important but this entry is more recent than the old accepted one
-		if new_power > old_power or (new_power == old_power and new_time > old_time):
-			# if the existing entry is a real classification (not dumby data from above)
-			if data[pid]['time'] != 0:
-				# we need to move this classification to the 'other_classifications' array before overwriting it
-				# first clone the old entry
-				to_move = data[pid].copy()
-				# then remove keys only needed in the top-level classification data
-				to_move.pop('width', None)
-				to_move.pop('height', None)
-				to_move.pop('other_classifications', None)
-				to_move.pop('tags', None)
-				# finally move to the non-accepted array
-				data[pid]['other_classifications'].append(to_move)
-			# now merge and overwrite with new data
-			data[pid] = {**data[pid], **dict}
-		# if user isn't more important, or this annotation is older than the currently accepted one
 		else:
-			# we simply stick this data into 'other_classifications'
-			data[pid]['other_classifications'].append(dict)
-	
+			data[row[12]]['other_classifications'].append(dict)
+			
 	# now loop all targets given by Param 2
 	for pid,dims in targets.items():
 		# if we didn't already find any annotations for this pid
 		if not pid in data:
 			# insert some default values and height/width
 			data[pid] = {
-				'pid' : pid, 
+				'pid' : pid,
 				'width' : dims['width'],
 				'height' : dims['height'],
 				'other_classifications' : [],
 				'tags' : [],
 			}
 	
-	# now we need to find tag data
-	for t in Tag.objects.filter(bin__in=bins, timeseries_id=timeseries_id):
-		pid = t.bin + '_' + utils.formatROI(t.roi)
-		
-		# build the dictionary
-		dict = {
-			'id' : t.pk,
-			'pid' : pid,
-			'user_id' : t.user_id,
-			'user_power' : utils.getUserPower(t.user_id),
-			'username' : utils.getUserName(t.user_id),
-			'time' : t.time.isoformat(),
-			'tag_id' : t.tag_id,
-			'level' : t.level,
-			'verifications' : t.verifications,
-			'timeseries_id' : t.timeseries_id,
-			'negation' : t.negation,
-		}
-		
-		dict['verification_time'] = t.verification_time.isoformat() if t.verification_time else None
-		
-		# and stick it in the tags array for this PID
-		data[pid]['tags'].append(dict)
+	# now we query for tags, but the 'accepted' logic for them is less straightforward, so we'll leave that to JS
+	# here, we simply add tags to the 'tags' array for their respective pids
 	
+	# result column order:
+	# 0   1    2    3        4     5       6      7              8                  9              10        11     12        13
+	# id, bin, roi, user_id, time, tag_id, level, verifications, verification_time, timeseries_id, negation, power, username, pid
+	query = ('SELECT t.*, p.power, u.username, t.bin || \'_\' || LPAD(t.roi::text, 5, \'0\') as pid '
+		'FROM classify_tag t, auth_user_groups g, auth_group p, auth_user u '
+		'WHERE t.user_id = g.user_id '
+		'AND t.user_id = u.id '
+		'AND p.id = g.group_id '
+		'AND t.timeseries_id::uuid = %s '
+		'AND t.bin in (')
+	for bin in bins:
+		query += '%s, '
+	query = query[:-2] + ');'
+		
+	cur.execute(query, params)
+	rows = cur.fetchall()
+	
+	for row in rows:
+		data[row[13]]['tags'].append({
+			'id' : row[0],
+			'user_id' : row[3],
+			'time' : row[4].isoformat(),
+			'tag_id' : row[5],
+			'level' : row[6],
+			'verifications' : row[7],
+			'verification_time' : row[8].isoformat() if row[8] else None,
+			'timeseries_id' : row[9],
+			'negation' : row[10],
+			'user_power' : row[11],
+			'username' : row[12],
+		})
+		
 	return data
 
 # Unfortunately, Django doesn't seem to have a good way to do many UPSERTs at once (I tried just looping objects, and it's PAINFULLY slow)
-# 	so we have to drop back down to SQL for this
+# 	so we have to drop back down to SQL for this too
 # Since this function is practically identical for classifications/tags (with only minor SQL differences), it handles both use cases
 # This may make the function overly complex and hard to maintain, so I may change it in the future, but it works for now
 
@@ -165,6 +172,10 @@ def insertUpdates(updates, user_id, is_classifications, negations):
 		
 	# loop updates and build the VALUES portion of the query string
 	query = query + ') VALUES '
+	
+	# now we're looking at user inputs, so we need to pass paramters to psycopg2 instead of inserting directly into the query
+	params = [];
+	
 	for pid,id in updates.items():
 	
 		# parse out the bin and roi from pid
@@ -175,9 +186,11 @@ def insertUpdates(updates, user_id, is_classifications, negations):
 		if negations:
 			# if these are negations, each `id` is actually an array of ids
 			for trueID in id:
-				query = query + '(\'' + bin + '\', ' + roi + ', ' + str(user_id) + ', now(), ' + trueID + ', 1, 0, null, \'' + str(getTimeseriesId(utils.timeseries)) + '\', true), '
+				query = query + '(%s, %s, %s, now(), %s, 1, 0, null, %s, true), '
+				params.extend([bin, roi, user_id, trueID, getTimeseriesId(utils.timeseries)])
 		else:
-			query = query + '(\'' + bin + '\', ' + roi + ', ' + str(user_id) + ', now(), ' + id + ', 1, 0, null, \'' + str(getTimeseriesId(utils.timeseries)) + '\''
+			query = query + '(%s, %s, %s, now(), %s, 1, 0, null, %s'
+			params.extend([bin, roi, user_id, id, getTimeseriesId(utils.timeseries)])
 			# if these are tags, we have to specificy 'false' for negation column
 			if is_classifications:
 				query = query + '), '
@@ -195,7 +208,7 @@ def insertUpdates(updates, user_id, is_classifications, negations):
 	
 	conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
 	cur = conn.cursor()
-	cur.execute(query)
+	cur.execute(query, params)
 	conn.commit()
 	rows = cur.fetchall()
 	
@@ -207,7 +220,6 @@ def insertUpdates(updates, user_id, is_classifications, negations):
 		pid = row[1] + '_' + utils.formatROI(row[2])
 		dict = {
 			'id' : row[0],
-			'pid' : pid,
 			'user_id' : row[3],
 			'time' : row[4].isoformat(),
 			'level' : row[6],
@@ -244,7 +256,7 @@ def getTimeseriesId(url):
 		return timeseries_ids[url]
 	else:
 		ts = Timeseries.objects.get(url=url).pk
-		timeseries_ids[url] = ts
+		timeseries_ids[url] = str(ts)
 		return ts
 
 def loadAllTimeseries():
@@ -252,7 +264,7 @@ def loadAllTimeseries():
 	timeseries_ids = {}
 	try:
 		for ts in Timeseries.objects.all():
-			timeseries_ids[ts.url] = ts.pk
+			timeseries_ids[ts.url] = str(ts.pk)
 	except:
 		print('Failed to load timeseries IDs, does the table exist?')
 

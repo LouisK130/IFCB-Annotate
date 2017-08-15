@@ -103,6 +103,15 @@ div.MCDetailEntryPiece {
 	var bins = {{ bins|safe }}
 	var user_id = {{ user_id|safe }}
 	var username = '{{ username }}'
+	var batch_mode = '{{ batchmode }}' == 'True'
+	if (batch_mode) {
+		var batch_class = '{{ batchclass }}'
+		var batch_tag = '{{ batchtag }}'
+		if (parseInt(batch_class))
+			batch_class = parseInt(batch_class);
+		if (parseInt(batch_tag))
+			batch_tag = parseInt(batch_tag);
+	}
 	zip.workerScriptsPath = "{% static 'javascript/lib/' %}";
 </script>
 <script type='text/javascript' src="{% static 'javascript/utils.js' %}"></script>

@@ -7,6 +7,8 @@ from classify import utils, database, config
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.conf import settings
+import re
+import time
 
 # Create your views here.
 class HomePageView(TemplateView):
@@ -18,6 +20,8 @@ class HomePageView(TemplateView):
 			'failed' : request.session.pop('failed', ''),
 			'username' : request.user.username,
 			'timeseries_list' : database.timeseries_ids.keys(),
+			'classification_labels' : database.getClassificationList(),
+			'tag_labels' : database.getTagList(),
 		})
 		
 class LoginPageView(TemplateView):
@@ -63,27 +67,41 @@ class LogoutPageView(TemplateView):
 
 class ClassifyPageView(TemplateView):
 	def post(self, request, **kwargs):
-		if request.method == 'POST':
-			if not request.user.is_authenticated:
-				return redirect(settings.LOGIN_URL)
-			binsInput = request.POST.get('bins', '')
-			shouldImport = json.loads(request.POST.get('import', False)) # boolean conversion with json lib
-			utils.timeseries = request.POST.get('timeseries', '')
-			(bins, failures) = utils.verifyBins(binsInput)
-			if len(failures) > 0:
-				request.session['failed'] = 'Invalid bin(s) specified for given timeseries:'
-				for f in failures:
-					request.session['failed'] = request.session['failed'] + '\\n' + f
-				return redirect('/')
-			classList = database.getClassificationList()
-			tagList = database.getTagList()
-			targets = utils.getTargets(bins)
-			classifications = database.getAllDataForBins(bins, targets)
-			print(str(len(targets)) + ' total targets found')
-			if shouldImport:
-				print('including auto results')
-				classifications = utils.addClassifierData(bins, classList, tagList, classifications)
-		return render(request, 'classify.html', {
+		
+		if not request.user.is_authenticated:
+			return redirect(settings.LOGIN_URL)
+			
+		binsInput = request.POST.get('bins', '')
+		shouldImport = json.loads(request.POST.get('import', False)) # boolean conversion with json lib
+		utils.timeseries = request.POST.get('timeseries', '')
+		batchMode = json.loads(request.POST.get('batchmode', False))
+		
+		bins = re.split(',', binsInput)
+		
+		t = time.time()
+		targets = utils.getTargets(bins)
+		print(str(time.time() - t) + ' load target PIDs and dimensions')
+		
+		if not targets:
+			request.session['failed'] = 'One or more of the chosen bins was invalid for the chosen timeseries'
+			return redirect('/')
+		
+		classList = database.getClassificationList()
+		tagList = database.getTagList()
+		
+		t = time.time()
+		classifications = database.getAllDataForBins(bins, targets)
+		print(str(time.time() - t) + ' to get all annotations from database')
+		
+		print(str(len(targets)) + ' total targets found')
+		
+		if shouldImport:
+			print('including auto results')
+			t = time.time()
+			classifications = utils.addClassifierData(bins, classList, tagList, classifications)
+			print(str(time.time() - t) + ' to add classifier data')
+		
+		JS_values = {
 			'timeseries' : utils.timeseries,
 			'classification_labels' : classList,
 			'tag_labels' : tagList,
@@ -91,7 +109,16 @@ class ClassifyPageView(TemplateView):
 			'bins' : json.dumps(bins),
 			'user_id' : request.user.pk,
 			'username' : request.user.username,
-		})
+			'batchmode' : batchMode,
+		}
+		
+		if batchMode:
+			JS_values['batchclass'] = request.POST.get('batchclass', '')
+			JS_values['batchtag'] = request.POST.get('batchtag', '')
+			JS_values['rest_of_bins'] = request.POST.get('rest_of_bins', '')
+			JS_values['import'] = shouldImport
+		
+		return render(request, 'classify.html', JS_values)
 
 class SubmitUpdatesPageView(TemplateView):
 	def post(self, request, **kwargs):

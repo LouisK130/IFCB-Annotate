@@ -134,40 +134,50 @@ function compareTargets(a, b) {
 	return 0;
 }
 
+function checkPidBelongsInView(pid, classification, tag, filter, include_unclassified) {
+	if (classifications.hasOwnProperty(pid)) {
+		if (batch_mode) {
+			if (pid.substring(0, pid.lastIndexOf('_')) != bins[current_bin])
+				return false;
+		}
+		var c = classifications[pid]['accepted_classification'];
+		
+		var c_ok = classification == 'ALL' || (!c && include_unclassified) || c['classification_id'] == classification;
+		var t_ok = tag == 'ALL';
+		if (!(t_ok)) {
+			var acceptedTags = getAcceptedTagsForPid(pid);
+			if (tag == 'NONE') {
+				t_ok = (acceptedTags.length == 0);
+			}
+			else {
+				t_ok = (acceptedTags.indexOf(parseInt(tag)) >= 0);
+			}
+		}
+		var f_ok = false;
+		switch (filter) {
+			case 'ALL':
+				f_ok = true;
+				break;
+			case 'ME':
+				f_ok = c['user_id'] == user_id;
+				break;
+			case 'OTHERS':
+				f_ok = c['user_id'] && c['user_id'] > 0 && c['user_id'] != user_id;
+				break;
+			case 'NONE':
+				f_ok = !c['user_id'] || c['user_id'] < 0;
+				break;
+		}
+		return c_ok && t_ok && f_ok;
+	}
+	return false;
+}
+
 function getTargetsInCategory(classification, tag, filter, include_unclassified) {
 	var targets = [];
 	for(var pid in classifications) {
-		if (classifications.hasOwnProperty(pid)) {
-			var c = classifications[pid];
-			var c_ok = (c['classification_id'] && c['classification_id'] == classification) || (!(c['classification_id']) && include_unclassified) || classification == 'ALL';
-			var t_ok = tag == 'ALL';
-			if (!(t_ok)) {
-				var acceptedTags = getAcceptedTagsForPid(pid);
-				if (tag == 'NONE') {
-					t_ok = (acceptedTags.length == 0);
-				}
-				else {
-					t_ok = (acceptedTags.indexOf(parseInt(tag)) >= 0);
-				}
-			}
-			var f_ok = false;
-			switch (filter) {
-				case 'ALL':
-					f_ok = true;
-					break;
-				case 'ME':
-					f_ok = c['user_id'] == user_id;
-					break;
-				case 'OTHERS':
-					f_ok = c['user_id'] && c['user_id'] > 0 && c['user_id'] != user_id;
-					break;
-				case 'NONE':
-					f_ok = !c['user_id'] || c['user_id'] < 0;
-					break;
-			}
-			if (c_ok && t_ok && f_ok)
-				targets.push(classifications[pid])
-		}
+		if (checkPidBelongsInView(pid, classification, tag, filter, include_unclassified))
+			targets.push(classifications[pid])
 	}
 	targets.sort(compareTargets);
 	return targets;
@@ -192,46 +202,30 @@ function makeUpdatesToClassifications(updates) {
 			var h = c['height'];
 			var w = c['width'];
 			var update = updates['classifications'][pid]
-			if (!(c['classification_id'])) {
-				classifications[pid] = update;
-				classifications[pid]['height'] = h;
-				classifications[pid]['width'] = w;
-				classifications[pid]['other_classifications'] = [];
-				classifications[pid]['tags'] = [];
+			if (!c['accepted_classification']) {
+				c['accepted_classification'] = update;
 			}
 			else {
-				var time1 = c['time'];
-				if (c['verification_time'] && c['verification_time'] > time1)
-					time1 = c['verification_time'];
-				var time2 = update['time'];
-				if (update['verification_time'] && update['verification_time'] > time2)
-					time2 = update['verification_time'];
-				if (update['user_power'] > c['user_power'] || (update['user_power'] == c['user_power'] && time2 > time1)) {
-					var oc = c['other_classifications'];
-					var tags = c['tags'];
-					if (c['user_id'] != update['user_id'] || c['classification_id'] != update['classification_id']) {
-						delete c['other_classifications'];
-						delete c['tags'];
-						oc.push(c);
+				var to_remove = null;
+				var oc = c['other_classifications'];
+				for (var n = 0; n < oc.length; n++) {
+					if (oc[n]['user_id'] = update['user_id'] && oc[n]['classification_id'] == update['classification_id']) {
+						to_remove = n;
+						break;
 					}
-					classifications[pid] = update
-					classifications[pid]['tags'] = tags;
-					classifications[pid]['height'] = h;
-					classifications[pid]['width'] = w;
-					classifications[pid]['other_classifications'] = oc;
+				}
+				if (to_remove != null)
+					oc.splice(to_remove, 1);
+				var ac = c['accepted_classification'];
+				var old_time = c['verification_time'] ? ac['verification_time'] : ac['time'];
+				var new_time = update['verification_time'] ? update['verification_time'] : update['time'];
+				if (update['user_power'] > ac['user_power'] || (update['user_power'] == ac['user_power'] && new_time > old_time)) {
+					if (ac['user_id'] != update['user_id'] || ac['classification_id'] != update['classification_id'])
+						c['other_classifications'].push(ac);
+					c['accepted_classification'] = update;
 				}
 				else {
-					var clist = c['other_classifications'];
-					var replaced = false;
-					for (var n = 0; n < clist.length; n++) {
-						if (clist[n]['user_id'] == update['user_id'] && clist[n]['classification_id'] == update['classification_id']) {
-							clist[n] = update;
-							replaced = true;
-							break;
-						}
-					}
-					if (!replaced)
-						classifications[pid]['other_classifications'].push(update);
+					c['other_classifications'].push(update);
 				}
 			}
 

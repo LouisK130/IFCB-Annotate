@@ -103,37 +103,62 @@ document.getElementById('MCBinsSubmitAndImport').onclick = function() {
 	submitForm(false);
 }
 
+document.getElementById('MCBatchMode').onclick = function() {
+	if (this.checked)
+		document.getElementById('MCBatchModeOptions').style.display = 'block';
+	else
+		document.getElementById('MCBatchModeOptions').style.display = 'none';
+}
+
 function submitForm(raw) {
 	var bins_string = '';
+	var rest_of_bins = ''; // for batch mode only
+	var batchmode = document.getElementById('MCBatchMode').checked;
+	
 	var options = document.getElementById('MCBins').options;
 	for (var n = 0; n < options.length; n++) {
-		bins_string += options[n].text + ',';
+		if (batchmode && n > 4)
+			rest_of_bins += options[n].text + ',';
+		else
+			bins_string += options[n].text + ',';
 	}
+	
 	bins_string = bins_string.substring(0, bins_string.length - 1);
+	rest_of_bins = rest_of_bins.substring(0 , rest_of_bins.length - 1);
 	if (bins_string == '')
 		return;
+
 	var ts = document.getElementById('MCTimeSeries');
 	ts = ts.options[ts.selectedIndex].value;
 	setLastTimeseries(ts);
+	
 	var form = document.createElement('form');
 	form.action = '/classify/';
 	form.method = 'POST';
-	var input1 = document.createElement('input');
-	input1.type = 'hidden';
-	input1.name = 'bins';
-	input1.value = bins_string;
-	var input2 = document.createElement('input');
-	input2.type = 'hidden';
-	input2.name = 'timeseries';
-	input2.value = ts;
-	var input3 = document.createElement('input');
-	input3.type = 'hidden';
-	input3.name = 'import';
-	input3.value = !raw
-	form.appendChild(input1);
-	form.appendChild(input2);
-	form.appendChild(input3);
+	
+	form.appendChild(createInput('bins', bins_string));
+	form.appendChild(createInput('timeseries', ts));
+	form.appendChild(createInput('import', !raw));
+	form.appendChild(createInput('batchmode', batchmode));
+	
+	if (batchmode) {
+		
+		form.appendChild(createInput('batchclass', document.getElementById('MCBatchClass').value));
+		form.appendChild(createInput('batchtag', document.getElementById('MCBatchTag').value));
+		form.appendChild(createInput('restbins', rest_of_bins));
+		
+	}
+	
 	form.insertAdjacentHTML('beforeend', csrf_token_form);
 	document.body.appendChild(form);
+	
 	form.submit();
+}
+
+function createInput(name, value) {
+	var input = document.createElement('input');
+	input.type = 'hidden';
+	input.name = name;
+	input.value = value;
+	return input;
 }

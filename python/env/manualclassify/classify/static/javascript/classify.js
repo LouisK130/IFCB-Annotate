@@ -4,6 +4,7 @@ var tag_negations = {};
 
 var target_counter = 0;
 var loaded = 0;
+var current_bin = 0; // only relevant if in batch mode
 var current_targets = [];
 
 var set_size = getCookie('MCSetSize');
@@ -34,6 +35,13 @@ classSelect.onchange = reloadTargets;
 // select 'NONE' tags
 tagSelect.value = 'NONE';
 tagSelect.onchange = reloadTargets;
+
+if (batch_mode) {
+	classSelect.value = batch_class;
+	tagSelect.value = batch_tag;
+	classSelect.disabled = true;
+	tagSelect.disabled = true;
+}
 
 // see all completion levels by default
 filterSelect.value = 'ALL';
@@ -93,7 +101,6 @@ setSizeElement.onchange = function() {
 		set = 100;
 	setCookie('MCSetSize', set, 3650); // 10 years expiration...
 }
-
 
 // Above this is initialization
 // Below this is function declarations
@@ -280,39 +287,57 @@ function submitUpdates() {
 					'&timeseries=' + timeseries;
 	http.send(params);
 	http.onload = function() {
+		
 		var response;
 		if (http.status == 200)
 			response = JSON.parse(http.responseText);
+		
 		if (response && !(response['failure'])) {
+			
 			var new_targets = [];
+			
+			var c_select = document.getElementById('MCClassificationSelection');
+			var t_select = document.getElementById('MCTagSelection');
+			var f_select = document.getElementById('MCFilterByCompletionSelection');
+			var include_unclassified = c_select.options[c_select.selectedIndex].text.substring(0,5) == 'other';
+			
+			makeUpdatesToClassifications(response); // this function updates JS with results from DB
+
 			for (var n = 0; n < current_targets.length; n++) {
+				
 				var pid = current_targets[n]['pid'];
 				var current_classification = document.getElementById('MCClassificationSelection').value;
+				
 				if (pid in tag_updates)
 					document.getElementById('MCNewTag_' + pid).style.color = '#56f442';
-				if (pid in classification_updates) {
-					if (classification_updates[pid] == current_classification) {
+				
+				if (checkPidBelongsInView(pid, c_select.value, t_select.value, f_select.value, include_unclassified)) {
+					
+					if (pid in classification_updates) {
 						document.getElementById('MCTarget_' + pid).style.outlineColor = '#56f442';
 						document.getElementById('MCNewClassification_' + pid).style.color = '#56f442';
-						new_targets.push(current_targets[n]);
 					}
-					else {
-						document.getElementById('MCTarget_' + pid).outerHTML = '';
-						loaded--;
-						target_counter--;
-					}
+					
+					new_targets.push(current_targets[n]);
+					
 				}
 				else {
-					new_targets.push(current_targets[n]);
+					
+					document.getElementById('MCTarget_' + pid).outerHTML = '';
+					loaded--;
+					target_counter--;
+					
 				}
+				
 			}
-			makeUpdatesToClassifications(response); // this function updates JS with results from DB
+
 			current_targets = new_targets;
 			classification_updates = {};
 			tag_updates = {};
 			tag_negations = {};
 			updateLoadedCounter();
 			updateAppliedCounter();
+			
 		}
 		enablePage();
 		if (current_targets.length == 0)

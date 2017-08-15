@@ -58,19 +58,26 @@ function generalKeyDown(e) {
 
 function moveToNextView() {
 	submitUpdates();
-	var c = document.getElementById('MCClassificationSelection');
-	var t = document.getElementById('MCTagSelection');
-	if (t.selectedIndex == t.options.length-1) {
-		if (c.selectedIndex != c.options.length-1) {
-			c.selectedIndex = c.selectedIndex + 1;
-			t.value = 'NONE';
+	if (!batch_mode) {
+		var c = document.getElementById('MCClassificationSelection');
+		var t = document.getElementById('MCTagSelection');
+		if (t.selectedIndex == t.options.length-1) {
+			if (c.selectedIndex != c.options.length-1) {
+				c.selectedIndex = c.selectedIndex + 1;
+				t.value = 'NONE';
+			}
+			else {
+				return;
+			}
 		}
 		else {
-			return;
+			t.selectedIndex = t.selectedIndex + 1;
 		}
 	}
 	else {
-		t.selectedIndex = t.selectedIndex + 1;
+		if (bins.length == current_bin+1)
+			return;
+		current_bin += 1;
 	}
 	reloadTargets();
 	if (current_targets.length == 0)
@@ -79,19 +86,26 @@ function moveToNextView() {
 
 function moveToPreviousView() {
 	submitUpdates();
-	var c = document.getElementById('MCClassificationSelection');
-	var t = document.getElementById('MCTagSelection');
-	if (t.value == 'NONE' || t.value == 'ALL') {
-		if (c.selectedIndex != 1) {
-			c.selectedIndex = c.selectedIndex - 1;
-			t.selectedIndex = t.options.length - 1;
+	if (!batch_mode) {
+		var c = document.getElementById('MCClassificationSelection');
+		var t = document.getElementById('MCTagSelection');
+		if (t.value == 'NONE' || t.value == 'ALL') {
+			if (c.selectedIndex != 1) {
+				c.selectedIndex = c.selectedIndex - 1;
+				t.selectedIndex = t.options.length - 1;
+			}
+			else {
+				return;
+			}
 		}
 		else {
-			return;
+			t.selectedIndex = t.selectedIndex - 1;
 		}
 	}
 	else {
-		t.selectedIndex = t.selectedIndex - 1;
+		if(current_bin == 0)
+			return;
+		current_bin -= 1;
 	}
 	reloadTargets();
 	if (current_targets.length == 0)
