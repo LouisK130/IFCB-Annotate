@@ -10,7 +10,7 @@ WITH
             FROM classify_tag t, auth_user_groups g, auth_group p
             WHERE t.user_id = g.user_id
             AND p.id = g.group_id
-            ORDER BY t.bin, t.roi, t.tag_id, p.power DESC, t.verification_time DESC, t.time DESC
+            ORDER BY t.bin, t.roi, t.tag_id, p.power DESC, t.verification_time DESC NULLS LAST, t.time DESC
     ),
     TF AS (
         SELECT * FROM TA,TI WHERE TA.tag_id = TI.id AND negation = false
@@ -20,7 +20,7 @@ WITH
             FROM classify_classification c, auth_user_groups g, auth_group p
             WHERE c.user_id = g.user_id
             AND p.id = g.group_id
-            ORDER BY c.bin, c.roi, p.power DESC, c.verification_time DESC, c.time DESC
+            ORDER BY c.bin, c.roi, p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC
     ),
     CF AS (
         SELECT * FROM CA,CI WHERE CA.classification_id = CI.id
