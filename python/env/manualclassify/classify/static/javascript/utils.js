@@ -56,6 +56,14 @@ function getLastTimeseries() {
 	return getCookie('MCLastTimeseries')
 }
 
+function setBatchSize(size) {
+	setCookie('MCBatchSize', size, 3650);
+}
+
+function getBatchSize(size) {
+	return getCookie('MCBatchSize') || 5;
+}
+
 function getRecentApplications() {
 	var combos_string = getCookie('MCRecentApplications');
 	var oldCombos = combos_string.split(',');
@@ -136,13 +144,7 @@ function compareTargets(a, b) {
 
 function checkPidBelongsInView(pid, classification, tag, filter, include_unclassified) {
 	if (classifications.hasOwnProperty(pid)) {
-		if (batch_mode) {
-			if (pid.substring(0, pid.lastIndexOf('_')) != bins[current_bin])
-				return false;
-		}
-		var c = classifications[pid]['accepted_classification'];
 		
-		var c_ok = classification == 'ALL' || (!c && include_unclassified) || c['classification_id'] == classification;
 		var t_ok = tag == 'ALL';
 		if (!(t_ok)) {
 			var acceptedTags = getAcceptedTagsForPid(pid);
@@ -153,6 +155,14 @@ function checkPidBelongsInView(pid, classification, tag, filter, include_unclass
 				t_ok = (acceptedTags.indexOf(parseInt(tag)) >= 0);
 			}
 		}
+		
+		if (!('accepted_classification' in classifications[pid]))
+			return t_ok && include_unclassified && (filter == 'ALL' || filter == 'NONE');
+		
+		var c = classifications[pid]['accepted_classification'];
+		
+		var c_ok = classification == 'ALL' || c['classification_id'] == classification;
+
 		var f_ok = false;
 		switch (filter) {
 			case 'ALL':
@@ -262,9 +272,15 @@ function downloadZip(bin) {
 	xhr.onload = function() {
 		zips[bin] = xhr.response;
 		loadImagesFromZip(bin);
+		zips_downloaded++;
+		if (batch_mode && zips_downloaded == batchsize) // don't cache until current zips are done
+			cacheBinsOnServer();
 	}
 	xhr.onerror = function() {
 		console.log('something went wrong downloading zip');
+		zips_downloaded++;
+		if (batch_mode && zips_downloaded == batchsize)
+			cacheBinsOnServer();
 	}
 	xhr.send(params);
 }
@@ -381,6 +397,27 @@ function labelAcceptedTagsForPid(pid) {
 			for (var id in temp_tags) {
 				temp_tags[id]['accepted'] = true;
 			}
+		}
+	}
+}
+
+function createInput(name, value) {
+	var input = document.createElement('input');
+	input.type = 'hidden';
+	input.name = name;
+	input.value = value;
+	return input;
+}
+
+function cacheBinsOnServer() {
+	if (batch_mode) {
+		var to_cache = bins.slice(batchsize, batchsize*2).join(',');
+		if (to_cache != '') {
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', '/cachebins/')
+			xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+			var params = 'csrfmiddlewaretoken=' + csrf_token + '&bins=' + to_cache;
+			xhr.send(params);
 		}
 	}
 }

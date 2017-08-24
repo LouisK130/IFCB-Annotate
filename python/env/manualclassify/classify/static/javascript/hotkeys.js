@@ -58,26 +58,43 @@ function generalKeyDown(e) {
 
 function moveToNextView() {
 	submitUpdates();
-	if (!batch_mode) {
-		var c = document.getElementById('MCClassificationSelection');
-		var t = document.getElementById('MCTagSelection');
-		if (t.selectedIndex == t.options.length-1) {
-			if (c.selectedIndex != c.options.length-1) {
-				c.selectedIndex = c.selectedIndex + 1;
-				t.value = 'NONE';
-			}
-			else {
+	var c = document.getElementById('MCClassificationSelection');
+	var t = document.getElementById('MCTagSelection');
+	if (t.selectedIndex == t.options.length-1) {
+		if (c.selectedIndex != c.options.length-1) {
+			c.selectedIndex = c.selectedIndex + 1;
+			t.value = 'NONE';
+		}
+		else {
+			if (batch_mode) {
+				// load next batch
+				var form = document.createElement('form');
+				form.action = '/classify/';
+				form.method = 'POST';
+				
+				var rest_of_bins = bins.slice(batchsize)
+				
+				if (rest_of_bins.length == 0)
+					return;
+				
+				rest_of_bins = rest_of_bins.join(',');
+				
+				form.appendChild(createInput('bins', rest_of_bins));
+				form.appendChild(createInput('timeseries', timeseries));
+				form.appendChild(createInput('import', shouldImport));
+				form.appendChild(createInput('batchmode', true));
+				form.appendChild(createInput('batchsize', batchsize));
+				
+				form.insertAdjacentHTML('beforeend', csrf_token_form);
+				document.body.appendChild(form);
+				
+				form.submit();
 				return;
 			}
 		}
-		else {
-			t.selectedIndex = t.selectedIndex + 1;
-		}
 	}
 	else {
-		if (bins.length == current_bin+1)
-			return;
-		current_bin += 1;
+		t.selectedIndex = t.selectedIndex + 1;
 	}
 	reloadTargets();
 	if (current_targets.length == 0)
@@ -86,26 +103,19 @@ function moveToNextView() {
 
 function moveToPreviousView() {
 	submitUpdates();
-	if (!batch_mode) {
-		var c = document.getElementById('MCClassificationSelection');
-		var t = document.getElementById('MCTagSelection');
-		if (t.value == 'NONE' || t.value == 'ALL') {
-			if (c.selectedIndex != 1) {
-				c.selectedIndex = c.selectedIndex - 1;
-				t.selectedIndex = t.options.length - 1;
-			}
-			else {
-				return;
-			}
+	var c = document.getElementById('MCClassificationSelection');
+	var t = document.getElementById('MCTagSelection');
+	if (t.value == 'NONE' || t.value == 'ALL') {
+		if (c.selectedIndex != 1) {
+			c.selectedIndex = c.selectedIndex - 1;
+			t.selectedIndex = t.options.length - 1;
 		}
 		else {
-			t.selectedIndex = t.selectedIndex - 1;
+			return;
 		}
 	}
 	else {
-		if(current_bin == 0)
-			return;
-		current_bin -= 1;
+		t.selectedIndex = t.selectedIndex - 1;
 	}
 	reloadTargets();
 	if (current_targets.length == 0)

@@ -41,7 +41,6 @@ CLASSIFIER_CONVERSION_TABLE = {
 	
 def parseBinToTargets(bin):
 	targets = {}
-	
 	with closing(requests.get(timeseries + bin + '.csv', stream=True)) as r:
 		if r.status_code == 404:
 			return False
@@ -64,17 +63,19 @@ def parseBinToTargets(bin):
 def getTargets(bins):
 	targets = {}
 	for bin in bins:
-		if os.path.isfile(TARGETS_CACHE_PATH + '/' + bin):
-			print('loading targets from cache: ' + bin)
+		print('[SERVING] ' + bin + '...')
+		if areTargetsCached(bin):
 			with open(TARGETS_CACHE_PATH + '/' + bin) as f:
 				new_targets = json.load(f)
 		else:
-			print('fetching bin from dashboard: ' + bin)
 			new_targets = parseBinToTargets(bin)
 		if new_targets == False:
 			return False
-		targets = {**targets, **parseBinToTargets(bin)}
+		targets = {**targets, **new_targets}
 	return targets
+	
+def areTargetsCached(bin):
+	return os.path.isfile(TARGETS_CACHE_PATH + '/' + bin)
 
 def formatROI(roi):
 	roi_s = str(roi)
@@ -108,6 +109,18 @@ def downloadZipForBin(bin):
 	with open(ZIP_CACHE_PATH + '/' + bin + '.zip', 'wb') as f:
 		f.write(r.content)
 	print('finished downloading: ' + timeseries + bin + '.zip')
+	
+def areAutoResultsCached(bin):
+	return os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin)
+	
+def removeDuplicates(arr):
+	seen = set()
+	result = []
+	for item in arr:
+		if item in seen: continue
+		seen.add(item)
+		result.append(item)
+	return result
 
 # reads class scores csv file and interprets the highest score as being the "auto classifier's choice"
 
@@ -117,12 +130,10 @@ def downloadZipForBin(bin):
 def getAutoResultsForBin(bin):
 	classifications = {}
 	path = timeseries + bin + '_class_scores.csv'
-	if os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin):
-		print('loading auto results from cache: ' + bin)
+	if areAutoResultsCached(bin):
 		with open(AUTO_RESULTS_CACHE_PATH + '/' + bin) as f:
 			classifications = json.load(f)
 	else:
-		print('fetching auto results from dashboard: ' + bin)
 		with closing(requests.get(path, stream=True)) as r:
 			reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
 			headers = next(reader)
@@ -205,3 +216,20 @@ def addClassifierData(bins, classes, tags, data):
 					else:
 						print('[WARNING] Classifier attempted to annotate Thalassiosira_dirty but no external_detritus tag was found!')
 	return data
+
+# gets all bin names for a timeseries in a date range
+
+# Param 1: a datetime object representing the beginning of the time range to find bins in
+# Param 2: a datetime object representing the end of the time range
+# Param 3: a string representing a timeseries url
+# Output: an array of strings, representing bin names in the time range
+def getBinsInRange(start, end, timeseries):
+	start = start.strftime('%Y-%m-%d')
+	end = end.strftime('%Y-%m-%d')
+	url = timeseries + '/api/feed/temperature/start/' + start + '/end/' + end
+	bins = []
+	with closing(requests.get(url, stream=True)) as r:
+		data = json.loads(r.text)
+		for dict in data:
+			bins.append(dict['pid'].replace(timeseries, ''))
+	return bins

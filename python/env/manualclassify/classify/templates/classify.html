@@ -6,6 +6,12 @@
 		{% include 'filter-toolbox.html' %}
 		{% include 'application-toolbox.html' %}
 		<button type='button' id='MCSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
+		<center>
+			<p id='MCCurrentBinsLabel'>Currently viewing:</p>
+			<div id='MCCurrentBins'>
+				<p style='margin-top:0px;margin-bottom:5px;padding:0;'><b>{{ timeseries }}</b></p>
+			</div>
+		</center>
 	</div>
 	<div id='MCTargetContainer'></div>
 </html>
@@ -89,6 +95,17 @@ div.MCDetailEntryPiece {
 	padding: 2px;
 	vertical-align: middle;
 }
+#MCCurrentBinsLabel {
+	margin-top: 10px;
+	margin-bottom: 3px;
+	width: 100%;
+	border-top: black solid 1px;
+	padding-top: 5px;
+	font-weight: bold;
+}
+#MCCurrentBins {
+	font-size: small;
+}
 </style>
 
 <script type='text/javascript' src="{% static 'javascript/lib/zip.js' %}"></script>
@@ -105,12 +122,8 @@ div.MCDetailEntryPiece {
 	var username = '{{ username }}'
 	var batch_mode = '{{ batchmode }}' == 'True'
 	if (batch_mode) {
-		var batch_class = '{{ batchclass }}'
-		var batch_tag = '{{ batchtag }}'
-		if (parseInt(batch_class))
-			batch_class = parseInt(batch_class);
-		if (parseInt(batch_tag))
-			batch_tag = parseInt(batch_tag);
+		var batchsize = {{ batchsize|safe }}
+		var shouldImport = '{{ shouldImport }}' == 'True'
 	}
 	zip.workerScriptsPath = "{% static 'javascript/lib/' %}";
 </script>

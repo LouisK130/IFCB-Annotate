@@ -110,22 +110,21 @@ document.getElementById('MCBatchMode').onclick = function() {
 		document.getElementById('MCBatchModeOptions').style.display = 'none';
 }
 
+document.getElementById('MCBatchSize').value = getBatchSize();
+
 function submitForm(raw) {
 	var bins_string = '';
-	var rest_of_bins = ''; // for batch mode only
 	var batchmode = document.getElementById('MCBatchMode').checked;
+	var batchSize = batchmode ? document.getElementById('MCBatchSize').value : null;
 	
 	var options = document.getElementById('MCBins').options;
 	for (var n = 0; n < options.length; n++) {
-		if (batchmode && n > 4)
-			rest_of_bins += options[n].text + ',';
-		else
 			bins_string += options[n].text + ',';
 	}
 	
 	bins_string = bins_string.substring(0, bins_string.length - 1);
-	rest_of_bins = rest_of_bins.substring(0 , rest_of_bins.length - 1);
-	if (bins_string == '')
+	
+	if (bins_string == '' && !batchmode)
 		return;
 
 	var ts = document.getElementById('MCTimeSeries');
@@ -142,10 +141,12 @@ function submitForm(raw) {
 	form.appendChild(createInput('batchmode', batchmode));
 	
 	if (batchmode) {
+
+		form.appendChild(createInput('batchsize', batchSize));
+		form.appendChild(createInput('batchstart', document.getElementById('MCBatchStart').value))
+		form.appendChild(createInput('batchend', document.getElementById('MCBatchEnd').value))
 		
-		form.appendChild(createInput('batchclass', document.getElementById('MCBatchClass').value));
-		form.appendChild(createInput('batchtag', document.getElementById('MCBatchTag').value));
-		form.appendChild(createInput('restbins', rest_of_bins));
+		setBatchSize(batchSize);
 		
 	}
 	
@@ -153,12 +154,4 @@ function submitForm(raw) {
 	document.body.appendChild(form);
 	
 	form.submit();
-}
-
-function createInput(name, value) {
-	var input = document.createElement('input');
-	input.type = 'hidden';
-	input.name = name;
-	input.value = value;
-	return input;
 }

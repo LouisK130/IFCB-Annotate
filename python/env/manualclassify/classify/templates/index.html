@@ -24,28 +24,22 @@
 					{% endfor %}
 				</select>
 			</div>
-			<div style='display:none'>
+			<div>
 				<b><label for="MCBatchMode">Batch mode:</label></b>
 				<input type="checkbox" id="MCBatchMode">
 			</div>
 			<div id='MCBatchModeOptions' style='display:none;line-height:25px;'>
-				<p style='display:table-row'>
-					<label for='MCBatchClass' style='display:table-cell;padding-right:5px;'><b>Classification:</b></label>
-					<select id='MCBatchClass' style='display:table-cell'>
-						{% for label in classification_labels %}
-							<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
-						{% endfor %}
-					</select>
+				<p style='display:table-row;'>
+					<label for='MCBatchSize' class='MCBatchOption'><b>Batch size:</b></label>
+					<input type='number' min='1' name='MCBatchSize' id='MCBatchSize'></input>
 				</p>
 				<p style='display:table-row'>
-					<label for='MCBatchTag' style='display:table-cell'><b>Tag:</b></label>
-					<select id='MCBatchTag' style='display:table-cell'>
-						<option value='ALL'>ALL</option>
-						<option value='NONE'>NONE</option>
-						{% for label in tag_labels %}
-							<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
-						{% endfor %}
-					</select>
+					<label for='MCBatchStart' style='display:table-cell;padding-right:5px;'><b>Start date:</b></label>
+					<input id='MCBatchStart' type='date'>
+				</p>
+				<p style='display:table-row'>
+					<label for='MCBatchEnd' style='display:table-cell;padding-right:5px;'><b>End date:</b></label>
+					<input id='MCBatchEnd' type='date'>
 				</p>
 			</div>
 			<input type='button' id='MCBinsSubmit' value='Begin Classifying Raw'>
@@ -116,5 +110,13 @@ body {
 }
 #MCIndexDiv {
 	display: inline-block;
+}
+label.MCBatchOption {
+	display: table-cell;
+	padding-right: 5px;
+}
+#MCBatchSize {
+	width: 70px;
+	display: table-cell;
 }
 </style>

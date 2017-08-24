@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 import re
 import time
+from datetime import datetime
 
 # Create your views here.
 class HomePageView(TemplateView):
@@ -72,15 +73,50 @@ class ClassifyPageView(TemplateView):
 			return redirect(settings.LOGIN_URL)
 			
 		binsInput = request.POST.get('bins', '')
+		bins = re.split(',', binsInput)
 		shouldImport = json.loads(request.POST.get('import', False)) # boolean conversion with json lib
 		utils.timeseries = request.POST.get('timeseries', '')
-		batchMode = json.loads(request.POST.get('batchmode', False))
+		batchmode = json.loads(request.POST.get('batchmode', False))
 		
-		bins = re.split(',', binsInput)
+		current_bins = bins
+		
+		if batchmode:
+			batchsize = int(request.POST.get('batchsize', 5))
+			if 'batchstart' in request.POST:
+			
+				batchstart = request.POST.get('batchstart', '')
+				batchend = request.POST.get('batchend', '')
+				
+				if batchstart == '' or batchend == '':
+					request.session['failed'] = 'Invalid date(s) given for batch mode range'
+					return redirect('/')
+					
+				batchstart = datetime.strptime(batchstart, '%Y-%m-%d')
+				batchend = datetime.strptime(batchend, '%Y-%m-%d')
+				
+				if batchend < batchstart:
+					temp = batchend
+					batchend = batchstart
+					batchstart = temp
+					
+				delta = batchend - batchstart
+				if delta.total_seconds() / 86400 > 90:
+					request.session['failed'] = 'Date range cannot be greater than 90 days'
+					return redirect('/')
+
+				if len(bins) == 1 and bins[0] == '':
+					bins = utils.getBinsInRange(batchstart, batchend, utils.timeseries)
+				else:
+					bins = utils.removeDuplicates(bins + utils.getBinsInRange(batchstart, batchend, utils.timeseries))
+			current_bins = bins[:batchsize]
+			
+		if len(current_bins) == 1 and current_bins[0] == '':
+			request.session['failed'] = 'You must supply at least one valid bin'
+			return redirect('/')
 		
 		t = time.time()
-		targets = utils.getTargets(bins)
-		print(str(time.time() - t) + ' load target PIDs and dimensions')
+		targets = utils.getTargets(current_bins)
+		print(str(time.time() - t) + ' to load target PIDs and dimensions')
 		
 		if not targets:
 			request.session['failed'] = 'One or more of the chosen bins was invalid for the chosen timeseries'
@@ -90,7 +126,7 @@ class ClassifyPageView(TemplateView):
 		tagList = database.getTagList()
 		
 		t = time.time()
-		classifications = database.getAllDataForBins(bins, targets)
+		classifications = database.getAllDataForBins(current_bins, targets)
 		print(str(time.time() - t) + ' to get all annotations from database')
 		
 		print(str(len(targets)) + ' total targets found')
@@ -98,7 +134,7 @@ class ClassifyPageView(TemplateView):
 		if shouldImport:
 			print('including auto results')
 			t = time.time()
-			classifications = utils.addClassifierData(bins, classList, tagList, classifications)
+			classifications = utils.addClassifierData(current_bins, classList, tagList, classifications)
 			print(str(time.time() - t) + ' to add classifier data')
 		
 		JS_values = {
@@ -109,15 +145,14 @@ class ClassifyPageView(TemplateView):
 			'bins' : json.dumps(bins),
 			'user_id' : request.user.pk,
 			'username' : request.user.username,
-			'batchmode' : batchMode,
+			'batchmode' : batchmode,
+			'batchsize' : 5,
+			'shouldImport' : shouldImport,
 		}
 		
-		if batchMode:
-			JS_values['batchclass'] = request.POST.get('batchclass', '')
-			JS_values['batchtag'] = request.POST.get('batchtag', '')
-			JS_values['rest_of_bins'] = request.POST.get('rest_of_bins', '')
-			JS_values['import'] = shouldImport
-		
+		if batchmode:
+			JS_values['batchsize'] = batchsize
+			
 		return render(request, 'classify.html', JS_values)
 
 class SubmitUpdatesPageView(TemplateView):
@@ -145,3 +180,18 @@ class ZipDownloadPageView(TemplateView):
 			response = HttpResponse(utils.getZipForBin(bin), content_type='application/zip')
 			response['Content-Disposition'] = 'attachment; filename=' + bin + '.zip'
 			return response
+class CacheBinPageView(TemplateView):
+	def post(self, request, **kwargs):
+		if request.method == 'POST':
+			bins = request.POST.get('bins', '')
+			bins = re.split(',', bins)
+			if len(bins) > 0 and bins[0] != '':
+				for bin in bins:
+					print('[CACHING] ' + bin + '...')
+					if not utils.areTargetsCached(bin):
+						utils.parseBinToTargets(bin)
+					if not utils.areAutoResultsCached(bin):
+						utils.getAutoResultsForBin(bin)
+					if not utils.isZipDownloaded(bin):
+						utils.downloadZipForBin(bin)
+		return HttpResponse('')

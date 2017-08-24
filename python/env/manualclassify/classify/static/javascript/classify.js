@@ -4,7 +4,6 @@ var tag_negations = {};
 
 var target_counter = 0;
 var loaded = 0;
-var current_bin = 0; // only relevant if in batch mode
 var current_targets = [];
 
 var set_size = getCookie('MCSetSize');
@@ -12,9 +11,17 @@ if (set_size == "")
 	set_size = 100;
 document.getElementById('MCSetSize').value = set_size
 
-for(var n = 0; n < bins.length; n++) {
+var zips_downloaded = 0;
+var zips_expected = batch_mode ? batchsize : bins.length;
+var current_bins_ele = document.getElementById('MCCurrentBins');
+for(var n = 0; n < zips_expected; n++) {
 	addRecentBinToCookies(bins[n]);
 	downloadZip(bins[n]);
+	var label = document.createElement('p');
+	label.innerHTML = bins[n];
+	label.style.padding = '0';
+	label.style.margin = '0';
+	current_bins_ele.appendChild(label);
 }
 
 var classSelect = document.getElementById('MCClassificationSelection');
@@ -35,13 +42,6 @@ classSelect.onchange = reloadTargets;
 // select 'NONE' tags
 tagSelect.value = 'NONE';
 tagSelect.onchange = reloadTargets;
-
-if (batch_mode) {
-	classSelect.value = batch_class;
-	tagSelect.value = batch_tag;
-	classSelect.disabled = true;
-	tagSelect.disabled = true;
-}
 
 // see all completion levels by default
 filterSelect.value = 'ALL';
