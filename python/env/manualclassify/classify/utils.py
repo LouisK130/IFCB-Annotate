@@ -57,24 +57,24 @@ def parseBinToTargets(bin):
 		f = open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w')
 		f.close()
 		
-		print('started downloading: ' + timeseries + bin + '.csv')
-		with closing(requests.get(timeseries + bin + '.csv', stream=True)) as r:
+		print('started downloading: ' + timeseries + bin + '_roisizes')
+		with closing(requests.get(timeseries + bin + '_roisizes', stream=True)) as r:
 			if r.status_code == 404:
 				return False
-			reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
-			headers = next(reader)
-			pid_index = headers.index('pid')
-			# reversed because regardless of how they go through IFCB, on display these values are backwards
-			width_index = headers.index('height')
-			height_index = headers.index('width')
-			for row in reader:
-				data = {'width' : int(row[width_index]), 'height' : int(row[height_index])}
-				pid = row[pid_index].replace(timeseries, '')
-				targets[pid] = data
+			data = json.loads(r.text)
+			n = 0
+			while n < len(data['targetNumber']):
+				pid = bin + '_' + str(data['targetNumber'][n]).zfill(5)
+				# reversed because regardless of how they go through IFCB, on display these values are backwards
+				targets[pid] = {
+					'width' : data['height'][n],
+					'height' : data['width'][n],
+				}
+				n += 1
 		with open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w') as f:
 			json.dump(targets, f)
 		os.rename(TARGETS_CACHE_PATH + '/' + bin + '_temp', TARGETS_CACHE_PATH + '/' + bin)
-		print('finished downloading: ' + timeseries + bin + '.csv')
+		print('finished downloading: ' + timeseries + bin + '_roisizes')
 		return targets
 	
 # dictionary with key = values:
