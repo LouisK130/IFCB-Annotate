@@ -12,7 +12,7 @@ if (set_size == "")
 document.getElementById('MCSetSize').value = set_size
 
 var zips_downloaded = 0;
-var zips_expected = batch_mode ? batchsize : bins.length;
+var zips_expected = batch_mode ? Math.min(batchsize, bins.length) : bins.length;
 var current_bins_ele = document.getElementById('MCCurrentBins');
 for(var n = 0; n < zips_expected; n++) {
 	addRecentBinToCookies(bins[n]);

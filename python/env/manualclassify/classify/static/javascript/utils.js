@@ -416,7 +416,7 @@ function cacheBinsOnServer() {
 			var xhr = new XMLHttpRequest();
 			xhr.open('POST', '/cachebins/')
 			xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-			var params = 'csrfmiddlewaretoken=' + csrf_token + '&bins=' + to_cache;
+			var params = 'csrfmiddlewaretoken=' + csrf_token + '&bins=' + to_cache + '&timeseries=' + timeseries;
 			xhr.send(params);
 		}
 	}

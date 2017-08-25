@@ -82,6 +82,11 @@ class ClassifyPageView(TemplateView):
 		
 		if batchmode:
 			batchsize = int(request.POST.get('batchsize', 5))
+			
+			if batchsize > 10:
+				request.session['failed'] = 'Batch size cannot be greater than 10'
+				return redirect('/')
+			
 			if 'batchstart' in request.POST:
 			
 				batchstart = request.POST.get('batchstart', '')
@@ -100,8 +105,8 @@ class ClassifyPageView(TemplateView):
 					batchstart = temp
 					
 				delta = batchend - batchstart
-				if delta.total_seconds() / 86400 > 90:
-					request.session['failed'] = 'Date range cannot be greater than 90 days'
+				if delta.total_seconds() / 86400 > 365:
+					request.session['failed'] = 'Date range cannot be greater than 365 days'
 					return redirect('/')
 
 				if len(bins) == 1 and bins[0] == '':
@@ -114,9 +119,7 @@ class ClassifyPageView(TemplateView):
 			request.session['failed'] = 'You must supply at least one valid bin'
 			return redirect('/')
 		
-		t = time.time()
 		targets = utils.getTargets(current_bins)
-		print(str(time.time() - t) + ' to load target PIDs and dimensions')
 		
 		if not targets:
 			request.session['failed'] = 'One or more of the chosen bins was invalid for the chosen timeseries'
@@ -124,18 +127,14 @@ class ClassifyPageView(TemplateView):
 		
 		classList = database.getClassificationList()
 		tagList = database.getTagList()
-		
-		t = time.time()
+
 		classifications = database.getAllDataForBins(current_bins, targets)
-		print(str(time.time() - t) + ' to get all annotations from database')
 		
 		print(str(len(targets)) + ' total targets found')
 		
 		if shouldImport:
 			print('including auto results')
-			t = time.time()
 			classifications = utils.addClassifierData(current_bins, classList, tagList, classifications)
-			print(str(time.time() - t) + ' to add classifier data')
 		
 		JS_values = {
 			'timeseries' : utils.timeseries,
@@ -184,6 +183,7 @@ class CacheBinPageView(TemplateView):
 	def post(self, request, **kwargs):
 		if request.method == 'POST':
 			bins = request.POST.get('bins', '')
+			utils.timeseries = request.POST.get('timeseries', '')
 			bins = re.split(',', bins)
 			if len(bins) > 0 and bins[0] != '':
 				for bin in bins:

@@ -6,6 +6,7 @@ import os
 from classify import database
 from django.contrib.auth.models import User
 import json
+import time
 
 ZIP_CACHE_PATH = 'classify/cache/zips'
 TARGETS_CACHE_PATH = 'classify/cache/targets'
@@ -41,22 +42,40 @@ CLASSIFIER_CONVERSION_TABLE = {
 	
 def parseBinToTargets(bin):
 	targets = {}
-	with closing(requests.get(timeseries + bin + '.csv', stream=True)) as r:
-		if r.status_code == 404:
-			return False
-		reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
-		headers = next(reader)
-		pid_index = headers.index('pid')
-		# reversed because regardless of how they go through IFCB, on display these values are backwards
-		width_index = headers.index('height')
-		height_index = headers.index('width')
-		for row in reader:
-			data = {'width' : int(row[width_index]), 'height' : int(row[height_index])}
-			pid = row[pid_index].replace(timeseries, '')
-			targets[pid] = data
-	with open(TARGETS_CACHE_PATH + '/' + bin, 'w') as f:
-		json.dump(targets, f)
-	return targets
+	
+	t = time.time()
+	while os.path.isfile(TARGETS_CACHE_PATH + '/' + bin + '_temp'):
+		if time.time() - t > 30: # 30 second timeout before just trying to download the file again
+			break
+		time.sleep(1)
+		
+	if areTargetsCached(bin):
+		with open(TARGETS_CACHE_PATH + '/' + bin) as f:
+			return json.load(f)
+	else:
+		# create the temp file first so we know it's being downloaded
+		f = open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w')
+		f.close()
+		
+		print('started downloading: ' + timeseries + bin + '.csv')
+		with closing(requests.get(timeseries + bin + '.csv', stream=True)) as r:
+			if r.status_code == 404:
+				return False
+			reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
+			headers = next(reader)
+			pid_index = headers.index('pid')
+			# reversed because regardless of how they go through IFCB, on display these values are backwards
+			width_index = headers.index('height')
+			height_index = headers.index('width')
+			for row in reader:
+				data = {'width' : int(row[width_index]), 'height' : int(row[height_index])}
+				pid = row[pid_index].replace(timeseries, '')
+				targets[pid] = data
+		with open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w') as f:
+			json.dump(targets, f)
+		os.rename(TARGETS_CACHE_PATH + '/' + bin + '_temp', TARGETS_CACHE_PATH + '/' + bin)
+		print('finished downloading: ' + timeseries + bin + '.csv')
+		return targets
 	
 # dictionary with key = values:
 # pid = {'height' : height, 'width' : width}
@@ -104,11 +123,23 @@ def getZipForBin(bin):
 	return open(ZIP_CACHE_PATH + '/' + bin + '.zip', 'rb').read()
 	
 def downloadZipForBin(bin):
-	print('started downloading: ' + timeseries + bin + '.zip')
-	r = requests.get(timeseries + bin + '.zip')
-	with open(ZIP_CACHE_PATH + '/' + bin + '.zip', 'wb') as f:
-		f.write(r.content)
-	print('finished downloading: ' + timeseries + bin + '.zip')
+
+	t = time.time()
+	while os.path.isfile(ZIP_CACHE_PATH + '/' + bin + '_temp.zip'):
+		if time.time() - t > 30: # 30 second timeout before just trying to download the file again
+			break
+		time.sleep(1)
+		
+	if not isZipDownloaded(bin):
+		print('started downloading: ' + timeseries + bin + '.zip')
+		# create the file first, just so we know it's being downloaded
+		f = open(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', 'w')
+		f.close()
+		r = requests.get(timeseries + bin + '.zip')
+		with open(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', 'wb') as f:
+			f.write(r.content)
+		os.rename(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', ZIP_CACHE_PATH + '/' + bin + '.zip')
+		print('finished downloading: ' + timeseries + bin + '.zip')
 	
 def areAutoResultsCached(bin):
 	return os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin)
@@ -130,11 +161,28 @@ def removeDuplicates(arr):
 def getAutoResultsForBin(bin):
 	classifications = {}
 	path = timeseries + bin + '_class_scores.csv'
+	
+	t = time.time()
+	while os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp'):
+		if time.time() - t > 30: # 30 second timeout before just trying to download the file again
+			break
+		time.sleep(1)
+		
 	if areAutoResultsCached(bin):
 		with open(AUTO_RESULTS_CACHE_PATH + '/' + bin) as f:
-			classifications = json.load(f)
+			try:
+				classifications = json.load(f)
+			except ValueError:
+				pass
 	else:
+		f = open(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', 'w')
+		f.close()
+		print('started downloading: ' + path)
 		with closing(requests.get(path, stream=True)) as r:
+			if r.status_code == 404:
+				print('no auto results available at: ' + path)
+				os.rename(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', AUTO_RESULTS_CACHE_PATH + '/' + bin)
+				return None
 			reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
 			headers = next(reader)
 			try:
@@ -155,8 +203,10 @@ def getAutoResultsForBin(bin):
 							winner = (headers[i], col)
 					i += 1
 				classifications[row[pid_index]] = winner[0]
-		with open(AUTO_RESULTS_CACHE_PATH + '/' + bin, 'w') as f:
+		with open(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', 'w') as f:
 			json.dump(classifications, f)
+		os.rename(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', AUTO_RESULTS_CACHE_PATH + '/' + bin)
+		print('finished downloading: ' + path)
 	return classifications
 
 # adds annotations based on the auto classifier results to the data being prepared for passing to the client

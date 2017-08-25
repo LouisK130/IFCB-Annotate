@@ -141,10 +141,15 @@ function submitForm(raw) {
 	form.appendChild(createInput('batchmode', batchmode));
 	
 	if (batchmode) {
+		
+		var bstart = document.getElementById('MCBatchStart').value;
+		var bend = document.getElementById('MCBatchEnd').value;
 
 		form.appendChild(createInput('batchsize', batchSize));
-		form.appendChild(createInput('batchstart', document.getElementById('MCBatchStart').value))
-		form.appendChild(createInput('batchend', document.getElementById('MCBatchEnd').value))
+		if (bstart != '' && bend != '') {
+			form.appendChild(createInput('batchstart', document.getElementById('MCBatchStart').value))
+			form.appendChild(createInput('batchend', document.getElementById('MCBatchEnd').value))
+		}
 		
 		setBatchSize(batchSize);
 		
