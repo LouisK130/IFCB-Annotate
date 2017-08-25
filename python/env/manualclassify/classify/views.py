@@ -74,9 +74,9 @@ class ClassifyPageView(TemplateView):
 			
 		binsInput = request.POST.get('bins', '')
 		bins = re.split(',', binsInput)
-		shouldImport = json.loads(request.POST.get('import', False)) # boolean conversion with json lib
+		shouldImport = json.loads(request.POST.get('import', 'false')) # boolean conversion with json lib
 		utils.timeseries = request.POST.get('timeseries', '')
-		batchmode = json.loads(request.POST.get('batchmode', False))
+		batchmode = json.loads(request.POST.get('batchmode', 'false'))
 		
 		current_bins = bins
 		

@@ -13,11 +13,11 @@ TARGETS_CACHE_PATH = 'classify/cache/targets'
 AUTO_RESULTS_CACHE_PATH = 'classify/cache/class_scores'
 
 if not os.path.exists(ZIP_CACHE_PATH):
-	os.mkdir(ZIP_CACHE_PATH)
+	os.makedirs(ZIP_CACHE_PATH, exist_ok=True)
 if not os.path.exists(TARGETS_CACHE_PATH):
-	os.mkdir(TARGETS_CACHE_PATH)
+	os.makedirs(TARGETS_CACHE_PATH, exist_ok=True)
 if not os.path.exists(AUTO_RESULTS_CACHE_PATH):
-	os.mkdir(AUTO_RESULTS_CACHE_PATH)
+	os.makedirs(AUTO_RESULTS_CACHE_PATH, exist_ok=True)
 	
 CLASSIFIER_CONVERSION_TABLE = {
 	'Asterionellopsis' : 'Asterionellopsis glacialis',
