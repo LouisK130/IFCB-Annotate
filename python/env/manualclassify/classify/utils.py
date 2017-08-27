@@ -234,6 +234,13 @@ def addClassifierData(bins, classes, tags, data):
 			for c in classes:
 				if c['name'] == new_name:
 					classification_id = c['id']
+					break
+			if not classification_id:
+				print('[WARNING] Auto classifier label "' + classification + '" did not have a matching classification label in the database!')
+				for c in classes:
+					if c['name'] == 'unclassified':
+						classification_id = c['id']
+						break
 			if pid in data:
 				dict = {
 					'user_id' : -1,

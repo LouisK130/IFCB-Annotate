@@ -89,8 +89,8 @@ function moveToNextView() {
 				document.body.appendChild(form);
 				
 				form.submit();
-				return;
 			}
+			return;
 		}
 	}
 	else {
