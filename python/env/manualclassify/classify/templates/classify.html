@@ -124,6 +124,12 @@ div.MCDetailEntryPiece {
 	if (batch_mode) {
 		var batchsize = {{ batchsize|safe }}
 		var shouldImport = '{{ shouldImport }}' == 'True'
+		var batchclass = '{{ batchclass }}'
+		var batchtag = '{{ batchtag }}'
+		if (parseInt(batchclass))
+			batchclass = parseInt(batchclass);
+		if (parseInt(batchtag))
+			batchtag = parseInt(batchtag);
 	}
 	zip.workerScriptsPath = "{% static 'javascript/lib/' %}";
 </script>

@@ -246,6 +246,103 @@ def insertUpdates(updates, user_id, is_classifications, negations):
 	conn.close()
 	return return_updates
 
+# takes a set of bins and filters out those which have no annotations matching the given class/tag combo
+
+# Param 1: an array of strings, representing bin names
+# Param 2: an integer representing a class id
+# Param 3: an integer repsenting a tag id, OR a string 'ALL' or 'NONE'
+# Output: the same array of strings from Param 1, minus any bins which don't have at least one target classified as Param 2/3
+def filterBins(bins, classID, tagID):
+	if classID == '' or tagID == '':
+		return bins
+	
+	params = []
+		
+	query = ('WITH '
+				'CA AS ( '
+					'SELECT DISTINCT ON (c.bin, c.roi) c.*, p.power '
+					'FROM classify_classification c, auth_user_groups g, auth_group p '
+					'WHERE c.user_id = g.user_id '
+					'AND p.id = g.group_id '
+					'AND c.bin in (')
+					
+	for bin in bins:
+		query += '%s, '
+		params.append(bin)
+		
+	query = query[:-2]
+	
+	query = query + (') '
+					'ORDER BY c.bin, c.roi, p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC '
+				'), '
+				'CF AS ( '
+					'SELECT * FROM CA WHERE classification_id = %s '
+				')')
+	
+	params.append(classID)
+				
+	if not tagID == 'ALL':
+		query = query + (''
+				', '
+				'TA AS ( '
+					'SELECT DISTINCT ON (t.bin, t.roi, t.tag_id) t.*, p.power '
+					'FROM classify_tag t, auth_user_groups g, auth_group p '
+					'WHERE t.user_id = g.user_id '
+					'AND p.id = g.group_id '
+					'AND t.bin IN (')
+					
+		for bin in bins:
+			query += '%s, '
+			params.append(bin)
+	
+		query = query[:-2]
+		
+		query = query + (') '
+					'ORDER BY t.bin, t.roi, t.tag_id, p.power DESC, t.verification_time DESC NULLS LAST, t.time DESC '
+				')')
+				
+		if not tagID == 'NONE':
+			query = query + (''
+					', '
+					'TF AS ( '
+						'SELECT * FROM TA WHERE tag_id = %s AND negation = false '
+					')')
+			params.append(tagID)
+				
+	query = query + (''
+			' SELECT DISTINCT ON (bin) bin FROM CF')
+			
+	if not tagID == 'ALL':
+	
+		tag_query = 'TA' if tagID == 'NONE' else 'TF'
+		
+		if tagID == 'NONE':
+			query = query + (' '
+					'WHERE NOT EXISTS ')
+		else:
+			query = query + (' '
+					'WHERE EXISTS ')
+		query = query + (''
+						'(SELECT 1 FROM ' + tag_query + ' '
+							'WHERE ' + tag_query + '.roi = CF.roi '
+							'AND ' + tag_query + '.bin = CF.bin'
+						')')
+
+	query = query + ';'
+	
+	conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
+	cur = conn.cursor()
+	cur.execute(query, params)
+	conn.commit()
+	rows = cur.fetchall()
+	
+	bins = []
+	
+	for row in rows:
+		bins.append(row[0])
+
+	return bins
+	
 # we cache timeseries info here, so we don't make the same call to the database thousands of times
 # format:
 #	URL : UUID

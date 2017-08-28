@@ -78,6 +78,9 @@ class ClassifyPageView(TemplateView):
 		utils.timeseries = request.POST.get('timeseries', '')
 		batchmode = json.loads(request.POST.get('batchmode', 'false'))
 		
+		classList = database.getClassificationList()
+		tagList = database.getTagList()
+		
 		current_bins = bins
 		
 		if batchmode:
@@ -113,6 +116,12 @@ class ClassifyPageView(TemplateView):
 					bins = utils.getBinsInRange(batchstart, batchend, utils.timeseries)
 				else:
 					bins = utils.removeDuplicates(bins + utils.getBinsInRange(batchstart, batchend, utils.timeseries))
+				
+			batchclass = request.POST.get('batchclass', '')
+			batchtag = request.POST.get('batchtag', '')
+				
+			bins = database.filterBins(bins, batchclass, batchtag)
+			
 			current_bins = bins[:batchsize]
 			
 		if len(current_bins) == 1 and current_bins[0] == '':
@@ -124,9 +133,6 @@ class ClassifyPageView(TemplateView):
 		if not targets:
 			request.session['failed'] = 'One or more of the chosen bins was invalid for the chosen timeseries'
 			return redirect('/')
-		
-		classList = database.getClassificationList()
-		tagList = database.getTagList()
 
 		classifications = database.getAllDataForBins(current_bins, targets)
 		
@@ -151,6 +157,8 @@ class ClassifyPageView(TemplateView):
 		
 		if batchmode:
 			JS_values['batchsize'] = batchsize
+			JS_values['batchclass'] = batchclass
+			JS_values['batchtag'] = batchtag
 			
 		return render(request, 'classify.html', JS_values)
 

@@ -34,7 +34,6 @@ var tagApplySelect = document.getElementById('TagApplicationSelection');
 sortSelectBoxes(classSelect, tagSelect, 1, 2); // stuck this in a function since it's more complex than I expected
 sortSelectBoxes(classApplySelect, tagApplySelect, 2, 2); 
 
-
 // select first classification
 classSelect.selectedIndex = 1;
 classSelect.onchange = reloadTargets;
@@ -42,6 +41,15 @@ classSelect.onchange = reloadTargets;
 // select 'NONE' tags
 tagSelect.value = 'NONE';
 tagSelect.onchange = reloadTargets;
+
+if (batch_mode) {
+	console.log(batchclass);
+	console.log(batchtag);
+	classSelect.value = batchclass;
+	tagSelect.value = batchtag;
+	classSelect.disabled = true;
+	tagSelect.disabled = true;
+}
 
 // see all completion levels by default
 filterSelect.value = 'ALL';

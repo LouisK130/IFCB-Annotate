@@ -29,15 +29,17 @@ CLASSIFIER_CONVERSION_TABLE = {
 	'Guinardia' : 'Guinardia delicatula',
 	'Pseudonitzschia' : 'Pseudo-nitzschia',
 	'Thalassiosira_dirty' : 'Thalassiosira', # TAGGED: 'external detritus'
-	'dino30' : 'Dinoflagellata',
+	'dino30' : 'Dinophyceae',
 	'Lauderia' : 'Lauderia annulata',
 	'Cerataulina' : 'Cerataulina pelagica',
 	'Paralia' : 'Paralia sulcata',
 	'ciliate_mix' : 'Ciliate mix',
 	'Laboea' : 'Laboea strobila',
-	'Myrionecta' : 'Mesodinium sp',
+	'Myrionecta' : 'Mesodinium',
 	'tintinnid' : 'Tintinnida',
 	'Pyramimonas' : 'Pyramimonas longicauda',
+	'clusterflagellate' : 'Corymbellus',
+	'kiteflagellates' : 'Chrysochromulina lanceolata',
 }
 	
 def parseBinToTargets(bin):

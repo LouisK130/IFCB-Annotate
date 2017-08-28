@@ -60,48 +60,54 @@ function moveToNextView() {
 	submitUpdates();
 	var c = document.getElementById('MCClassificationSelection');
 	var t = document.getElementById('MCTagSelection');
-	if (t.selectedIndex == t.options.length-1) {
-		if (c.selectedIndex != c.options.length-1) {
-			c.selectedIndex = c.selectedIndex + 1;
-			t.value = 'NONE';
-		}
-		else {
-			if (batch_mode) {
-				// load next batch
-				var form = document.createElement('form');
-				form.action = '/classify/';
-				form.method = 'POST';
-				
-				var rest_of_bins = bins.slice(batchsize)
-				
-				if (rest_of_bins.length == 0)
-					return;
-				
-				rest_of_bins = rest_of_bins.join(',');
-				
-				form.appendChild(createInput('bins', rest_of_bins));
-				form.appendChild(createInput('timeseries', timeseries));
-				form.appendChild(createInput('import', shouldImport));
-				form.appendChild(createInput('batchmode', true));
-				form.appendChild(createInput('batchsize', batchsize));
-				
-				form.insertAdjacentHTML('beforeend', csrf_token_form);
-				document.body.appendChild(form);
-				
-				form.submit();
-			}
+	if (batch_mode) {
+		// load next batch
+		var form = document.createElement('form');
+		form.action = '/classify/';
+		form.method = 'POST';
+		
+		var rest_of_bins = bins.slice(batchsize)
+		
+		if (rest_of_bins.length == 0)
 			return;
-		}
+		
+		rest_of_bins = rest_of_bins.join(',');
+		
+		form.appendChild(createInput('bins', rest_of_bins));
+		form.appendChild(createInput('timeseries', timeseries));
+		form.appendChild(createInput('import', shouldImport));
+		form.appendChild(createInput('batchmode', true));
+		form.appendChild(createInput('batchsize', batchsize));
+		form.appendChild(createInput('batchclass', batchclass));
+		form.appendChild(createInput('batchtag', batchtag));
+		
+		form.insertAdjacentHTML('beforeend', csrf_token_form);
+		document.body.appendChild(form);
+		
+		form.submit();
+		return;
 	}
 	else {
-		t.selectedIndex = t.selectedIndex + 1;
+		if (t.selectedIndex == t.options.length-1) {
+			if (c.selectedIndex != c.options.length-1) {
+				c.selectedIndex = c.selectedIndex + 1;
+				t.value = 'NONE';
+			}
+			else {
+			}
+		}
+		else {
+			t.selectedIndex = t.selectedIndex + 1;
+		}
+		reloadTargets();
+		if (current_targets.length == 0)
+			moveToNextView();
 	}
-	reloadTargets();
-	if (current_targets.length == 0)
-		moveToNextView();
 }
 
 function moveToPreviousView() {
+	if (batch_mode)
+		return;
 	submitUpdates();
 	var c = document.getElementById('MCClassificationSelection');
 	var t = document.getElementById('MCTagSelection');

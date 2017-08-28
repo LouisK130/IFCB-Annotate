@@ -41,6 +41,24 @@
 					<label for='MCBatchEnd' style='display:table-cell;padding-right:5px;'><b>End date:</b></label>
 					<input id='MCBatchEnd' type='date'>
 				</p>
+				<p style='display:table-row'>
+					<label for='MCBatchClass' style='display:table-cell;padding-right:5px;'><b>Class:</b></label>
+					<select id='MCBatchClass' style='display:table-cell'>
+						{% for label in classification_labels %}
+							<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+						{% endfor %}
+					</select>
+				</p>
+				<p style='display:table-row'>
+					<label for='MCBatchTag' style='display:table-cell;padding-right:5px;'><b>Tag:</b></label>
+					<select id='MCBatchTag' style='display:table-cell'>
+						<option value='ALL'>ALL</option>
+						<option value='NONE'>NONE</option>
+						{% for label in tag_labels %}
+							<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+						{% endfor %}
+					</select>
+				</p>
 			</div>
 			<input type='button' id='MCBinsSubmit' value='Begin Classifying Raw'>
 			<br>
