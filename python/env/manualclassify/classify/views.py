@@ -23,6 +23,7 @@ class HomePageView(TemplateView):
 			'timeseries_list' : database.timeseries_ids.keys(),
 			'classification_labels' : database.getClassificationList(),
 			'tag_labels' : database.getTagList(),
+			'bins' : request.session.pop('bins', []),
 		})
 		
 class LoginPageView(TemplateView):
@@ -86,8 +87,8 @@ class ClassifyPageView(TemplateView):
 		if batchmode:
 			batchsize = int(request.POST.get('batchsize', 5))
 			
-			if batchsize > 10:
-				request.session['failed'] = 'Batch size cannot be greater than 10'
+			if batchsize > 20:
+				request.session['failed'] = 'Batch size cannot be greater than 20'
 				return redirect('/')
 			
 			if 'batchstart' in request.POST:
@@ -131,6 +132,7 @@ class ClassifyPageView(TemplateView):
 		targets = utils.getTargets(current_bins)
 		
 		if not targets:
+			request.session['bins'] = bins
 			request.session['failed'] = 'One or more of the chosen bins was invalid for the chosen timeseries'
 			return redirect('/')
 

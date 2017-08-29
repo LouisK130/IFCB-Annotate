@@ -13,7 +13,11 @@
 			</div>
 			<div>
 				<b>Chosen bins:</b><br>
-				<select id='MCBins' size='10'></select>
+				<select id='MCBins' size='10'>
+					{% for bin in bins %}
+						<option value='{{ bin }}'>{{ bin }}</option>
+					{% endfor %}
+				</select>
 				<input type='button' id='MCBinsRemoveBtn' value='Remove'>
 			</div>
 			<div>

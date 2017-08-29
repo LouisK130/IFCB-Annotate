@@ -62,6 +62,7 @@ def parseBinToTargets(bin):
 		print('started downloading: ' + timeseries + bin + '_roisizes')
 		with closing(requests.get(timeseries + bin + '_roisizes', stream=True)) as r:
 			if r.status_code == 404:
+				print('[ERROR] Invalid bin: ' + bin)
 				return False
 			data = json.loads(r.text)
 			n = 0

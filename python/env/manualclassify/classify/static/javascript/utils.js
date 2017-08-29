@@ -34,7 +34,7 @@ function addRecentBinToCookies(new_bin) {
 		if (bins[n] != new_bin)
 			new_bins.push(bins[n]);
 	}
-	while (new_bins.length >= 10)
+	while (new_bins.length >= 50)
 		new_bins.splice(bins.length-1, 1);
 	new_bins.splice(0, 0, new_bin);
 	setCookie('MCRecentBins', new_bins.join(), 3650);
