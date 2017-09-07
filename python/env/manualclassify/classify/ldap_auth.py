@@ -1,9 +1,15 @@
+import re
+
 from ldap3 import Server, Connection
 
 from django.contrib.auth.models import User
 from django.conf import settings as S
 
 def ldap_login(username, password):
+    # validate username
+    if not re.match(r'[a-z]+',username.lower()):
+        return False
+
     # WHOI LDAP AD proxy server
     server = Server(S.LDAP_HOST, port=S.LDAP_PORT, use_ssl=S.LDAP_SSL)
     # connect as lookup user
