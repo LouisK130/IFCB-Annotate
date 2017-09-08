@@ -46,6 +46,10 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# emacs temp files
+*~
+\#*\#
+
 # BEGIN CUSTOM SETTINGS
 /python/env/*
 !/python/env/pip requirements.txt
