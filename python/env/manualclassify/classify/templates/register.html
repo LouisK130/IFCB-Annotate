@@ -1,7 +1,7 @@
 <!-- howdy/templates/index.html -->
-<!DOCTYPE html>
-<html>
-	<body>
+{% extends 'master.html' %}
+
+{% block 'body' %}
 		<a href = '/login/'>Back to login</a>
 		<div id='MCRegisterDiv'>
 			<center>
@@ -30,40 +30,6 @@
 					</p>
 				</center>
 		</div>
-	</body>
-</html>
-
-<style>
-body {
-	background-color: #79b7e0;
-}
-form {
-	display: table;
-	line-height: 30px;
-}
-p {
-	display: table-row;
-}
-label {
-	display: table-cell;
-	text-align: right;
-}
-input {
-	display: table-cell;
-}
-#MCRegisterSubmit {
-	margin-top: 10px;
-}
-#MCRegisterDiv {
-	position: absolute;
-	top: 40%;
-	left: 50%;
-	transform: translateY(-50%) translateX(-50%);
-}
-#MCRegisterHeader {
-	margin-bottom: 5px;
-}
-</style>
 
 <script>
 	if ('{{ user_taken }}' == 'True') {
@@ -113,3 +79,34 @@ input {
 		document.getElementById("MCRegisterForm").submit();
 	}
 </script>
+{% endblock %}
+
+{% block 'style' %}
+form {
+	display: table;
+	line-height: 30px;
+}
+p {
+	display: table-row;
+}
+label {
+	display: table-cell;
+	text-align: right;
+}
+input {
+	display: table-cell;
+}
+#MCRegisterSubmit {
+	margin-top: 10px;
+}
+#MCRegisterDiv {
+	position: absolute;
+	top: 40%;
+	left: 50%;
+	transform: translateY(-50%) translateX(-50%);
+}
+#MCRegisterHeader {
+	margin-bottom: 5px;
+}
+{% endblock %}
+		
