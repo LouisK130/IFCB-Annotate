@@ -6,18 +6,22 @@
 				<h1 id='MCLoginHeader'>Manual Classify Login</h1>
 				<form id="MCLoginForm" action="/login/" method="post">
 					{% csrf_token %}
-					<p>
-						<label for="MCLoginUsername">Username:</label>
+					<div style="text-align: right">
+					  <span>
+						<label for="MCLoginUsername">Username&nbsp;</label>
 						<input id="MCLoginUsername" type="text" name="username">
-					</p>
-					<p>
-						<label for="MCLoginPassword">Password:</label>
-						<input id="MCLoginPassword" type="password" name="password">
-					</p>
+					  </span>
+					</div>
+					<div style="text-align: right">
+					  <span>
+						<label for="MCLoginPassword">Password&nbsp;</label>
+						<input id="MCLoginPassowrd" type="password" name="password">
+					  </span>
+					</div>
+					<div>
+					  <input id="MCLoginSubmit" type="submit" name="Login" value="Login"></input>
+					</div>
 				</form>
-				<p>
-					<button id="MCLoginSubmit" onclick="submitForm()">Login</button>
-				</p>
 				<p>
 					<a href='/register/'>Need an account?</a>
 				</p>
@@ -64,17 +68,24 @@ input {
 	display: table-cell;
 }
 #MCLoginSubmit {
-	margin-top: 10px;
-	margin-bottom: 10px;
+margin-top: 10px;
+margin-bottom: 10px;
+width: 100px;
+margin-left: auto;
+margin-right: auto;
 }
 #MCLoginDiv {
-	position: absolute;
-	top: 40%;
-	left: 50%;
-	transform: translateY(-50%) translateX(-50%);
+display: inline-block;
+position: fixed;
+top: 0;
+bottom: 0;
+left: 0;
+right: 0;
+width: 500px;
+height: 200px;
+margin: auto;
 }
 #MCLoginHeader {
 	margin-bottom: 5px;
 }
 {% endblock %}
-
