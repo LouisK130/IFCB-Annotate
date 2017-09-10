@@ -152,9 +152,11 @@ function layoutMosaic() {
 		var target = targets.item(n);
 		var pid = target.id.replace('MCTarget_', '');
 		var img = document.getElementById('MCImg_' + pid);
-	        if (img.naturalWidth > img.width || img.width > width) {
-		    img.width = (Math.min(img.naturalWidth, width)) + 'px';
-		    img.height = (img.width * (img.naturalHeight / img.naturalWidth)) + 'px';
+		if (img.naturalWidth > img.width || img.width > width) {
+			img.width = (Math.min(img.naturalWidth, width));
+			img.height = (img.width * (img.naturalHeight / img.naturalWidth));
+			target.style.width = img.width + 'px';
+			target.style.height = img.height + 'px';
 		}
 	}
 	
