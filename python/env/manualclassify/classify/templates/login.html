@@ -1,8 +1,7 @@
 <!-- howdy/templates/index.html -->
-<!DOCTYPE html>
-<html>
-	<body>
-		<div id='MCLoginDiv'>
+{% extends 'master.html' %}
+{% block 'body' %}
+<div id='MCLoginDiv'>
 			<center>
 				<h1 id='MCLoginHeader'>Manual Classify Login</h1>
 				<form id="MCLoginForm" action="/login/" method="post">
@@ -28,13 +27,32 @@
 				</p>
 			</center>
 		</div>
-	</body>
-</html>
 
-<style>
-body {
-	background-color: #79b7e0;
-}
+<script>
+	var old = document.getElementById('MCLoginFailure');
+	if (old)
+		old.outerHTML = '';
+	if ('{{ failed }}' == 'True') {
+		showError('Invalid username or password');
+	}
+	if ('{{ needs_approval }}' == 'True') {
+		showError('This account needs to be enabled by an administrator, please email epeacock@whoi.edu');
+	}
+	function showError(text) {
+		var failure = document.createElement('div')
+		failure.id = 'MCLoginFailure'
+		var center = document.getElementById('MCLoginDiv').children[0];
+		failure.innerHTML = text;
+		failure.style.color = 'red';
+		center.insertBefore(failure, center.children[1]);
+	}
+	function submitForm() {
+		document.getElementById("MCLoginForm").submit();
+	}
+</script>
+{% endblock %}
+
+{% block 'style' %}
 form {
 	display: table;
 	line-height: 30px;
@@ -70,27 +88,4 @@ margin: auto;
 #MCLoginHeader {
 	margin-bottom: 5px;
 }
-</style>
-
-<script>
-	var old = document.getElementById('MCLoginFailure');
-	if (old)
-		old.outerHTML = '';
-	if ('{{ failed }}' == 'True') {
-		showError('Invalid username or password');
-	}
-	if ('{{ needs_approval }}' == 'True') {
-		showError('This account needs to be enabled by an administrator, please email epeacock@whoi.edu');
-	}
-	function showError(text) {
-		var failure = document.createElement('div')
-		failure.id = 'MCLoginFailure'
-		var center = document.getElementById('MCLoginDiv').children[0];
-		failure.innerHTML = text;
-		failure.style.color = 'red';
-		center.insertBefore(failure, center.children[1]);
-	}
-	function submitForm() {
-		document.getElementById("MCLoginForm").submit();
-	}
-</script>
+{% endblock %}

@@ -1,6 +1,6 @@
+{% extends 'master.html' %}
 {% load staticfiles %}
-<html>
-	<body>
+{% block 'body' %}
 		<div id="MCIndexDiv">
 			<b>Enter bin manually: </b>
 			<br>
@@ -68,29 +68,24 @@
 			<br>
 			<input type='button' id='MCBinsSubmitAndImport' value='Begin Classifying and Import Auto Data'>
 		</div>
-		<p id='MCLinks'>
+		<div id='MCLinks'>
 			You are signed in as: <b>{{ username }}</b>
 			<br>
 			<a href='/logout/'>Logout</a>
 			<br>
 			<a href='/admin/'>Admin</a>
-		</p>
-    </body>
-</html>
+		</div>
 
 <script>
 	var csrf_token_form = "{% csrf_token %}"
 	var csrf_token = '{{ csrf_token }}'
 	var failed = '{{ failed }}'
 </script>
-
 <script type='text/javascript' src="{% static 'javascript/utils.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/index.js' %}"></script>
+{% endblock %}
 
-<style>
-body {
-	background-color: #79b7e0;
-}
+{% block 'style' %}
 #MCRecentBinsSelect {
 	margin-left: 5px;
 	margin-top: 5px;
@@ -141,4 +136,4 @@ label.MCBatchOption {
 	width: 70px;
 	display: table-cell;
 }
-</style>
+{% endblock %}
