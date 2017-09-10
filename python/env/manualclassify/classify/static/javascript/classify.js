@@ -144,8 +144,8 @@ function layoutMosaic() {
 	var targetContainer = document.getElementById('MCTargetContainer');
 	var targetContainerX = targetContainer.getBoundingClientRect().left;
 	width = width - targetContainerX - 20; // ensures there's no extra horizontal scrollbar
-	targetContainer.style.width = width;
-	targetContainer.style.height = height - 10;
+	targetContainer.style.width = width + "px";
+	targetContainer.style.height = (height - 10) + "px";
 	var targets = document.getElementsByClassName('MCTarget');
 	width -= 5;
 	for (var n = 0; n < targets.length; n++) {
@@ -153,8 +153,10 @@ function layoutMosaic() {
 		var pid = target.id.replace('MCTarget_', '');
 		var img = document.getElementById('MCImg_' + pid);
 		if (img.naturalWidth > img.width || img.width > width) {
-			img.width = Math.min(img.naturalWidth, width);
-			img.height = img.width * (img.naturalHeight / img.naturalWidth);
+			img.width = (Math.min(img.naturalWidth, width));
+			img.height = (img.width * (img.naturalHeight / img.naturalWidth));
+			target.style.width = img.width + 'px';
+			target.style.height = img.height + 'px';
 		}
 	}
 	
@@ -191,7 +193,9 @@ function createTile(pid, width, height) {
 	img.height = height;
 	img.width = width;
 	img.draggable = false;
-	
+	tile.style.width = width+'px';
+	tile.style.height = height+'px';
+
 	img.onmousedown = function(e) {
 		if (e.preventDefault)
 			e.preventDefault();
