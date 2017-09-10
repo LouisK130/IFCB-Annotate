@@ -191,7 +191,9 @@ function createTile(pid, width, height) {
 	img.height = height;
 	img.width = width;
 	img.draggable = false;
-	
+	tile.style.width = width+'px';
+	tile.style.height = height+'px';
+
 	img.onmousedown = function(e) {
 		if (e.preventDefault)
 			e.preventDefault();
