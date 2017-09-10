@@ -7,6 +7,9 @@ from classify import database
 from django.contrib.auth.models import User
 import json
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 ZIP_CACHE_PATH = 'classify/cache/zips'
 TARGETS_CACHE_PATH = 'classify/cache/targets'
@@ -59,10 +62,10 @@ def parseBinToTargets(bin):
         f = open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w')
         f.close()
         
-        print('started downloading: ' + timeseries + bin + '_roisizes')
+        logging.info('started downloading: ' + timeseries + bin + '_roisizes')
         with closing(requests.get(timeseries + bin + '_roisizes', stream=True)) as r:
             if r.status_code == 404:
-                print('[ERROR] Invalid bin: ' + bin)
+                logging.error('Invalid bin: ' + bin)
                 return False
             data = json.loads(r.text)
             n = 0
@@ -77,7 +80,7 @@ def parseBinToTargets(bin):
         with open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w') as f:
             json.dump(targets, f)
         os.rename(TARGETS_CACHE_PATH + '/' + bin + '_temp', TARGETS_CACHE_PATH + '/' + bin)
-        print('finished downloading: ' + timeseries + bin + '_roisizes')
+        logging.info('finished downloading: ' + timeseries + bin + '_roisizes')
         return targets
     
 # dictionary with key = values:
@@ -85,7 +88,7 @@ def parseBinToTargets(bin):
 def getTargets(bins):
     targets = {}
     for bin in bins:
-        print('[SERVING] ' + bin + '...')
+        logging.info('[SERVING] ' + bin + '...')
         if areTargetsCached(bin):
             with open(TARGETS_CACHE_PATH + '/' + bin) as f:
                 new_targets = json.load(f)
@@ -134,7 +137,7 @@ def downloadZipForBin(bin):
         time.sleep(1)
         
     if not isZipDownloaded(bin):
-        print('started downloading: ' + timeseries + bin + '.zip')
+        logging.info('started downloading: ' + timeseries + bin + '.zip')
         # create the file first, just so we know it's being downloaded
         f = open(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', 'w')
         f.close()
@@ -142,7 +145,7 @@ def downloadZipForBin(bin):
         with open(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', 'wb') as f:
             f.write(r.content)
         os.rename(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', ZIP_CACHE_PATH + '/' + bin + '.zip')
-        print('finished downloading: ' + timeseries + bin + '.zip')
+        logging.info('finished downloading: ' + timeseries + bin + '.zip')
     
 def areAutoResultsCached(bin):
     return os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin)
@@ -180,10 +183,10 @@ def getAutoResultsForBin(bin):
     else:
         f = open(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', 'w')
         f.close()
-        print('started downloading: ' + path)
+        logging.info('started downloading: ' + path)
         with closing(requests.get(path, stream=True)) as r:
             if r.status_code == 404:
-                print('no auto results available at: ' + path)
+                logging.info('no auto results available at: ' + path)
                 os.rename(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', AUTO_RESULTS_CACHE_PATH + '/' + bin)
                 return None
             reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
@@ -209,7 +212,7 @@ def getAutoResultsForBin(bin):
         with open(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', 'w') as f:
             json.dump(classifications, f)
         os.rename(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', AUTO_RESULTS_CACHE_PATH + '/' + bin)
-        print('finished downloading: ' + path)
+        logging.info('finished downloading: ' + path)
     return classifications
 
 # adds annotations based on the auto classifier results to the data being prepared for passing to the client
@@ -239,7 +242,7 @@ def addClassifierData(bins, classes, tags, data):
                     classification_id = c['id']
                     break
             if not classification_id:
-                print('[WARNING] Auto classifier label "' + classification + '" did not have a matching classification label in the database!')
+                logging.warn('Auto classifier label "' + classification + '" did not have a matching classification label in the database!')
                 for c in classes:
                     if c['name'] == 'unclassified':
                         classification_id = c['id']
@@ -274,7 +277,7 @@ def addClassifierData(bins, classes, tags, data):
                         }
                         data[pid]['tags'].append(dict)
                     else:
-                        print('[WARNING] Classifier attempted to annotate Thalassiosira_dirty but no external_detritus tag was found!')
+                        logging.warn('Classifier attempted to annotate Thalassiosira_dirty but no external_detritus tag was found!')
     return data
 
 # gets all bin names for a timeseries in a date range

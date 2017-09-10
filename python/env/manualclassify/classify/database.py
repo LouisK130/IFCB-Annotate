@@ -5,6 +5,9 @@ import uuid
 from classify import utils, config
 from classify.models import TagLabel, ClassLabel, Timeseries, Classification, Tag
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 # NOTE: Throughout this application, PIDs and bins are stored and transferred WITHOUT the timeseries url prepended
 
@@ -363,7 +366,7 @@ def loadAllTimeseries():
         for ts in Timeseries.objects.all():
             timeseries_ids[ts.url] = str(ts.pk)
     except:
-        print('Failed to load timeseries IDs, does the table exist?')
+        logger.error('Failed to load timeseries IDs, does the table exist?')
 
 def getClassificationList():
     data = []

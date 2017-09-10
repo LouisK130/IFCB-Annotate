@@ -10,6 +10,9 @@ from django.conf import settings
 import re
 import time
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 class HomePageView(TemplateView):
@@ -138,10 +141,10 @@ class ClassifyPageView(TemplateView):
 
         classifications = database.getAllDataForBins(current_bins, targets)
         
-        print(str(len(targets)) + ' total targets found')
+        logger.info('{} total targets found'.format(len(targets)))
         
         if shouldImport:
-            print('including auto results')
+            logger.info('including auto results')
             classifications = utils.addClassifierData(current_bins, classList, tagList, classifications)
         
         JS_values = {
@@ -198,7 +201,7 @@ class CacheBinPageView(TemplateView):
             bins = re.split(',', bins)
             if len(bins) > 0 and bins[0] != '':
                 for bin in bins:
-                    print('[CACHING] ' + bin + '...')
+                    logger.info('CACHING ' + bin + '...')
                     if not utils.areTargetsCached(bin):
                         utils.parseBinToTargets(bin)
                     if not utils.areAutoResultsCached(bin):
