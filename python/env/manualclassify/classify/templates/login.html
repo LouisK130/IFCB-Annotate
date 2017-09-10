@@ -7,18 +7,14 @@
 				<form id="MCLoginForm" action="/login/" method="post">
 					{% csrf_token %}
 					<div style="text-align: right">
-					  <span>
-						<label for="MCLoginUsername">Username&nbsp;</label>
-						<input id="MCLoginUsername" type="text" name="username">
-					  </span>
+						Username <input id="MCLoginUsername" type="text" name="username">
 					</div>
 					<div style="text-align: right">
 					  <span>
-						<label for="MCLoginPassword">Password&nbsp;</label>
-						<input id="MCLoginPassowrd" type="password" name="password">
+						Password <input id="MCLoginPassowrd" type="password" name="password">
 					  </span>
 					</div>
-					<div>
+					<div style="text-align: center">
 					  <input id="MCLoginSubmit" type="submit" name="Login" value="Login"></input>
 					</div>
 				</form>
