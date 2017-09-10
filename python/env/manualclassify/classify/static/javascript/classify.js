@@ -144,17 +144,17 @@ function layoutMosaic() {
 	var targetContainer = document.getElementById('MCTargetContainer');
 	var targetContainerX = targetContainer.getBoundingClientRect().left;
 	width = width - targetContainerX - 20; // ensures there's no extra horizontal scrollbar
-	targetContainer.style.width = width;
-	targetContainer.style.height = height - 10;
+	targetContainer.style.width = width + "px";
+	targetContainer.style.height = (height - 10) + "px";
 	var targets = document.getElementsByClassName('MCTarget');
 	width -= 5;
 	for (var n = 0; n < targets.length; n++) {
 		var target = targets.item(n);
 		var pid = target.id.replace('MCTarget_', '');
 		var img = document.getElementById('MCImg_' + pid);
-		if (img.naturalWidth > img.width || img.width > width) {
-			img.width = Math.min(img.naturalWidth, width);
-			img.height = img.width * (img.naturalHeight / img.naturalWidth);
+	        if (img.naturalWidth > img.width || img.width > width) {
+		    img.width = (Math.min(img.naturalWidth, width)) + 'px';
+		    img.height = (img.width * (img.naturalHeight / img.naturalWidth)) + 'px';
 		}
 	}
 	
