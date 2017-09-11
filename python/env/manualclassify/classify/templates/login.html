@@ -7,12 +7,10 @@
 				<form id="MCLoginForm" action="/login/" method="post">
 					{% csrf_token %}
 					<div style="text-align: right">
-						Username <input id="MCLoginUsername" type="text" name="username">
+						Username&nbsp;<input id="MCLoginUsername" type="text" name="username">
 					</div>
 					<div style="text-align: right">
-					  <span>
-						Password <input id="MCLoginPassowrd" type="password" name="password">
-					  </span>
+						Password&nbsp;<input id="MCLoginPassword" type="password" name="password">
 					</div>
 					<div style="text-align: center">
 					  <input id="MCLoginSubmit" type="submit" name="Login" value="Login"></input>
@@ -51,7 +49,8 @@
 {% block 'style' %}
 form {
 	display: table;
-	line-height: 30px;
+line-height: 30px;
+width: 275px;
 }
 p {
 	display: table-row;
