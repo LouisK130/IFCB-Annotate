@@ -2,111 +2,111 @@
 {% extends 'master.html' %}
 
 {% block 'body' %}
-		<a href = '/login/'>Back to login</a>
-		<div id='MCRegisterDiv'>
-			<center>
-				<h1 id='MCRegisterHeader'>Manual Classify Registration</h1>
-					<form id="MCRegisterForm" action="/register/" method="post" onSubmit="checkInput(event);">
-						{% csrf_token %}
-						<p>
-							<label for="MCRegisterUsername">Username:</label>
-							<input id="MCRegisterUsername" type="text" name="username">
-						</p>
-						<p>
-							<label for="MCRegisterEmail">Email:</label>
-							<input id="MCRegisterEmail" type="email" name="email">
-						</p>
-						<p>
-							<label for="MCRegisterPass">Password:</label>
-							<input id="MCRegisterPass" type="password" name="password">
-						</p>
-						<p>
-							<label for="<CRegisterPass2">Confirm password:</label>
-							<input id="MCRegisterPass2" type="password" name="confirmpassword">
-						</p>
-					</form>
-					<p>
-						<button id="MCRegisterSubmit" onclick="submitForm()">Register</button>
-					</p>
-				</center>
-		</div>
+<a href = '/login/'>Back to login</a>
+<div id='MCRegisterDiv'>
+  <center>
+    <h1 id='MCRegisterHeader'>Manual Classify Registration</h1>
+    <form id="MCRegisterForm" action="/register/" method="post" onSubmit="checkInput(event);">
+      {% csrf_token %}
+      <p>
+	<label for="MCRegisterUsername">Username:</label>
+	<input id="MCRegisterUsername" type="text" name="username">
+      </p>
+      <p>
+	<label for="MCRegisterEmail">Email:</label>
+	<input id="MCRegisterEmail" type="email" name="email">
+      </p>
+      <p>
+	<label for="MCRegisterPass">Password:</label>
+	<input id="MCRegisterPass" type="password" name="password">
+      </p>
+      <p>
+	<label for="MCRegisterPass2">Confirm password:</label>
+	<input id="MCRegisterPass2" type="password" name="confirmpassword">
+      </p>
+    </form>
+    <p>
+      <button id="MCRegisterSubmit" onclick="submitForm()">Register</button>
+    </p>
+  </center>
+</div>
 
 <script>
-	if ('{{ user_taken }}' == 'True') {
-		showError('Username already in use');
-	}
-	if ('{{ email_taken }}' == 'True') {
-		showError('Email already in use');
-	}
-	function checkInput(e) {
-		var old = document.getElementById('MCRegisterFailure');
-		if (old)
-			old.outerHTML = '';
-		var p1 = document.getElementById('MCRegisterPass').value;
-		var p2 = document.getElementById('MCRegisterPass2').value;
-		var email = document.getElementById('MCRegisterEmail').value;
-		var user = document.getElementById('MCRegisterUsername').value;
-		if (user.length == 0) {
-			showError('You must enter a username');
-			e.preventDefault();
-			return false;
-		}
-		if (email.length == 0 || email.indexOf('@') < 0) {
-			showError('You must enter a valid email');
-			e.preventDefault();
-			return false;
-		}
-		if (p1.length < 8) {
-			showError('Password must be at least 8 characters');
-			e.preventDefault();
-			return false;
-		}
-		if (p1 != p2) {
-			showError('Passwords do not match');
-			e.preventDefault();
-			return false;
-		}
-	}
-	function showError(text) {
-		var failure = document.createElement('div')
-		failure.id = 'MCRegisterFailure';
-		var center = document.getElementById('MCRegisterDiv').children[0];
-		failure.innerHTML = text;
-		failure.style.color = 'red';
-		center.insertBefore(failure, center.children[1]);
-	}
-	function submitForm() {
-		document.getElementById("MCRegisterForm").submit();
-	}
+    if ('{{ user_taken }}' == 'True') {
+        showError('Username already in use');
+    }
+    if ('{{ email_taken }}' == 'True') {
+        showError('Email already in use');
+    }
+    function checkInput(e) {
+        var old = document.getElementById('MCRegisterFailure');
+        if (old)
+            old.outerHTML = '';
+        var p1 = document.getElementById('MCRegisterPass').value;
+        var p2 = document.getElementById('MCRegisterPass2').value;
+        var email = document.getElementById('MCRegisterEmail').value;
+        var user = document.getElementById('MCRegisterUsername').value;
+        if (user.length == 0) {
+            showError('You must enter a username');
+            e.preventDefault();
+            return false;
+        }
+        if (email.length == 0 || email.indexOf('@') < 0) {
+            showError('You must enter a valid email');
+            e.preventDefault();
+            return false;
+        }
+        if (p1.length < 8) {
+            showError('Password must be at least 8 characters');
+            e.preventDefault();
+            return false;
+        }
+        if (p1 != p2) {
+            showError('Passwords do not match');
+            e.preventDefault();
+            return false;
+        }
+    }
+    function showError(text) {
+        var failure = document.createElement('div')
+        failure.id = 'MCRegisterFailure';
+        var center = document.getElementById('MCRegisterDiv').children[0];
+        failure.innerHTML = text;
+        failure.style.color = 'red';
+        center.insertBefore(failure, center.children[1]);
+    }
+    function submitForm() {
+        document.getElementById("MCRegisterForm").submit();
+    }
 </script>
 {% endblock %}
 
 {% block 'style' %}
 form {
-	display: table;
-	line-height: 30px;
+    display: table;
+    line-height: 30px;
 }
 p {
-	display: table-row;
+    display: table-row;
 }
 label {
-	display: table-cell;
-	text-align: right;
+    display: table-cell;
+    text-align: right;
 }
 input {
-	display: table-cell;
+    display: table-cell;
 }
 #MCRegisterSubmit {
-	margin-top: 10px;
+    margin-top: 10px;
 }
 #MCRegisterDiv {
-	position: absolute;
-	top: 40%;
-	left: 50%;
-	transform: translateY(-50%) translateX(-50%);
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translateY(-50%) translateX(-50%);
 }
 #MCRegisterHeader {
-	margin-bottom: 5px;
+    margin-bottom: 5px;
 }
 {% endblock %}
-		
+

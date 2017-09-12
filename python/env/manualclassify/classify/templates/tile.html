@@ -7,26 +7,26 @@
 </div>
 
 <script>
-	var target = document.getElementById('MCTarget_{{ pid }}');
-	target.style.visibility = 'hidden';
-	var img = document.getElementById('MCImg_{{ pid }}');
-	img.onload = function() {
-		target.style.width = img.naturalWidth + 'px';
-		target.style.visibility = 'visible';
-	}
+    var target = document.getElementById('MCTarget_{{ pid }}');
+    target.style.visibility = 'hidden';
+    var img = document.getElementById('MCImg_{{ pid }}');
+    img.onload = function() {
+        target.style.width = img.naturalWidth + 'px';
+        target.style.visibility = 'visible';
+    }
 </script>
 {% endblock %}
 
 {% block 'style' %}
 div.MCTarget {
-	outline-style: solid;
-	outline-color: black;
-	outline-width: 1px;
-	background-color: #ffffff
+    outline-style: solid;
+    outline-color: black;
+    outline-width: 1px;
+    background-color: #ffffff
 }
 a.MCSeeFullSize {
-	position: absolute;
-	right: 4px;
-	top: 2px;
+    position: absolute;
+    right: 4px;
+    top: 2px;
 }
 {% endblock %}
