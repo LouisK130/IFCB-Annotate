@@ -2,21 +2,21 @@
 {% load staticfiles %}
 
 {% block 'body' %}
-	{% csrf_token %}
-	<div id='MCToolboxContainer'>
-	  <center><a href='/'>Manual Classify</a>
-	  </center>
-		{% include 'filter-toolbox.html' %}
-		{% include 'application-toolbox.html' %}
-		<button type='button' id='MCSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
-		<center>
-			<p id='MCCurrentBinsLabel'>Currently viewing:</p>
-			<div id='MCCurrentBins'>
-				<p style='margin-top:0px;margin-bottom:5px;padding:0;'><b>{{ timeseries }}</b></p>
-			</div>
-		</center>
-	</div>
-	<div id='MCTargetContainer'></div>
+{% csrf_token %}
+<div id='MCToolboxContainer'>
+  <center><a href='/'>Manual Classify</a>
+  </center>
+  {% include 'filter-toolbox.html' %}
+  {% include 'application-toolbox.html' %}
+  <button type='button' id='MCSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
+  <center>
+    <p id='MCCurrentBinsLabel'>Currently viewing:</p>
+    <div id='MCCurrentBins'>
+      <p style='margin-top:0px;margin-bottom:5px;padding:0;'><b>{{ timeseries }}</b></p>
+    </div>
+  </center>
+</div>
+<div id='MCTargetContainer'></div>
 {% endblock %}
 
 {% block 'style' %}
@@ -29,84 +29,84 @@ body {
     user-select: none;
 }
 #MCToolboxContainer {
-	position: fixed;
+    position: fixed;
 }
 #MCTargetContainer {
-	position: absolute;
-	top: 7px;
-	left: 216px;
+    position: absolute;
+    top: 7px;
+    left: 216px;
 }
 div.MCTarget {
-	outline-style: solid;
-	outline-color: black;
-	outline-width: 1px;
-	background-color: #ffffff;
-	margin-right: 4px;
-	margin-bottom: 4px;
-	display: inline-block;
-	position: relative;
+    outline-style: solid;
+    outline-color: black;
+    outline-width: 1px;
+    background-color: #ffffff;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    display: inline-block;
+    position: relative;
 }
 div.MCNewClassification {
-	position: absolute;
-	top: 2px;
-	left: 2px;
-	color: red;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    color: red;
 }
 div.MCNewTag {
-	position: absolute;
-	top: 2px;
-	right: 2px;
-	color: blue;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    color: blue;
 }
 div.MCEndSetMarker {
-	height: 20px;
-	margin-left: 2%;
-	margin-right: 2%;
-	margin-bottom: 4px;
+    height: 20px;
+    margin-left: 2%;
+    margin-right: 2%;
+    margin-bottom: 4px;
 }
 div.MCEndSetMarkerInner {
-	width: 100%;
-	height: 10%;
-	background-color: red;
-	position: relative;
-	top: 45%;
+    width: 100%;
+    height: 10%;
+    background-color: red;
+    position: relative;
+    top: 45%;
 }
 #MCSubmitUpdates {
-	margin:0 auto;
-	margin-top: 10px;
-	display: block;
-	width: 150px;
-	text-align: center;
+    margin:0 auto;
+    margin-top: 10px;
+    display: block;
+    width: 150px;
+    text-align: center;
 }
 #MCRightClickMenu {
-	position: fixed;
-	background-color: white;
-	outline: solid;
-	outline-width: 2px;
+    position: fixed;
+    background-color: white;
+    outline: solid;
+    outline-width: 2px;
 }
 div.MCDetailEntry {
-	width: 100%;
-	border-top: 1px solid;
-	white-space: nowrap;
-	display: inline-block;
+    width: 100%;
+    border-top: 1px solid;
+    white-space: nowrap;
+    display: inline-block;
 }
 div.MCDetailEntryPiece {
-	display: inline-block;
-	border-right: 1px solid;
-	text-align: center;
-	padding: 2px;
-	vertical-align: middle;
+    display: inline-block;
+    border-right: 1px solid;
+    text-align: center;
+    padding: 2px;
+    vertical-align: middle;
 }
 #MCCurrentBinsLabel {
-	margin-top: 10px;
-	margin-bottom: 3px;
-	width: 100%;
-	border-top: black solid 1px;
-	padding-top: 5px;
-	font-weight: bold;
+    margin-top: 10px;
+    margin-bottom: 3px;
+    width: 100%;
+    border-top: black solid 1px;
+    padding-top: 5px;
+    font-weight: bold;
 }
 #MCCurrentBins {
-	font-size: small;
+    font-size: small;
 }
 {% endblock %}
 
@@ -116,25 +116,25 @@ div.MCDetailEntryPiece {
 <!-- Get data first, then load js for this page -->
 <!-- Do it all after above positioning / styling -->
 <script>
-	var timeseries = '{{ timeseries }}'
-	var classifications = {{ classifications|safe }}
-	var csrf_token_form = "{% csrf_token %}"
-	var csrf_token = '{{ csrf_token }}'
-	var bins = {{ bins|safe }}
-	var user_id = {{ user_id|safe }}
-	var username = '{{ username }}'
-	var batch_mode = '{{ batchmode }}' == 'True'
-	if (batch_mode) {
-		var batchsize = {{ batchsize|safe }}
-		var shouldImport = '{{ shouldImport }}' == 'True'
-		var batchclass = '{{ batchclass }}'
-		var batchtag = '{{ batchtag }}'
-		if (parseInt(batchclass))
-			batchclass = parseInt(batchclass);
-		if (parseInt(batchtag))
-			batchtag = parseInt(batchtag);
-	}
-	zip.workerScriptsPath = "{% static 'javascript/lib/' %}";
+    var timeseries = '{{ timeseries }}'
+    var classifications = {{ classifications|safe }}
+    var csrf_token_form = "{% csrf_token %}"
+    var csrf_token = '{{ csrf_token }}'
+    var bins = {{ bins|safe }}
+    var user_id = {{ user_id|safe }}
+    var username = '{{ username }}'
+    var batch_mode = '{{ batchmode }}' == 'True'
+    if (batch_mode) {
+        var batchsize = {{ batchsize|safe }}
+        var shouldImport = '{{ shouldImport }}' == 'True'
+        var batchclass = '{{ batchclass }}'
+        var batchtag = '{{ batchtag }}'
+        if (parseInt(batchclass))
+            batchclass = parseInt(batchclass);
+        if (parseInt(batchtag))
+            batchtag = parseInt(batchtag);
+    }
+    zip.workerScriptsPath = "{% static 'javascript/lib/' %}";
 </script>
 <script type='text/javascript' src="{% static 'javascript/utils.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/area-selection.js' %}"></script>
