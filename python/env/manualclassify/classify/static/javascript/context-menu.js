@@ -4,8 +4,8 @@ var mouse_y = 0;
 document.addEventListener('mousemove', updateMousePos, false);
 
 function updateMousePos(e) {
-	mouse_x = e.clientX;
-	mouse_y = e.clientY;
+    mouse_x = e.clientX;
+    mouse_y = e.clientY;
 }
 
 document.addEventListener('mouseup', deleteContextMenu, false);

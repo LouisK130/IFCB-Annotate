@@ -1,8 +1,11 @@
-<html>
-	{% load staticfiles %}
+{% extends 'master.html' %}
+{% load staticfiles %}
+
+{% block 'body' %}
 	{% csrf_token %}
 	<div id='MCToolboxContainer'>
-		<center><a href='/'>Manual Classify</a></center>
+	  <center><a href='/'>Manual Classify</a>
+	  </center>
 		{% include 'filter-toolbox.html' %}
 		{% include 'application-toolbox.html' %}
 		<button type='button' id='MCSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
@@ -14,12 +17,11 @@
 		</center>
 	</div>
 	<div id='MCTargetContainer'></div>
-</html>
+{% endblock %}
 
-<style>
+{% block 'style' %}
 body {
-	background-color: #79b7e0;
-	-webkit-touch-callout: none;
+    -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
     -moz-user-select: none;
@@ -106,13 +108,14 @@ div.MCDetailEntryPiece {
 #MCCurrentBins {
 	font-size: small;
 }
-</style>
+{% endblock %}
 
+
+{% block 'post' %}
 <script type='text/javascript' src="{% static 'javascript/lib/zip.js' %}"></script>
-
 <!-- Get data first, then load js for this page -->
 <!-- Do it all after above positioning / styling -->
-<script type='text/javascript'>
+<script>
 	var timeseries = '{{ timeseries }}'
 	var classifications = {{ classifications|safe }}
 	var csrf_token_form = "{% csrf_token %}"
@@ -135,7 +138,8 @@ div.MCDetailEntryPiece {
 </script>
 <script type='text/javascript' src="{% static 'javascript/utils.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/area-selection.js' %}"></script>
+<script type='text/javascript' src="{% static 'javascript/hotkeys.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/classify.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/context-menu.js' %}"></script>
-<script type='text/javascript' src="{% static 'javascript/hotkeys.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/right-click-menu.js' %}"></script>
+{% endblock %}

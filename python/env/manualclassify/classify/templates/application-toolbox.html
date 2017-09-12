@@ -1,6 +1,6 @@
 <!-- howdy/templates/index.html -->
-<!DOCTYPE html>
-<html>
+{% extends 'master.html' %}
+{% block 'body' %}
 	<div id='MCApplicationToolbox'>
 		<div class='MCSelectLabel'><small><b>Select a classification to apply:</b></small></div>
 		<select class='MCSelectBox' id='ClassificationApplicationSelection'>
@@ -21,9 +21,9 @@
 		<small><div id='MCNumberAppliedLabel'>0 targets classified</div></small>
 		<small><div id='MCNumberTaggedLabel'>0 targets tagged</div></small>
 	</div>
-</html>
+{% endblock %}
 
-<style>
+{% block 'style' %}
 #MCApplicationToolbox {
 	height: auto;
 	width: 200px;
@@ -45,4 +45,4 @@
 	display: inline-block;
 	margin-bottom: 3px;
 }
-</style>
+{% endblock %}

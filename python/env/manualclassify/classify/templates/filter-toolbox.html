@@ -1,6 +1,9 @@
 <!-- howdy/templates/index.html -->
-<!DOCTYPE html>
-<html>
+<!-- howdy/templates/index.html -->
+{% extends 'master.html' %}
+{% load staticfiles %}
+
+{% block 'body' %}
 	<div id='MCFilterToolbox'>
 		<div class='MCSelectLabel'><small><b>Select a classification to view:</b></small></div>
 		<select class='MCSelectBox' id='MCClassificationSelection'>
@@ -30,9 +33,9 @@
 		<input type="number" id='MaxWidthInput' value=400></input>-->
 		<small><div id='MCNumberLoadedLabel'>0 loaded of 0</div></small>
 	</div>
-</html>
+{% endblock %}
 
-<style>
+{% block 'style' %}
 #MCFilterToolbox {
 	height: auto;
 	width: 200px;
@@ -63,4 +66,4 @@ div.MCSelectLabel {
 	margin-top: 3px;
 	margin-bottom: 3px;
 }
-</style>
+{% endblock %}

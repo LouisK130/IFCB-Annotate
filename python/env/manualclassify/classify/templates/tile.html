@@ -1,9 +1,10 @@
-<html>
-	<div class='MCTarget' id='MCTarget_{{ pid }}'>
-		<small><a class='MCSeeFullSize' target='_black' href='{{ web_services_path }}{{ pid }}.png'>See full size</a></small>
-		<img id='MCImg_{{ pid }}' src='{{ web_services_path }}{{ pid }}.png'></img>
-	</div>
-</html>
+{% extends 'master.html' %}
+
+{% block 'body' %}
+<div class='MCTarget' id='MCTarget_{{ pid }}'>
+  <small><a class='MCSeeFullSize' target='_black' href='{{ web_services_path }}{{ pid }}.png'>See full size</a></small>
+  <img id='MCImg_{{ pid }}' src='{{ web_services_path }}{{ pid }}.png'></img>
+</div>
 
 <script>
 	var target = document.getElementById('MCTarget_{{ pid }}');
@@ -14,8 +15,9 @@
 		target.style.visibility = 'visible';
 	}
 </script>
+{% endblock %}
 
-<style>
+{% block 'style' %}
 div.MCTarget {
 	outline-style: solid;
 	outline-color: black;
@@ -27,4 +29,4 @@ a.MCSeeFullSize {
 	right: 4px;
 	top: 2px;
 }
-</style>
+{% endblock %}

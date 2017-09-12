@@ -1,0 +1,17 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/master.css' %}"/>
+    <style>
+      {% block 'style' %}
+      {% endblock %}
+    </style>
+  </head>
+  <body>
+    {% block 'body' %}
+    {% endblock %}
+  </body>
+</html>
+{% block 'post' %}
+{% endblock %}
