@@ -94,6 +94,7 @@ function moveToNextView() {
                 t.value = 'NONE';
             }
             else {
+		return;
             }
         }
         else {
