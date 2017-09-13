@@ -34,17 +34,17 @@ window.addEventListener('mousemove', function(event) {
         var box = document.getElementById('MCSelectAreaBox');
         if (event.clientX < mouseX1) {
             box.style.left = event.clientX + 'px';
-            box.style.width = mouseX1 - event.clientX;
+            box.style.width = (mouseX1 - event.clientX) + 'px';
         }
         else {
-            box.style.width = event.clientX - mouseX1;
+            box.style.width = (event.clientX - mouseX1) + 'px';
         }
         if (event.clientY < mouseY1) {
             box.style.top = event.clientY + 'px';
-            box.style.height = mouseY1 - event.clientY;
+            box.style.height = (mouseY1 - event.clientY) + 'px';
         }
         else {
-            box.style.height = event.clientY - mouseY1;
+            box.style.height = (event.clientY - mouseY1) + 'px';
         }
     }
 });
