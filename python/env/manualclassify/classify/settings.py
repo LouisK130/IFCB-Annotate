@@ -7,25 +7,16 @@ https://docs.djangoproject.com/en/1.7/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.7/ref/settings/
 """
+from .local_settings import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'so*=!p8qwd%ygh3+*u@tu90ls7&rzy&k=lz$#bl7#m4d*&^q$2'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 TEMPLATE_DEBUG = True
-
-ALLOWED_HOSTS = ['localhost']
-
 
 # Application definition
 
@@ -53,47 +44,29 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'classify.urls'
 
 TEMPLATES = [
-        {
-            'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [],
-            'APP_DIRS': True,
-            'OPTIONS': {
-                'context_processors': [
-                                    'django.template.context_processors.debug',
-                                    'django.template.context_processors.request',
-                                    'django.contrib.auth.context_processors.auth',
-                                    'django.contrib.messages.context_processors.messages',
-                                ],
-                        },
-                },
-    ]
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
-WSGI_APPLICATION = 'manualclassify.wsgi.application'
+WSGI_APPLICATION = 'classify.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'django_db',
-        'USER': 'django',
-        'PASSWORD': '********',
-        'HOST': 'localhost',
-        'PORT': ''
-    }
+    'default': DEFAULT_DATABASE
 }
-
-# LDAP authentication
-LDAP_HOST = '*******'
-LDAP_PORT = 636
-LDAP_SSL = True
-
-LDAP_SEARCH_DN = '**************'
-LDAP_SEARCH_PW = '**************'
-LDAP_SEARCH_BASE = '**************'
-
-# AUTHENTICATION_BACKENDS = ( 'classify.ldap_auth.LdapBackend', )
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
@@ -107,7 +80,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
