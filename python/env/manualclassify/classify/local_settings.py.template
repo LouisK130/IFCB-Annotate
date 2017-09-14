@@ -1,0 +1,24 @@
+SECRET_KEY = 'a908oi34yuh5naerdf0v98y3uh4jtergzdf9o87hunjae4gr'
+
+ALLOWED_HOSTS = ['localhost']
+
+DEFAULT_DATABASE = {
+    'ENGINE': 'django.db.backends.postgresql',
+    'NAME': 'my_database',
+    'USER': 'my_database_user',
+    'PASSWORD': 'some_password',
+    'HOST': 'localhost',
+    'PORT': ''
+}
+
+# uncomment below for LDAP authentication
+
+# LDAP_HOST = 'my_ldap_host.foo.bar'
+# LDAP_PORT = 636
+# LDAP_SSL = True
+
+# LDAP_SEARCH_DN = 'a_distinguished_name'
+# LDAP_SEARCH_PW = 'some_password'
+# LDAP_SEARCH_BASE = 'a_distinguished_name'
+
+# AUTHENTICATION_BACKENDS = ( 'classify.ldap_auth.LdapBackend', )
