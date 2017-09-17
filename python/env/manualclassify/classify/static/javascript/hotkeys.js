@@ -18,10 +18,18 @@ function generalKeyDown(e) {
         }
         switch (e.keyCode) {
         case FORWARD_KEY:
-            moveToNextView();
+	    showLoading();
+	    setTimeout(function() {
+		moveToNextView();
+		hideLoading();
+	    }, 10);
             break;
         case PREVIOUS_KEY:
-            moveToPreviousView();
+	    showLoading();
+	    setTimeout(function() {
+		moveToPreviousView();
+		hideLoading();
+	    }, 10);
             break;
         case CONTEXT_MENU_KEY:
             createContextMenu()
@@ -83,7 +91,7 @@ function moveToNextView() {
         
         form.insertAdjacentHTML('beforeend', csrf_token_form);
         document.body.appendChild(form);
-        
+
         form.submit();
         return;
     }
@@ -102,7 +110,7 @@ function moveToNextView() {
         }
         reloadTargets();
         if (current_targets.length == 0)
-            moveToNextView();
+	    moveToNextView();
     }
 }
 
@@ -126,7 +134,7 @@ function moveToPreviousView() {
     }
     reloadTargets();
     if (current_targets.length == 0)
-        moveToPreviousView();
+	moveToPreviousView();
 }
 
 function getAllVisibleTargets() {
