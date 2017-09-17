@@ -71,12 +71,24 @@ document.body.onresize = function() {
     timeout = setTimeout(layoutMosaic, 200);
 }
 
+function showLoading() {
+    loading = document.getElementById('MCLoading');
+    loading.innerHTML = 'Loading ...';
+}
+
+function hideLoading() {
+    loading = document.getElementById('MCLoading');
+    loading.innerHTML = '';
+}
+
+showLoading();
 setTimeout(function() {
     for (var pid in classifications)
         labelAcceptedTagsForPid(pid);
     reloadTargets();
     if (current_targets.length == 0)
         moveToNextView();
+    hideLoading();
 }, 50); // delayed because container needs time to size properly first
 
 // load more when scrolled down

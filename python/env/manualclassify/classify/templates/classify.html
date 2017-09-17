@@ -14,6 +14,8 @@
     <div id='MCCurrentBins'>
       <p style='margin-top:0px;margin-bottom:5px;padding:0;'><b>{{ timeseries }}</b></p>
     </div>
+    <div id='MCLoading'>
+    </div>
   </center>
 </div>
 <div id='MCTargetContainer'></div>
@@ -109,7 +111,6 @@ div.MCDetailEntryPiece {
     font-size: small;
 }
 {% endblock %}
-
 
 {% block 'post' %}
 <script type='text/javascript' src="{% static 'javascript/lib/zip.js' %}"></script>
