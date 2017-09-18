@@ -1,0 +1,26 @@
+form {
+    display: table;
+    line-height: 30px;
+}
+p {
+    display: table-row;
+}
+label {
+    display: table-cell;
+    text-align: right;
+}
+input {
+    display: table-cell;
+}
+#MCRegisterSubmit {
+    margin-top: 10px;
+}
+#MCRegisterDiv {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translateY(-50%) translateX(-50%);
+}
+#MCRegisterHeader {
+    margin-bottom: 5px;
+}

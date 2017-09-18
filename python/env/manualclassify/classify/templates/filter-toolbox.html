@@ -1,62 +1,29 @@
-	<div id='MCFilterToolbox'>
-		<div class='MCSelectLabel'><small><b>Select a classification to view:</b></small></div>
-		<select class='MCSelectBox' id='MCClassificationSelection'>
-			<option value='ALL'>ALL</option>
-			{% for label in classification_labels %}
-				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
-			{% endfor %}
-		</select>
-		<div class='MCSelectLabel'><small><b>Select a tag to view:</b></small></div>
-		<select class='MCSelectBox' id='MCTagSelection'>
-			<option value='ALL'>ALL</option>
-			<option value='NONE'>NONE</option>
-			{% for label in tag_labels %}
-				<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
-			{% endfor %}
-		</select>
-		<div class='MCSelectLabel'><small><b>Filter by completion:</b></small></div>
-		<select class='MCSelectBox' id='MCFilterByCompletionSelection'>
-			<option value='ALL'>ALL</option>
-			<option value='ME'>Classified by me (and nobody more powerful)</option>
-			<option value='OTHERS'>Classified by others</option>
-			<option value='NONE'>Not classified by anyone</option>
-		</select>
-		<center><small><b><a id='MCSetSizeLabel'>Set size: </a></b></small>
-		<input type='number' min='1' name='MCSetSize' id='MCSetSize'></input></center>
-		<!--<div id='MaxWidthInputLabel'><small><b>Max image width:</b></small></div>
-		<input type="number" id='MaxWidthInput' value=400></input>-->
-		<small><div id='MCNumberLoadedLabel'>0 loaded of 0</div></small>
-	</div>
-
-<style>
-#MCFilterToolbox {
-	height: auto;
-	width: 200px;
-	outline-style: solid;
-	outline-color: black;
-	outline-width: 2px;
-	background-color: #ffffff;
-	overflow: visible;
-	margin-top: 5px;
-}
-select.MCSelectBox {
-	width: 186px;
-	margin-top: 3px;
-	margin-left: 5px;
-}
-div.MCSelectLabel {
-	margin-top: 2px;
-	margin-left: 5px;
-	display: inline-block;
-}
-#MCSetSize {
-	width: 70px;
-	margin-top: 5px;
-}
-#MCNumberLoadedLabel {
-	width: 100%;
-	text-align: center;
-	margin-top: 3px;
-	margin-bottom: 3px;
-}
-</style>
+<div id='MCFilterToolbox'>
+  <div class='MCSelectLabel'><small><b>Select a classification to view:</b></small></div>
+  <select class='MCSelectBox' id='MCClassificationSelection'>
+    <option value='ALL'>ALL</option>
+    {% for label in classification_labels %}
+    <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+    {% endfor %}
+  </select>
+  <div class='MCSelectLabel'><small><b>Select a tag to view:</b></small></div>
+  <select class='MCSelectBox' id='MCTagSelection'>
+    <option value='ALL'>ALL</option>
+    <option value='NONE'>NONE</option>
+    {% for label in tag_labels %}
+    <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+    {% endfor %}
+  </select>
+  <div class='MCSelectLabel'><small><b>Filter by completion:</b></small></div>
+  <select class='MCSelectBox' id='MCFilterByCompletionSelection'>
+    <option value='ALL'>ALL</option>
+    <option value='ME'>Classified by me (and nobody more powerful)</option>
+    <option value='OTHERS'>Classified by others</option>
+    <option value='NONE'>Not classified by anyone</option>
+  </select>
+  <center><small><b><a id='MCSetSizeLabel'>Set size: </a></b></small>
+    <input type='number' min='1' name='MCSetSize' id='MCSetSize'></input></center>
+  <!--<div id='MaxWidthInputLabel'><small><b>Max image width:</b></small></div>
+      <input type="number" id='MaxWidthInput' value=400></input>-->
+  <small><div id='MCNumberLoadedLabel'>0 loaded of 0</div></small>
+</div>

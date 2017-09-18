@@ -1,5 +1,10 @@
 {% extends 'master.html' %}
 {% load staticfiles %}
+
+{% block 'head' %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/index.css' %}"/>
+{% endblock %}
+
 {% block 'body' %}
 <div id="MCIndexDiv">
   <b>Enter bin manually: </b>
@@ -85,55 +90,3 @@
 <script type='text/javascript' src="{% static 'javascript/index.js' %}"></script>
 {% endblock %}
 
-{% block 'style' %}
-#MCRecentBinsSelect {
-	margin-left: 5px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    min-width: 358px;
-}
-#MCBinsText {
-    width: 358px;
-    margin-left: 5px;
-}
-#MCBins {
-    margin-left: 5px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    min-width: 358px;
-}
-#MCRecentBinsAddBtn {
-    position: relative;
-    top: -8px;
-}
-#MCBinsRemoveBtn {
-    position: relative;
-    top: -8px;
-}
-#MCTimeSeries {
-    margin-left: 5px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    width: 358px;
-}
-#MCLinks {
-    margin: 0;
-    float: right;
-    text-align: right;
-}
-#MCBinsSubmit {
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-#MCIndexDiv {
-    display: inline-block;
-}
-label.MCBatchOption {
-    display: table-cell;
-    padding-right: 5px;
-}
-#MCBatchSize {
-    width: 70px;
-    display: table-cell;
-}
-{% endblock %}

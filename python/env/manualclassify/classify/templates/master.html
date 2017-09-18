@@ -2,16 +2,13 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <title>Manual Classify</title>
+    <link rel="icon" type="image/png" href="{% static 'images/ceratium.png' %}"/>
     <link rel="stylesheet" type="text/css" href="{% static 'css/master.css' %}"/>
-    <style>
-      {% block 'style' %}
-      {% endblock %}
-    </style>
-  </head>
+    {% block 'head' %}
+    {% endblock %}
   <body>
     {% block 'body' %}
     {% endblock %}
   </body>
 </html>
-{% block 'post' %}
-{% endblock %}

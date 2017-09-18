@@ -1,0 +1,30 @@
+#MCFilterToolbox {
+    height: auto;
+    width: 200px;
+    outline-style: solid;
+    outline-color: black;
+    outline-width: 2px;
+    background-color: #ffffff;
+    overflow: visible;
+    margin-top: 5px;
+}
+select.MCSelectBox {
+    width: 186px;
+    margin-top: 3px;
+    margin-left: 5px;
+}
+div.MCSelectLabel {
+    margin-top: 2px;
+    margin-left: 5px;
+    display: inline-block;
+}
+#MCSetSize {
+    width: 70px;
+    margin-top: 5px;
+}
+#MCNumberLoadedLabel {
+    width: 100%;
+    text-align: center;
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
