@@ -1,6 +1,12 @@
 {% extends 'master.html' %}
 {% load staticfiles %}
 
+{% block 'head' %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/classify.css' %}"/>
+<link rel="stylesheet" type="text/css" href="{% static 'css/filter-toolbox.css' %}"/>
+<link rel="stylesheet" type="text/css" href="{% static 'css/application-toolbox.css' %}"/>
+{% endblock %}
+
 {% block 'body' %}
 {% csrf_token %}
 <div id='MCToolboxContainer'>
@@ -19,100 +25,7 @@
   </center>
 </div>
 <div id='MCTargetContainer'></div>
-{% endblock %}
 
-{% block 'style' %}
-body {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-#MCToolboxContainer {
-    position: fixed;
-}
-#MCTargetContainer {
-    position: absolute;
-    top: 7px;
-    left: 216px;
-}
-div.MCTarget {
-    outline-style: solid;
-    outline-color: black;
-    outline-width: 1px;
-    background-color: #ffffff;
-    margin-right: 4px;
-    margin-bottom: 4px;
-    display: inline-block;
-    position: relative;
-}
-div.MCNewClassification {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    color: red;
-}
-div.MCNewTag {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    color: blue;
-}
-div.MCEndSetMarker {
-    height: 20px;
-    margin-left: 2%;
-    margin-right: 2%;
-    margin-bottom: 4px;
-}
-div.MCEndSetMarkerInner {
-    width: 100%;
-    height: 10%;
-    background-color: red;
-    position: relative;
-    top: 45%;
-}
-#MCSubmitUpdates {
-    margin:0 auto;
-    margin-top: 10px;
-    display: block;
-    width: 150px;
-    text-align: center;
-}
-#MCRightClickMenu {
-    position: fixed;
-    background-color: white;
-    outline: solid;
-    outline-width: 2px;
-}
-div.MCDetailEntry {
-    width: 100%;
-    border-top: 1px solid;
-    white-space: nowrap;
-    display: inline-block;
-}
-div.MCDetailEntryPiece {
-    display: inline-block;
-    border-right: 1px solid;
-    text-align: center;
-    padding: 2px;
-    vertical-align: middle;
-}
-#MCCurrentBinsLabel {
-    margin-top: 10px;
-    margin-bottom: 3px;
-    width: 100%;
-    border-top: black solid 1px;
-    padding-top: 5px;
-    font-weight: bold;
-}
-#MCCurrentBins {
-    font-size: small;
-}
-{% endblock %}
-
-{% block 'post' %}
 <script type='text/javascript' src="{% static 'javascript/lib/zip.js' %}"></script>
 <!-- Get data first, then load js for this page -->
 <!-- Do it all after above positioning / styling -->
@@ -143,4 +56,5 @@ div.MCDetailEntryPiece {
 <script type='text/javascript' src="{% static 'javascript/classify.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/context-menu.js' %}"></script>
 <script type='text/javascript' src="{% static 'javascript/right-click-menu.js' %}"></script>
+
 {% endblock %}

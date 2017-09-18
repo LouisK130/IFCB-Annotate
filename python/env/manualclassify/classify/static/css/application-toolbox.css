@@ -1,0 +1,21 @@
+#MCApplicationToolbox {
+    height: auto;
+    width: 200px;
+    outline-style: solid;
+    outline-color: black;
+    outline-width: 2px;
+    background-color: #ffffff;
+    margin-top: 10px;
+}
+#MCNumberAppliedLabel {
+    width: 100%;
+    text-align: center;
+    display: inline-block;
+    margin-top: 3px;
+}
+#MCNumberTaggedLabel {
+    width: 100%;
+    text-align: center;
+    display: inline-block;
+    margin-bottom: 3px;
+}

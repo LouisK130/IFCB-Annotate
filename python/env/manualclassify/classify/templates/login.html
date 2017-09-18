@@ -1,26 +1,31 @@
-<!-- howdy/templates/index.html -->
 {% extends 'master.html' %}
+{% load staticfiles %}
+
+{% block 'head' %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}"/>
+{% endblock %}
+
 {% block 'body' %}
 <div id='MCLoginDiv'>
-			<center>
-				<h1 id='MCLoginHeader'>Manual Classify Login</h1>
-				<form id="MCLoginForm" action="/login/" method="post">
-					{% csrf_token %}
-					<div style="text-align: right">
-						Username&nbsp;<input id="MCLoginUsername" type="text" name="username">
-					</div>
-					<div style="text-align: right">
-						Password&nbsp;<input id="MCLoginPassword" type="password" name="password">
-					</div>
-					<div style="text-align: center">
-					  <input id="MCLoginSubmit" type="submit" name="Login" value="Login"></input>
-					</div>
-				</form>
-				<p>
-					<a href='/register/'>Need an account?</a>
-				</p>
-			</center>
-		</div>
+  <center>
+    <h1 id='MCLoginHeader'>Manual Classify Login</h1>
+    <form id="MCLoginForm" action="/login/" method="post">
+      {% csrf_token %}
+      <div style="text-align: right">
+	Username&nbsp;<input id="MCLoginUsername" type="text" name="username" autofocus="true">
+      </div>
+      <div style="text-align: right">
+	Password&nbsp;<input id="MCLoginPassword" type="password" name="password">
+      </div>
+      <div style="text-align: center">
+	<input id="MCLoginSubmit" type="submit" name="Login" value="Login"></input>
+      </div>
+    </form>
+    <p>
+      <a href='/register/'>Need an account?</a>
+    </p>
+  </center>
+</div>
 
 <script>
 	var old = document.getElementById('MCLoginFailure');
@@ -44,43 +49,4 @@
 		document.getElementById("MCLoginForm").submit();
 	}
 </script>
-{% endblock %}
-
-{% block 'style' %}
-form {
-	display: table;
-line-height: 30px;
-width: 275px;
-}
-p {
-	display: table-row;
-}
-label {
-	display: table-cell;
-	text-align: right;
-}
-input {
-	display: table-cell;
-}
-#MCLoginSubmit {
-margin-top: 10px;
-margin-bottom: 10px;
-width: 100px;
-margin-left: auto;
-margin-right: auto;
-}
-#MCLoginDiv {
-display: inline-block;
-position: fixed;
-top: 0;
-bottom: 0;
-left: 0;
-right: 0;
-width: 500px;
-height: 200px;
-margin: auto;
-}
-#MCLoginHeader {
-	margin-bottom: 5px;
-}
 {% endblock %}

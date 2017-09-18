@@ -1,5 +1,9 @@
-<!-- howdy/templates/index.html -->
 {% extends 'master.html' %}
+{% load staticfiles %}
+
+{% block 'head' %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/register.css' %}"/>
+{% endblock %}
 
 {% block 'body' %}
 <a href = '/login/'>Back to login</a>
@@ -10,7 +14,7 @@
       {% csrf_token %}
       <p>
 	<label for="MCRegisterUsername">Username:</label>
-	<input id="MCRegisterUsername" type="text" name="username">
+	<input id="MCRegisterUsername" type="text" name="username" autofocus="true">
       </p>
       <p>
 	<label for="MCRegisterEmail">Email:</label>
@@ -79,34 +83,5 @@
         document.getElementById("MCRegisterForm").submit();
     }
 </script>
-{% endblock %}
-
-{% block 'style' %}
-form {
-    display: table;
-    line-height: 30px;
-}
-p {
-    display: table-row;
-}
-label {
-    display: table-cell;
-    text-align: right;
-}
-input {
-    display: table-cell;
-}
-#MCRegisterSubmit {
-    margin-top: 10px;
-}
-#MCRegisterDiv {
-    position: absolute;
-    top: 40%;
-    left: 50%;
-    transform: translateY(-50%) translateX(-50%);
-}
-#MCRegisterHeader {
-    margin-bottom: 5px;
-}
 {% endblock %}
 

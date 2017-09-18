@@ -1,0 +1,36 @@
+form {
+    display: table;
+    line-height: 30px;
+    width: 275px;
+}
+p {
+    display: table-row;
+}
+label {
+    display: table-cell;
+    text-align: right;
+}
+input {
+    display: table-cell;
+}
+#MCLoginSubmit {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#MCLoginDiv {
+    display: inline-block;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 500px;
+    height: 200px;
+    margin: auto;
+}
+#MCLoginHeader {
+    margin-bottom: 5px;
+}
