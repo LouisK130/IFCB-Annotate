@@ -48,6 +48,10 @@
         if (parseInt(batchtag))
             batchtag = parseInt(batchtag);
     }
+    var classification_labels = {};
+    {% for label in classification_labels %}
+    classification_labels['{{ label.id }}'] = '{{ label.name }}';
+    {% endfor %}
     zip.workerScriptsPath = "{% static 'javascript/lib/' %}";
 </script>
 <script type='text/javascript' src="{% static 'javascript/utils.js' %}"></script>
