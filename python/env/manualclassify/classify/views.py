@@ -145,7 +145,7 @@ class ClassifyPageView(TemplateView):
         
         if shouldImport:
             logger.info('including auto results')
-            classifications = utils.addClassifierData(current_bins, classList, tagList, classifications)
+            classifications = database.addClassifierData(current_bins, classList, tagList, classifications)
         
         JS_values = {
             'timeseries' : utils.timeseries,
@@ -180,7 +180,8 @@ class SubmitUpdatesPageView(TemplateView):
             result1 = database.insertUpdates(c_updates, id, True, False)
             result2 = database.insertUpdates(t_updates, id, False, False)
             result3 = database.insertUpdates(t_n_updates, id, False, True)
-            result = json.dumps({**{**result1, **result2}, **result3})
+            #result = json.dumps({**{**result1, **result2}, **result3})
+            result = json.dumps({}) # FIXME hugely broken here
             return HttpResponse(result)
             
 class ZipDownloadPageView(TemplateView):
