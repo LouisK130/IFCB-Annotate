@@ -95,7 +95,6 @@ def getTargets(bins):
             new_targets = parseBinToTargets(bin)
         if new_targets == False:
             return False
-        #targets = {**targets, **new_targets}
         targets.update(new_targets)
     return targets
     
