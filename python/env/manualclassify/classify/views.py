@@ -180,9 +180,11 @@ class SubmitUpdatesPageView(TemplateView):
             result1 = database.insertUpdates(c_updates, id, True, False)
             result2 = database.insertUpdates(t_updates, id, False, False)
             result3 = database.insertUpdates(t_n_updates, id, False, True)
-            #result = json.dumps({**{**result1, **result2}, **result3})
-            result = json.dumps({}) # FIXME hugely broken here
-            return HttpResponse(result)
+            result = dict()
+            result.update(result1)
+            result.update(result2)
+            result.update(result3)
+            return HttpResponse(json.dumps(result))
             
 class ZipDownloadPageView(TemplateView):
     def post(self, request, **kwargs):

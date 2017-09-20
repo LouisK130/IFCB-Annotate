@@ -399,14 +399,14 @@ def getTagList():
 
 def addClassifierData(bins, classes, tags, data):
     for bin in bins:
-        auto_results = getAutoResultsForBin(bin)
+        auto_results = utils.getAutoResultsForBin(bin)
         if not auto_results:
             continue;
         for pid, classification in auto_results.items():
             classification_id = None
             new_name = None
-            if classification in CLASSIFIER_CONVERSION_TABLE:
-                new_name = CLASSIFIER_CONVERSION_TABLE[classification]
+            if classification in utils.CLASSIFIER_CONVERSION_TABLE:
+                new_name = utils.CLASSIFIER_CONVERSION_TABLE[classification]
             else:
                 new_name = classification.replace('_', ' ')
             for c in classes:
@@ -424,7 +424,7 @@ def addClassifierData(bins, classes, tags, data):
                     'user_id' : -1,
                     'classification_id' : classification_id,
                     'level' : 1,
-                    'timeseries_id' : database.getTimeseriesId(timeseries),
+                    'timeseries_id' : getTimeseriesId(utils.timeseries),
                     'user_power' : -1,
                     'username' : 'auto',
                 }
@@ -444,7 +444,7 @@ def addClassifierData(bins, classes, tags, data):
                             'tag_id' : tag_id,
                             'user_power' : -1,
                             'level' : 1,
-                            'timeseries_id' : database.getTimeseriesId(timeseries),
+                            'timeseries_id' : getTimeseriesId(utils.timeseries),
                             'username' : 'auto',
                         }
                         data[pid]['tags'].append(dict)
