@@ -7,12 +7,13 @@ from django.contrib.auth.models import User
 import json
 import time
 import logging
+from .settings import CACHE_DIR
 
 logger = logging.getLogger(__name__)
 
-ZIP_CACHE_PATH = 'classify/cache/zips'
-TARGETS_CACHE_PATH = 'classify/cache/targets'
-AUTO_RESULTS_CACHE_PATH = 'classify/cache/class_scores'
+ZIP_CACHE_PATH = os.path.join(CACHE_DIR,'zips')
+TARGETS_CACHE_PATH = os.path.join(CACHE_DIR,'targets')
+AUTO_RESULTS_CACHE_PATH = os.path.join(CACHE_DIR,'class_scores')
 
 if not os.path.exists(ZIP_CACHE_PATH):
     os.makedirs(ZIP_CACHE_PATH, exist_ok=True)
