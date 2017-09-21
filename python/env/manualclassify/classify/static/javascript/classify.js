@@ -273,6 +273,7 @@ function applyToTile(tile) {
     else if (clas != '') {
         classification_updates[pid] = clas;
         c_label.style.color = 'red';
+        c_label.setAttribute('title',classification_labels[clas+'']);
         tile.style.outlineColor = 'black';
         if (clas == filter)
             c_label.innerHTML = '<small><b>V</b></small>';
