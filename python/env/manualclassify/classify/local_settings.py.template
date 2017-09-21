@@ -13,6 +13,8 @@ DEFAULT_DATABASE = {
     'PORT': ''
 }
 
+CACHE_DIR = '/var/www/something/something/cache'
+
 # uncomment below for LDAP authentication
 
 # LDAP_HOST = 'my_ldap_host.foo.bar'
