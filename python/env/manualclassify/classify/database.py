@@ -386,3 +386,69 @@ def getTagList():
         c['name'] = tl.name
         data.append(c)
     return data;
+
+# adds annotations based on the auto classifier results to the data being prepared for passing to the client
+
+# Param 1: an array of strings, each representing a bin that's included in the data
+# Param 2: an array with dictionary values; in each dictionary are "name", "id", and "international_id" keys representing values
+#     for a given classification label
+# Param 3: an array with dictionary values; in each dictionary are "name" and "id" keys representing values
+#    for a given tag label
+# Param 4: a dictionary, indexed by pid and produced by database.getAllDataForBins(), containing all annotations for the given bins
+# Output: the same dictionary given in Param 4, modified to include annotations from the auto classifier
+
+def addClassifierData(bins, classes, tags, data):
+    for bin in bins:
+        auto_results = utils.getAutoResultsForBin(bin)
+        if not auto_results:
+            continue;
+        for pid, classification in auto_results.items():
+            classification_id = None
+            new_name = None
+            if classification in utils.CLASSIFIER_CONVERSION_TABLE:
+                new_name = utils.CLASSIFIER_CONVERSION_TABLE[classification]
+            else:
+                new_name = classification.replace('_', ' ')
+            for c in classes:
+                if c['name'] == new_name:
+                    classification_id = c['id']
+                    break
+            if not classification_id:
+                logging.warn('Auto classifier label "' + classification + '" did not have a matching classification label in the database!')
+                for c in classes:
+                    if c['name'] == 'unclassified':
+                        classification_id = c['id']
+                        break
+            if pid in data:
+                dict = {
+                    'user_id' : -1,
+                    'classification_id' : classification_id,
+                    'level' : 1,
+                    'timeseries_id' : getTimeseriesId(utils.timeseries),
+                    'user_power' : -1,
+                    'username' : 'auto',
+                }
+                if not 'accepted_classification' in data[pid]:
+                    data[pid]['accepted_classification'] = dict
+                else:
+                    data[pid]['other_classifications'].append(dict)
+                # this is a special case, where the classifier also annotates an 'external detritus' tag
+                if classification == 'Thalassiosira_dirty':
+                    tag_id = None
+                    for t in tags:
+                        if t['name'] == 'external detritus':
+                            tag_id = t['id']
+                    if tag_id:
+                        dict = {
+                            'user_id' : -1,
+                            'tag_id' : tag_id,
+                            'user_power' : -1,
+                            'level' : 1,
+                            'timeseries_id' : getTimeseriesId(utils.timeseries),
+                            'username' : 'auto',
+                        }
+                        data[pid]['tags'].append(dict)
+                    else:
+                        logging.warn('Classifier attempted to annotate Thalassiosira_dirty but no external_detritus tag was found!')
+    return data
+
