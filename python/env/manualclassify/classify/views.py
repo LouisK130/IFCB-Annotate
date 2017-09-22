@@ -46,7 +46,16 @@ class LoginPageView(TemplateView):
                     return redirect('/login/')
             else:
                 return render(request, 'login.html', {'failed' : True})
-                
+
+def validate_username(username):
+    return re.match(r'[A-Za-z]+', username)
+
+def validate_email(email):
+    return re.match(r'[^@]+@[^@]+\.[^@]+', email)
+
+def validate_password(password):
+    return len(password) >= 8
+
 class RegisterPageView(TemplateView):
     def get(self, request, **kwargs):
         return render(request, 'register.html')
@@ -58,6 +67,12 @@ class RegisterPageView(TemplateView):
             return render(request, 'register.html', {'user_taken' : True})
         if User.objects.filter(email=email).exists():
             return render(request, 'register.html', {'email_taken' : True})
+        if not validate_username(username):
+            return render(request, 'register.html', {'user_invalid' : True})
+        if not validate_email(email):
+            return render(request, 'register.html', {'email_invalid': True})
+        if not validate_password(password):
+            return render(request, 'register.html', {'password_invalid': True})
         user = User.objects.create_user(username, email, password)
         user.is_active = False
         user.is_staff = True

@@ -42,6 +42,15 @@
     if ('{{ email_taken }}' == 'True') {
         showError('Email already in use');
     }
+    if ('{{ user_invalid }}' == 'True') {
+        showError('Username is invalid');
+    }
+    if ('{{ email_invalid }}' == 'True') {
+        showError('Email is invalid');
+    }
+    if ('{{ password_invalid }}' == 'True') {
+        showError('Password is invalid');
+    }
     function checkInput(e) {
         var old = document.getElementById('MCRegisterFailure');
         if (old)
