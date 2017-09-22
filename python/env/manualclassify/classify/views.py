@@ -48,7 +48,7 @@ class LoginPageView(TemplateView):
                 return render(request, 'login.html', {'failed' : True})
 
 def validate_username(username):
-    return re.match(r'[A-Za-z]+', username)
+    return re.match(r'[A-Za-z][a-zA-Z0-9]*', username)
 
 def validate_email(email):
     return re.match(r'[^@]+@[^@]+\.[^@]+', email)

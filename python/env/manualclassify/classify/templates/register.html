@@ -10,7 +10,7 @@
 <div id='MCRegisterDiv'>
   <center>
     <h1 id='MCRegisterHeader'>Manual Classify Registration</h1>
-    <form id="MCRegisterForm" action="/register/" method="post" onSubmit="checkInput(event);">
+    <form id="MCRegisterForm" action="/register/" method="post">
       {% csrf_token %}
       <p>
 	<label for="MCRegisterUsername">Username:</label>
@@ -43,15 +43,15 @@
         showError('Email already in use');
     }
     if ('{{ user_invalid }}' == 'True') {
-        showError('Username is invalid');
+        showError('Username must be alphanumeric');
     }
     if ('{{ email_invalid }}' == 'True') {
-        showError('Email is invalid');
+        showError('You must enter a valid email');
     }
     if ('{{ password_invalid }}' == 'True') {
-        showError('Password is invalid');
+        showError('Password must be at least 8 characters');
     }
-    function checkInput(e) {
+    function checkInput() {
         var old = document.getElementById('MCRegisterFailure');
         if (old)
             old.outerHTML = '';
@@ -59,26 +59,25 @@
         var p2 = document.getElementById('MCRegisterPass2').value;
         var email = document.getElementById('MCRegisterEmail').value;
         var user = document.getElementById('MCRegisterUsername').value;
-        if (user.length == 0) {
-            showError('You must enter a username');
-            e.preventDefault();
+        var user_re = /^[a-zA-Z][a-zA-Z0-9]+$/; 
+        if (!user_re.test(user)) {
+            showError('Username must be alphanumeric');
             return false;
         }
-        if (email.length == 0 || email.indexOf('@') < 0) {
+        var email_re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!email_re.test(email)) {
             showError('You must enter a valid email');
-            e.preventDefault();
             return false;
         }
         if (p1.length < 8) {
             showError('Password must be at least 8 characters');
-            e.preventDefault();
             return false;
         }
         if (p1 != p2) {
             showError('Passwords do not match');
-            e.preventDefault();
             return false;
-        }
+	}
+	return true;
     }
     function showError(text) {
         var failure = document.createElement('div')
@@ -89,7 +88,9 @@
         center.insertBefore(failure, center.children[1]);
     }
     function submitForm() {
-        document.getElementById("MCRegisterForm").submit();
+	if (checkInput()) {
+	    document.getElementById("MCRegisterForm").submit();
+	}
     }
 </script>
 {% endblock %}
