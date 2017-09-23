@@ -36,21 +36,29 @@
 </div>
 
 <script>
+    var user_inuse_msg = 'Username already in use';
+    var email_inuse_msg = 'Email already in use';
+    var user_invalid_msg = 'Username must be alphanumeric';
+    var email_invalid_msg = 'You must enter a valid email';
+    var password_invalid_msg = 'Password must be at least 8 characters';
+    var passwords_dontmatch_msg = 'Passwords do not match';
+    
     if ('{{ user_taken }}' == 'True') {
-        showError('Username already in use');
+        showError(user_inuse_msg);
     }
     if ('{{ email_taken }}' == 'True') {
-        showError('Email already in use');
+        showError(email_inuse_msg);
     }
     if ('{{ user_invalid }}' == 'True') {
-        showError('Username must be alphanumeric');
+        showError(user_invalid_msg);
     }
     if ('{{ email_invalid }}' == 'True') {
-        showError('You must enter a valid email');
+        showError(email_invalid_msg);
     }
     if ('{{ password_invalid }}' == 'True') {
-        showError('Password must be at least 8 characters');
+        showError(password_invalid_msg);
     }
+    
     function checkInput() {
         var old = document.getElementById('MCRegisterFailure');
         if (old)
@@ -61,20 +69,20 @@
         var user = document.getElementById('MCRegisterUsername').value;
         var user_re = /^[a-zA-Z][a-zA-Z0-9]+$/; 
         if (!user_re.test(user)) {
-            showError('Username must be alphanumeric');
+            showError(user_invalid_msg);
             return false;
         }
         var email_re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!email_re.test(email)) {
-            showError('You must enter a valid email');
+            showError(email_invalid_msg);
             return false;
         }
         if (p1.length < 8) {
-            showError('Password must be at least 8 characters');
+            showError(password_invalid_msg);
             return false;
         }
         if (p1 != p2) {
-            showError('Passwords do not match');
+            showError(passwords_dontmatch_msg);
             return false;
 	}
 	return true;
