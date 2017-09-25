@@ -10,7 +10,7 @@
 <div id='MCRegisterDiv'>
   <center>
     <h1 id='MCRegisterHeader'>Manual Classify Registration</h1>
-    <form id="MCRegisterForm" action="/register/" method="post" onSubmit="checkInput(event);">
+    <form id="MCRegisterForm" action="/register/" method="post">
       {% csrf_token %}
       <p>
 	<label for="MCRegisterUsername">Username:</label>
@@ -36,13 +36,30 @@
 </div>
 
 <script>
+    var user_inuse_msg = 'Username already in use';
+    var email_inuse_msg = 'Email already in use';
+    var user_invalid_msg = 'Username must be alphanumeric';
+    var email_invalid_msg = 'You must enter a valid email';
+    var password_invalid_msg = 'Password must be at least 8 characters';
+    var passwords_dontmatch_msg = 'Passwords do not match';
+    
     if ('{{ user_taken }}' == 'True') {
-        showError('Username already in use');
+        showError(user_inuse_msg);
     }
     if ('{{ email_taken }}' == 'True') {
-        showError('Email already in use');
+        showError(email_inuse_msg);
     }
-    function checkInput(e) {
+    if ('{{ user_invalid }}' == 'True') {
+        showError(user_invalid_msg);
+    }
+    if ('{{ email_invalid }}' == 'True') {
+        showError(email_invalid_msg);
+    }
+    if ('{{ password_invalid }}' == 'True') {
+        showError(password_invalid_msg);
+    }
+    
+    function checkInput() {
         var old = document.getElementById('MCRegisterFailure');
         if (old)
             old.outerHTML = '';
@@ -50,26 +67,25 @@
         var p2 = document.getElementById('MCRegisterPass2').value;
         var email = document.getElementById('MCRegisterEmail').value;
         var user = document.getElementById('MCRegisterUsername').value;
-        if (user.length == 0) {
-            showError('You must enter a username');
-            e.preventDefault();
+        var user_re = /^[a-zA-Z][a-zA-Z0-9]+$/; 
+        if (!user_re.test(user)) {
+            showError(user_invalid_msg);
             return false;
         }
-        if (email.length == 0 || email.indexOf('@') < 0) {
-            showError('You must enter a valid email');
-            e.preventDefault();
+        var email_re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!email_re.test(email)) {
+            showError(email_invalid_msg);
             return false;
         }
         if (p1.length < 8) {
-            showError('Password must be at least 8 characters');
-            e.preventDefault();
+            showError(password_invalid_msg);
             return false;
         }
         if (p1 != p2) {
-            showError('Passwords do not match');
-            e.preventDefault();
+            showError(passwords_dontmatch_msg);
             return false;
-        }
+	}
+	return true;
     }
     function showError(text) {
         var failure = document.createElement('div')
@@ -80,7 +96,9 @@
         center.insertBefore(failure, center.children[1]);
     }
     function submitForm() {
-        document.getElementById("MCRegisterForm").submit();
+	if (checkInput()) {
+	    document.getElementById("MCRegisterForm").submit();
+	}
     }
 </script>
 {% endblock %}
