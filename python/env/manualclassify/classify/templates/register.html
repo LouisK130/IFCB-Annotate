@@ -42,7 +42,11 @@
     var email_invalid_msg = 'You must enter a valid email';
     var password_invalid_msg = 'Password must be at least 8 characters';
     var passwords_dontmatch_msg = 'Passwords do not match';
-    
+    var other_msg = 'Error registering user';
+
+    if ('{{ other_error }}' == 'True') {
+        showError(other_msg);
+    }
     if ('{{ user_taken }}' == 'True') {
         showError(user_inuse_msg);
     }

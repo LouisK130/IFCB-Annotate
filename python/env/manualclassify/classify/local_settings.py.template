@@ -13,6 +13,8 @@ DEFAULT_DATABASE = {
     'PORT': ''
 }
 
+INACTIVE_USER_LIMIT = 25
+
 CACHE_DIR = '/var/www/something/something/cache'
 
 # uncomment below for LDAP authentication

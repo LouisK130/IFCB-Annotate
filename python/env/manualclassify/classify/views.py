@@ -63,6 +63,12 @@ class RegisterPageView(TemplateView):
         username = request.POST.get('username')
         password = request.POST.get('password')
         email = request.POST.get('email')
+        # limit number of inactive users
+        n_inactive = User.objects.filter(is_active=False).count()
+        inactive_user_limit = settings.INACTIVE_USER_LIMIT
+        if n_inactive > inactive_user_limit:
+            logger.warn('inactive users over the limit of {}'.format(inactive_user_limit))
+            return render(request, 'register.html', {'other_error': True})
         if User.objects.filter(username=username).exists():
             return render(request, 'register.html', {'user_taken' : True})
         if User.objects.filter(email=email).exists():
