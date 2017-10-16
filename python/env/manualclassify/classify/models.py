@@ -26,6 +26,9 @@ class Classification(models.Model):
     verification_time = models.DateTimeField(null=True, blank=True)
     timeseries_id = models.CharField(max_length=36)
     class Meta:
+        indexes = [
+            models.Index(fields=['bin'])
+        ]
         unique_together = (('bin', 'roi', 'user_id', 'classification_id'),)
     
 class Tag(models.Model):
@@ -40,9 +43,13 @@ class Tag(models.Model):
     timeseries_id = models.CharField(max_length=36)
     negation = models.BooleanField(default=False)
     class Meta:
+        indexes = [
+            models.Index(fields=['tag_id'])
+        ]
         unique_together = (('bin', 'roi', 'user_id', 'tag_id', 'negation'),)
 
 # add some fields and methods to User and Group
+# FIXME not recommended
 
 Group.add_to_class('power', models.IntegerField(default=0))
 
