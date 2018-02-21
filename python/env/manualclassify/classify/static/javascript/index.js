@@ -112,10 +112,36 @@ document.getElementById('MCBatchMode').onclick = function() {
 
 document.getElementById('MCBatchSize').value = getBatchSize();
 
+var lastBatchClass = getBatchClass();
+var bc = document.getElementById('MCBatchClass');
+for (var n = 0; n < bc.options.length; n++) {
+    if (bc.options[n].value == lastBatchClass) {
+        bc.selectedIndex = n;
+        break;
+    }
+}
+
+var lastBatchTag = getBatchTag();
+var bt = document.getElementById('MCBatchTag');
+for (var n = 0; n < bt.options.length; n++) {
+    if (bt.options[n].value == lastBatchTag) {
+	bt.selectedIndex = n;
+	break;
+    }
+}
+
+var lastBatchStart = getBatchStart();
+document.getElementById('MCBatchStart').value = lastBatchStart;
+
+var lastBatchEnd = getBatchEnd();
+document.getElementById('MCBatchEnd').value = lastBatchEnd;
+
 function submitForm(raw) {
     var bins_string = '';
     var batchmode = document.getElementById('MCBatchMode').checked;
     var batchSize = batchmode ? document.getElementById('MCBatchSize').value : null;
+    var batchClass = batchmode ? document.getElementById('MCBatchClass').value : null;
+    var batchTag = batchmode ? document.getElementById('MCBatchTag').value : null;    
     
     var options = document.getElementById('MCBins').options;
     for (var n = 0; n < options.length; n++) {
@@ -156,7 +182,10 @@ function submitForm(raw) {
         form.appendChild(createInput('batchtag', document.getElementById('MCBatchTag').value))
         
         setBatchSize(batchSize);
-        
+	setBatchClass(batchClass);
+	setBatchTag(batchTag);
+        setBatchStart(bstart);
+	setBatchEnd(bend);
     }
     
     form.insertAdjacentHTML('beforeend', csrf_token_form);

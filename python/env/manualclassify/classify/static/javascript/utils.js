@@ -64,6 +64,38 @@ function getBatchSize(size) {
     return getCookie('MCBatchSize') || 5;
 }
 
+function setBatchClass(claz) {
+    setCookie('MCBatchClass', claz, 3650);
+}
+
+function getBatchClass() {
+    return getCookie('MCBatchClass') || null;
+}
+
+function setBatchTag(tag) {
+    setCookie('MCBatchTag', tag, 3650);
+}
+
+function getBatchTag() {
+    return getCookie('MCBatchTag') || null;
+}
+
+function setBatchStart(dt) {
+    setCookie('MCBatchStart', dt, 3650);
+}
+
+function getBatchStart() {
+    return getCookie('MCBatchStart') || null;
+}
+
+function setBatchEnd(dt) {
+    setCookie('MCBatchEnd', dt, 3650);
+}
+
+function getBatchEnd() {
+    return getCookie('MCBatchEnd') || null;
+}
+
 function getRecentApplications() {
     var combos_string = getCookie('MCRecentApplications');
     var oldCombos = combos_string.split(',');
