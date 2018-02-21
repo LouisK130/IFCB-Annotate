@@ -376,6 +376,7 @@ def getClassificationList():
         c['name'] = cl.name
         c['international_id'] = cl.international_id
         data.append(c)
+    data = sorted(data, key=lambda c: c['name'].lower())
     return data
 
 def getTagList():
@@ -385,6 +386,7 @@ def getTagList():
         c['id'] = tl.pk
         c['name'] = tl.name
         data.append(c)
+    data = sorted(data, key=lambda c: c['name'].lower())        
     return data;
 
 # adds annotations based on the auto classifier results to the data being prepared for passing to the client
