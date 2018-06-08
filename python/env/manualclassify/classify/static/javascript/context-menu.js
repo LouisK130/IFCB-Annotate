@@ -16,21 +16,18 @@ function deleteContextMenu(e) {
         return;
     if (!(e.target == menu || menu.contains(e.target))) {
         menu.outerHTML = '';
+		return;
     }
 }
 
 function createContextMenu() {
-    var old_menu = document.getElementById('MCContextMenu');
-    if (old_menu)
-        old_menu.outerHTML = '';
-    
     var menu = document.createElement('div')
     menu.id = 'MCContextMenu';
     menu.style.width = '200px'
-    menu.style.height = '296px';
+    menu.style.minHeight = '296px';
     menu.style.position = 'fixed';
-    menu.style.left = mouse_x;
-    menu.style.top = mouse_y;
+    menu.style.left = mouse_x + 'px';
+    menu.style.top = mouse_y + 'px';
     menu.style.backgroundColor = 'white';
     menu.style.outlineWidth = '2px';
     menu.style.outline = 'solid';

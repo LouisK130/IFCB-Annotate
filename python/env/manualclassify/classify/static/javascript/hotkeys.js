@@ -32,7 +32,12 @@ function generalKeyDown(e) {
 	    }, 10);
             break;
         case CONTEXT_MENU_KEY:
-            createContextMenu()
+			let menu = document.getElementById('MCContextMenu');
+			if (menu) {
+				menu.outerHTML = '';
+			} else {
+				createContextMenu()
+			}
             break;
         case SUBMIT_UPDATES_KEY:
             submitUpdates();

@@ -121,7 +121,7 @@ function addRecentApplicationToCookies(classification, tag) {
             new_combos.push(combos[n][0] + '/' + combos[n][1]);
         }
     }
-    while (new_combos.length >= 9)
+    while (new_combos.length >= 14)
         new_combos.splice(new_combos.length-1, 1);
     if (classification == '')
         classification = 'BLANK';
