@@ -222,8 +222,8 @@ def getAutoResultsForBin(bin):
 # Param 3: a string representing a timeseries url
 # Output: an array of strings, representing bin names in the time range
 def getBinsInRange(start, end, timeseries):
-    start = start.strftime('%Y-%m-%d')
-    end = end.strftime('%Y-%m-%d')
+    start = start.strftime('%Y-%m-%dT%H:%M:00')
+    end = end.strftime('%Y-%m-%d%H:%M:00')
     url = timeseries + '/api/feed/temperature/start/' + start + '/end/' + end
     bins = []
     with closing(requests.get(url, stream=True)) as r:

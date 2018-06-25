@@ -1,195 +1,542 @@
-if (failed != '') {
-    var failure = document.createElement('div')
-    failure.innerHTML = failed;
-    failure.style.whiteSpace = 'pre';
-    failure.style.color = 'red';
-    failure.style.marginBottom = '0px';
-    failure.style.marginTop = '5px';
-    var children = document.body.children;
-    document.body.insertBefore(failure, children[children.length-1]); // not working as expected
-}
+$(function() {
+    
+    let TIMESERIES = null;
+    
+    let main = $('#main-form');
+    let page1 = $('#page1');
+    let tspage = $('#timeseries-page');
+    let binpage = $('#bin-page');
+    let addoptions = $('#add-options');
+    let recents = $('#recent-bins');
+    let alert = $('#alert');
+    
+    $('#date-start').datetimepicker({
+        widgetPositioning: {
+            horizontal: 'auto',
+            vertical: 'bottom'
+        },
+        widgetParent: 'body > .row > .col-md-12'
+    });
+    $('#date-end').datetimepicker();
 
-var last_ts = getLastTimeseries();
-var ts = document.getElementById('MCTimeSeries');
-for (var n = 0; n < ts.options.length; n++) {
-    if (ts.options[n].value == last_ts) {
-        ts.selectedIndex = n;
-        break;
+    
+    // don't actually delete the alert, we'll want to show it again later
+    $('#alert-close').click(function() {
+        alert.fadeTo(500, 0);
+    });
+    
+    if (getCookie('timeseries') != '' &&
+            $('#timeseries-select option[value="' + getCookie('timeseries') + '"]').length > 0) {
+        $('#timeseries-select').selectpicker('val', getCookie('timeseries'));
     }
-}
-
-var recent_bins = getRecentBins();
-var recentBinsEle = document.getElementById('MCRecentBinsSelect');
-for (var n = 0; n < recent_bins.length; n++) {
-    var option = document.createElement('option');
-    option.text = recent_bins[n];
-    option.value = recent_bins[n];
-    recentBinsEle.add(option);
-}
-
-document.getElementById('MCRecentBinsAddBtn').onclick = clickAddRecent;
-
-function clickAddRecent() {
-    var options = document.getElementById('MCRecentBinsSelect').options;
-    for(var n = 0; n < options.length; n++) {
-        if (options[n].selected) {
-            addBins(options[n].value);
-            options[n].outerHTML = '';
-            return;
+    
+    $(window).resize(function() {
+        
+        if (binpage.height() > 0) {
+            
+            addoptions.stop();
+            addoptions.css('left', main[0].getBoundingClientRect().left - addoptions[0].getBoundingClientRect().width - 20)
+            recents.stop();
+            recents.css('left', main[0].getBoundingClientRect().right + 20);
+            
         }
-    }
-}
-
-if (recent_bins.length == 0) {
-    document.getElementById('MCRecentBinsDiv').outerHTML = '';
-}
-
-document.getElementById('MCBinsAddBtn').onclick = clickAddManual;
-
-function clickAddManual() {
-    var ele = document.getElementById('MCBinsText');
-    var text = ele.value;
-    if (text.length > 0) {
-        addBins(text);
-    }
-    ele.value = '';
-}
-
-document.getElementById('MCBinsRemoveBtn').onclick = clickRemoveBin;
-
-function clickRemoveBin() {
-    var options = document.getElementById('MCBins').options;
-    for(var n = 0; n < options.length; n++) {
-        if (options[n].selected) {
-            for (var i = 0; i < recent_bins.length; i++) {
-                if (recent_bins[i].indexOf(options[n].text) >= 0) {
-                    var option = document.createElement('option');
-                    option.text = recent_bins[i];
-                    option.value = recent_bins[i];
-                    recentBinsEle.add(option);
+        
+    });
+    
+    $(document).on('click', '.glyphicon-plus', function() {
+        let recent = $(this).parent().parent().attr('id') == 'recent-list';
+        let results = $(this).parent().parent().attr('id') == 'date-list';
+        let bin = $(this).parent().detach();
+        bin.data("recent", recent);
+        bin.data("results", results);
+        $('#none-selected').css('display', 'none');
+        $('#bin-list').append(bin);
+        $(this).removeClass('glyphicon-plus');
+        $(this).addClass('glyphicon-remove');
+        if ($('#recent-list li').length == 1) {
+            $('#no-recents').css('display', 'block');
+        }
+    });
+    
+    $(document).on('click', '.glyphicon-remove', function() {
+        let bin = $(this).parent().detach();
+        if (bin.data('recent')) {
+            $('#no-recents').css('display', 'none');
+            $('#recent-list').append(bin);
+            $(this).removeClass('glyphicon-remove');
+            $(this).addClass('glyphicon-plus');
+        }
+        if (bin.data("results") && $('#date-results').height() > 0) {
+            $('#date-list').append(bin);
+            $(this).removeClass('glyphicon-remove');
+            $(this).addClass('glyphicon-plus');
+        }
+        if ($('#bin-list li').length == 1) {
+            $('#none-selected').css('display', 'block');
+        }
+    });
+    
+    $('#classify-button').click(function() {
+        page1.stop().animate({
+            'height' : 0,
+        }, 500, function() {
+            let height = tspage.css('height', 'auto').height();
+            tspage.height(0);
+            tspage.stop().animate({
+                'height': height
+            }, 500, function() {
+                tspage.css('height', 'auto');
+            });
+            let tsselect = $('#timeseries-page .bootstrap-select');
+            tsselect.stop().animate({
+                'width' : '350px'
+            }, 500);
+        });
+    });
+    
+    $('#timeseries-back').click(function() {
+        tspage.stop().animate({
+            'height' : 0,
+        }, 500, function() {
+            let height = page1.css('height', 'auto').height();
+            page1.height(0);
+            page1.stop().animate({
+                'height' : height
+            }, 500, function() {
+                page1.css('height', 'auto');
+            });
+            let tsselect = $('#timeseries-page .bootstrap-select');
+            tsselect.stop().animate({
+                'width' : '0'
+            }, 500);
+        });
+    });
+    
+    $('#timeseries-next').click(function() {
+        
+        TIMESERIES = $('#timeseries-select').val();
+        setCookie('timeseries', TIMESERIES, 365);
+        
+        $('#no-recents').css('display', 'block');
+        
+        $('#recent-list li').each(function() {
+            if ($(this).attr('id') != 'no-recents') {
+                $(this).remove();
+            }
+        });
+        
+        let recent_bins = getRecentBins();
+        let some = false;
+        for (let n = 0; n < recent_bins.length; n++) {
+            let txt = recent_bins[n];
+            if (txt.indexOf(TIMESERIES) == 0) {
+                for (let i = 0; i < 3; i++) {
+                    let b = createBinItem(txt.replace(TIMESERIES, ""), "PLACEHOLDER FIX ME", true);
+                    $('#recent-list').append(b);
+                    some = true;
                 }
             }
-            options[n].outerHTML = '';
+        }
+        if (some) {
+            $('#no-recents').css("display", "none");
+        }
+        
+        tspage.stop().animate({
+            'height' : 0,
+        }, 500, function() {
+            let height = binpage.css('height', 'auto').height();
+            binpage.height(0);
+            binpage.stop().animate({
+                'height' : height
+            }, 500, function() {
+                binpage.css('height', 'auto');
+            });
+            let tsselect = $('#timeseries-page .bootstrap-select');
+            let old_width = tsselect.width();
+            tsselect.width(0);
+            let left = main[0].getBoundingClientRect().left;
+            let right = main[0].getBoundingClientRect().right;
+            tsselect.width(old_width);
+            tsselect.stop().animate({
+                'width' : '0'
+            }, 500);
+            addoptions.animate({
+                'left' : left - addoptions[0].getBoundingClientRect().width - 20
+            }, 500);
+            recents.animate({
+                'left' : right + 20
+            }, 500);
+        });
+        
+    });
+    
+    $('#bin-back').click(function() {
+        
+        addoptions.animate({
+            'left' : 0 - addoptions[0].getBoundingClientRect().width
+        }, 500);
+        
+        recents.animate({
+            'left': '100%'
+        }, 500);
+        
+        binpage.stop().animate({
+            'height' : 0,
+        }, 500, function() {
+            let height = tspage.css('height', 'auto').height();
+            tspage.height(0);
+            tspage.stop().animate({
+                'height' : height
+            }, 500, function() {
+                tspage.css('height', 'auto');
+            });
+            let tsselect = $('#timeseries-page .bootstrap-select');
+            tsselect.stop().animate({
+                'width' : '350px'
+            }, 500);
+            if ($('#options-manual').height() > 0) {
+                $('#manual-back').click();
+            } else if ($('#options-date').height() > 0) {
+                $('#date-back').click();
+            } else if ($('#date-results').height() > 0) {
+                $('#results-back').click();
+            }
+        });
+        
+    });
+    
+    $('#add-manual').click(function() {
+        
+        $('#options-page1').stop().animate({
+            'height' : 0
+        }, 500, function() {
+            let height = $('#options-manual').css('height', 'auto').height();
+            $('#options-manual').height(0);
+            $('#options-manual').stop().animate({
+                'height' : height
+            }, 500, function() {
+                $('#options-manual').css('height', 'auto');
+            });
+        });
+        
+    });
+    
+    $('#manual-back').click(function() {
+    
+        $('#options-manual').stop().animate({
+            'height' : 0
+        }, 500, function() {
+            let height = $('#options-page1').css('height', 'auto').height();
+            $('#options-page1').height(0);
+            $('#options-page1').stop().animate({
+                'height' : height
+            }, 500, function() {
+                $('#options-page1').css('height', 'auto');
+            });
+            $('#manual-entry').val('');
+        });
+        
+    });
+    
+    $('#manual-add').click(function() {
+        let bins = $('#manual-entry').val().split(/[\s,]+/).filter(Boolean);
+        if (bins.length == 0) {
+            showAlert("Please input at least one bin.", true);
             return;
         }
-    }
-}
-
-function addBins(text) {
-    var container = document.getElementById('MCBins');
-    var bins = text.split(',');
-    var ts = document.getElementById('MCTimeSeries');
-    ts = ts.options[ts.selectedIndex].value;
-    outerLoop:
-    for (var j = 0; j < bins.length; j++) {
-        var bin = bins[j].trim();
-        bin = bin.replace(ts, '')
-        for (var n = 0; n < container.options.length; n++) {
-            if (container.options[n].value == bin)
-                continue outerLoop;
-        }
-        var option = document.createElement('option');
-        option.text = bin;
-        option.value = bin;
-        document.getElementById('MCBins').add(option);
-    }
-}
-
-document.getElementById('MCBinsSubmit').onclick = function() {
-    submitForm(true);
-}
-
-document.getElementById('MCBinsSubmitAndImport').onclick = function() {
-    submitForm(false);
-}
-
-document.getElementById('MCBatchMode').onclick = function() {
-    if (this.checked)
-        document.getElementById('MCBatchModeOptions').style.display = 'block';
-    else
-        document.getElementById('MCBatchModeOptions').style.display = 'none';
-}
-
-document.getElementById('MCBatchSize').value = getBatchSize();
-
-var lastBatchClass = getBatchClass();
-var bc = document.getElementById('MCBatchClass');
-for (var n = 0; n < bc.options.length; n++) {
-    if (bc.options[n].value == lastBatchClass) {
-        bc.selectedIndex = n;
-        break;
-    }
-}
-
-var lastBatchTag = getBatchTag();
-var bt = document.getElementById('MCBatchTag');
-for (var n = 0; n < bt.options.length; n++) {
-    if (bt.options[n].value == lastBatchTag) {
-	bt.selectedIndex = n;
-	break;
-    }
-}
-
-var lastBatchStart = getBatchStart();
-document.getElementById('MCBatchStart').value = lastBatchStart;
-
-var lastBatchEnd = getBatchEnd();
-document.getElementById('MCBatchEnd').value = lastBatchEnd;
-
-function submitForm(raw) {
-    var bins_string = '';
-    var batchmode = document.getElementById('MCBatchMode').checked;
-    var batchSize = batchmode ? document.getElementById('MCBatchSize').value : null;
-    var batchClass = batchmode ? document.getElementById('MCBatchClass').value : null;
-    var batchTag = batchmode ? document.getElementById('MCBatchTag').value : null;    
-    
-    var options = document.getElementById('MCBins').options;
-    for (var n = 0; n < options.length; n++) {
-        bins_string += options[n].text + ',';
-    }
-    
-    bins_string = bins_string.substring(0, bins_string.length - 1);
-    
-    if (bins_string == '' && !batchmode)
-        return;
-
-    var ts = document.getElementById('MCTimeSeries');
-    ts = ts.options[ts.selectedIndex].value;
-    setLastTimeseries(ts);
-    
-    var form = document.createElement('form');
-    form.action = '/classify/';
-    form.method = 'POST';
-    
-    form.appendChild(createInput('bins', bins_string));
-    form.appendChild(createInput('timeseries', ts));
-    form.appendChild(createInput('import', !raw));
-    form.appendChild(createInput('batchmode', batchmode));
-    
-    if (batchmode) {
         
-        var bstart = document.getElementById('MCBatchStart').value;
-        var bend = document.getElementById('MCBatchEnd').value;
-
-        form.appendChild(createInput('batchsize', batchSize));
+        $('#manual-add').prop("disabled", true);
+        $('#manual-back').prop("disabled", true);
+        $('#bin-back').prop("disabled", true);
+        $('#bin-next').prop("disabled", true);
+        $('#manual-add').text("Loading...");
+        $('#manual-entry').prop("disabled", true);
         
-        if (bstart != '' && bend != '') {
-            form.appendChild(createInput('batchstart', document.getElementById('MCBatchStart').value))
-            form.appendChild(createInput('batchend', document.getElementById('MCBatchEnd').value))
+        function done() {
+            $('#manual-add').prop("disabled", false);
+            $('#manual-back').prop("disabled", false);
+            $('#bin-back').prop("disabled", false);
+            $('#bin-next').prop("disabled", false);
+            $('#manual-entry').prop("disabled", false);
+            $('#manual-add').text("Add");
+            $('#manual-entry').val('');
         }
         
-        form.appendChild(createInput('batchclass', document.getElementById('MCBatchClass').value))
-        form.appendChild(createInput('batchtag', document.getElementById('MCBatchTag').value))
+        let stripped = [];
+        for(let n = 0; n < bins.length; n++) {
+            stripped.push(bins[n].replace(TIMESERIES, ""));
+        }
         
-        setBatchSize(batchSize);
-	setBatchClass(batchClass);
-	setBatchTag(batchTag);
-        setBatchStart(bstart);
-	setBatchEnd(bend);
+        $.ajax({
+            url : '/validatebins/',
+            type : 'POST',
+            dataType : 'json',
+            data : {
+                'csrfmiddlewaretoken' : getCookie('csrftoken'),
+                'timeseries' : TIMESERIES,
+                'bins' : JSON.stringify(stripped)
+            },
+            success : function(data) {
+                for (let n = 0; n < data.good.length; n++) {
+                    let item = createBinItem(data.good[n][0], data.good[n][1], false);
+                    $('#bin-list').append(item);
+                    $('#none-selected').css('display', 'none');
+                }
+                if (data.bad.length > 0) {
+                    showAlert(data.bad.length + " invalid bins were omitted.", true);
+                }
+                done();
+            },
+            error : function(){
+                showAlert("Something went wrong validating bins. Please try again later.", true);
+                done();
+            }
+        });
+        
+    });
+    
+    $('#add-date').click(function() {
+        $('#options-page1').stop().animate({
+            'height' : 0
+        }, 500, function() {
+            let height = $('#options-date').css('height', 'auto').height();
+            $('#options-date').height(0);
+            $('#options-date').stop().animate({
+                'height' : height
+            }, 500, function() {
+                $('#options-date').css({
+                    'height' : 'auto',
+                });
+            });
+        });
+    });
+    
+    $('#date-back').click(function() {
+        $('#options-date').stop().animate({
+            'height' : 0
+        }, 500, function() {
+            let height = $('#options-page1').css('height', 'auto').height();
+            $('#options-page1').height(0);
+            $('#options-page1').stop().animate({
+                'height' : height
+            }, 500, function() {
+                $('#options-page1').css('height', 'auto');
+            });
+        });
+    });
+    
+    $('#date-search').click(function() {
+        let start = $('#date-start input');
+        let end = $('#date-end input');
+        if (!start.val() || !end.val()) {
+            showAlert("Please pick two times to search between.", true);
+            return;
+        }
+        
+        $('#date-search').prop("disabled", true);
+        $('#date-back').prop("disabled", true);
+        $('#bin-back').prop("disabled", true);
+        $('#bin-next').prop("disabled", true);
+        $('#date-search').text("Loading...");
+        
+        function done() {
+            $('#date-search').prop("disabled", false);
+            $('#date-back').prop("disabled", false);
+            $('#bin-back').prop("disabled", false);
+            $('#bin-next').prop("disabled", false);
+            $('#date-search').text("Search");
+        }
+        
+        $.ajax({
+            url : '/searchbins/',
+            type : 'POST',
+            dataType : 'json',
+            data : {
+                'csrfmiddlewaretoken' : getCookie('csrftoken'),
+                'timeseries' : TIMESERIES,
+                'start' : start.val(),
+                'end' : end.val()
+            },
+            success : function(data) {
+                done();
+                if (data.bins.length == 0) {
+                    showAlert("No bins found in that range.", true);
+                    return;
+                }
+                if (data.bins.length > 100) {
+                    showAlert("There are too many bins in that range. Try narrowing it down.", true);
+                    return;
+                }
+                
+                $('#bin-list li').each(function() {
+                    $(this).data("results", false);
+                });
+                
+                for (let n = 0; n < data.bins.length; n++) {
+                    let bin = data.bins[n][0];
+                    let date = data.bins[n][1];
+                    let item = createBinItem(bin, date, true);
+                    $('#date-list').append(item);
+                }
+                $('#options-date').stop().animate({
+                    'height' : 0
+                }, 500, function() {
+                    let height = $('#date-results').css('height', 'auto').height();
+                    $('#date-results').height(0);
+                    $('#date-results').stop().animate({
+                        'height' : height
+                    }, 500, function() {
+                        $('#date-results').css('height', 'auto');
+                    });
+                });
+            },
+            error : function(){
+                showAlert("Something went wrong searching for bins. Please try again later.", true);
+                done();
+            }
+        });
+        
+    });
+    
+    $('#results-back').click(function() {
+        $('#date-results').stop().animate({
+            'height' : 0
+        }, 500, function() {
+            let height = $('#options-page1').css('height', 'auto').height();
+            $('#options-page1').height(0);
+            $('#options-page1').stop().animate({
+                'height' : height
+            }, 500, function() {
+                $('#options-page1').css('height', 'auto');
+                $('#date-list li').remove();
+            });
+        });
+    });
+    
+    $('#results-add-all').click(function() {
+        $('#date-list .glyphicon-plus').each(function() {
+            $(this).click()
+        });
+    });
+    
+    $('#bin-next').click(function() {
+        if ($('#none-selected').css('display') != 'none') {
+            showAlert("You must select at least 1 bin.", true);
+            return;
+        } else {
+            $('#bin-page').animate({
+                'height' : 0
+            }, 500, function() {
+                let height = $('#views-page').css('height', 'auto').height();
+                $('#views-page').height(0);
+                $('#views-page').animate({
+                    'height' : height
+                }, 500, function() {
+                    $('#views-page').css('height', 'auto');
+                });
+                $('#views-list').animate({
+                    'width' : 500
+                }, 500);
+            });
+            $('#add-options').animate({
+                'left' : '-300px'
+            }, 500, function() {
+                if ($('#options-manual').height() > 0) {
+                    $('#manual-back').click();
+                } else if ($('#options-date').height() > 0) {
+                    $('#date-back').click();
+                } else if ($('#date-results').height() > 0) {
+                    $('#results-back').click();
+                }
+            });
+            $('#recent-bins').animate({
+                'left' : '100%'
+            }, 500);
+        }
+    });
+    
+    $('#views-back').click(function() {
+        $('#views-page').animate({
+            'height' : 0
+        }, 500, function() {
+            let height = $('#bin-page').css('height', 'auto').height();
+            $('#bin-page').height(0);
+            $('#bin-page').animate({
+                'height' : height
+            }, 500, function() {
+                $('#bin-page').css('height', 'auto');
+            });
+            $('#views-list').width(0);
+            let left = main[0].getBoundingClientRect().left;
+            let right = main[0].getBoundingClientRect().right;
+            $('#views-list').width(500);
+            addoptions.animate({
+                'left' : left - addoptions[0].getBoundingClientRect().width - 20
+            }, 500);
+            recents.animate({
+                'left' : right + 20
+            }, 500);
+        });
+        $('#views-list').animate({
+            'width' : 256
+        }, 500);
+    });
+    
+    $('#views-next').click(function() {
+        var form = document.createElement('form');
+        form.action = '/classify/';
+        form.method = 'POST';
+        
+        form.appendChild(createInput('bins', 'D20180525T142354_IFCB010'));
+        form.appendChild(createInput('timeseries', 'http://ifcb-data.whoi.edu/mvco/'));
+        form.appendChild(createInput('import', true));
+        form.appendChild(createInput('batchmode', false));
+        form.appendChild(createInput('csrfmiddlewaretoken', getCookie('csrftoken')));
+        
+        $('body').append(form);
+        form.submit();
+    });
+    
+    $('#add-view-btn').click(function() {
+        let v = $('#view-template').clone();
+        v.find('.bootstrap-select').each(function() {
+            $(this).find('select').insertBefore($(this));
+        });
+        v.removeAttr('id');
+        v.find('.bootstrap-select').remove();
+        $('#add-view-item').css('max-height', '45px');
+        $('#add-view-btn').css('top', '23px');
+        v.insertBefore($('#add-view-item'));
+        v.find('select').each(function() {
+            $(this).selectpicker();
+        });
+    });
+    
+    function createBinItem(name, time, add) {
+        
+        let btnCls = add ? "glyphicon glyphicon-plus" : "glyphicon glyphicon-remove";
+        
+        return `
+            <li class='list-group-item'>
+                <div class="bin-name">` + name + `</div>
+                <div class="bin-date">` + time + `</div>
+                <span role="button" class="` + btnCls + `"></span>
+            </li>
+        `;
+    }
+
+    // if red is false, the alert is green
+    function showAlert(message, red) {
+        if(red) {
+            alert.removeClass('alert-success');
+            alert.addClass('alert-danger');
+        } else {
+            alert.removeClass('alert-danger');
+            alert.addClass('alert-success');
+        }
+        $('#alert-message').html(message);
+        alert.css('opacity', '0');
+        alert.fadeTo(500, 1.0)
     }
     
-    form.insertAdjacentHTML('beforeend', csrf_token_form);
-    document.body.appendChild(form);
-    
-    form.submit();
-}
+});

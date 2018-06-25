@@ -1,18 +1,31 @@
+import re
+import time
+import logging
+import requests
+import iso8601
+import json
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
 from django.http import HttpResponse
 from django import forms
-import json
-from classify import utils, database, config
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.conf import settings
-import re
-import time
 from datetime import datetime
-import logging
+from classify import utils, database, config
 
 logger = logging.getLogger(__name__)
+
+def alertResponse(msg, red=True):
+    return HttpResponse(json.dumps({
+        'red' : red,
+        'message' : msg
+    }), content_type="application/json")
+    
+def redirectResponse(to):
+    return HttpResponse(json.dumps({
+        'redirect' : to
+    }), content_type="application/json")
 
 # Create your views here.
 class HomePageView(TemplateView):
@@ -31,7 +44,7 @@ class HomePageView(TemplateView):
         
 class LoginPageView(TemplateView):
     def get(self, request, **kwargs):
-        return render(request, 'login.html', {'needs_approval' : request.session.pop('needs_approval', '')})
+        return render(request, 'login.html', {})
     def post(self, request, **kwargs):
         if request.method == 'POST':
             username = request.POST.get('username')
@@ -40,12 +53,11 @@ class LoginPageView(TemplateView):
             if user is not None:
                 if (user.is_active):
                     login(request, user)
-                    return redirect('/')
+                    return redirectResponse("/")
                 else:
-                    request.session['needs_approval'] = True
-                    return redirect('/login/')
+                    return alertResponse("This account needs to be enabled by an administrator, please email epeacock@whoi.edu.")
             else:
-                return render(request, 'login.html', {'failed' : True})
+                return alertResponse("Invalid credentials.")
 
 def validate_username(username):
     return re.match(r'[A-Za-z][a-zA-Z0-9]*', username)
@@ -55,6 +67,47 @@ def validate_email(email):
 
 def validate_password(password):
     return len(password) >= 8
+    
+class ValidateBinsView(TemplateView):
+    def post(self, request, **kwargs):
+        ts = request.POST.get('timeseries')
+        bins = json.loads(request.POST.get('bins'))
+        good = []
+        bad = []
+        for bin in bins:
+            url = ts + bin + '_short.json'
+            r = requests.get(url, allow_redirects=True)
+            if r.status_code == 200:
+                bin = r.json()['pid'].replace(ts, '')
+                date = iso8601.parse_date(r.json()['date']).strftime("%b %e, %Y %I:%M %p").replace(" 0", " ")
+                good.append((bin, date))
+            else:
+                bad.append(bin)
+        return HttpResponse(json.dumps({
+            'good' : good,
+            'bad' : bad
+        }), content_type="application/json")
+        
+class SearchBinsView(TemplateView):
+    def post(self, request, **kwargs):
+        ts = request.POST.get('timeseries')
+        start = request.POST.get('start')
+        end = request.POST.get('end')
+        start = datetime.strptime(start, '%m/%d/%Y %I:%M %p')
+        end = datetime.strptime(end, '%m/%d/%Y %I:%M %p')
+        start = start.strftime('%Y-%m-%dT%H:%M:00')
+        end = end.strftime('%Y-%m-%dT%H:%M:00')
+        url = ts + 'api/feed/temperature/start/' + start + '/end/' + end
+        bins = []
+        r = requests.get(url)
+        for dict in r.json():
+            bin = dict['pid'].replace(ts, '')
+            date = iso8601.parse_date(dict['date']).strftime("%b %e, %Y %I:%M %p").replace(" 0", " ")
+            bins.append((bin, date))
+        return HttpResponse(json.dumps({
+            'bins' : bins
+        }), content_type="application/json")
+        
 
 class RegisterPageView(TemplateView):
     def get(self, request, **kwargs):
@@ -68,23 +121,22 @@ class RegisterPageView(TemplateView):
         inactive_user_limit = settings.INACTIVE_USER_LIMIT
         if n_inactive > inactive_user_limit:
             logger.warn('inactive users over the limit of {}'.format(inactive_user_limit))
-            return render(request, 'register.html', {'other_error': True})
+            return alertResponse("Something went wrong. Please try again later.")
         if User.objects.filter(username=username).exists():
-            return render(request, 'register.html', {'user_taken' : True})
+            return alertResponse("That username is already in use.")
         if User.objects.filter(email=email).exists():
-            return render(request, 'register.html', {'email_taken' : True})
+            return alertResponse("That email is already in use.")
         if not validate_username(username):
-            return render(request, 'register.html', {'user_invalid' : True})
+            return alertResponse("Your username can only contain letters and numbers.")
         if not validate_email(email):
-            return render(request, 'register.html', {'email_invalid': True})
+            return alertResponse("Please enter a valid email.")
         if not validate_password(password):
-            return render(request, 'register.html', {'password_invalid': True})
+            return alertResponse("Your password must be atleast 8 characters.")
         user = User.objects.create_user(username, email, password)
         user.is_active = False
         user.is_staff = True
         user.save()
-        request.session['needs_approval'] = True
-        return redirect('/login/')
+        return alertResponse("Success! Your account has been registered, but needs to be enabled. Please email epeacock@whoi.edu.", False)
 
 class LogoutPageView(TemplateView):
     def get(self, request, **kwargs):

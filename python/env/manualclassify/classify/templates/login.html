@@ -2,51 +2,60 @@
 {% load staticfiles %}
 
 {% block 'head' %}
-<link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}"/>
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'javascript/utils.js' %}"></script>
+    <script src="{% static 'javascript/login.js' %}"></script>
+
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}"/>
+
 {% endblock %}
 
 {% block 'body' %}
-<div id='MCLoginDiv'>
-  <center>
-    <h1 id='MCLoginHeader'>Manual Classify Login</h1>
-    <form id="MCLoginForm" action="/login/" method="post">
-      {% csrf_token %}
-      <div style="text-align: right">
-	Username&nbsp;<input id="MCLoginUsername" type="text" name="username" autofocus="true">
-      </div>
-      <div style="text-align: right">
-	Password&nbsp;<input id="MCLoginPassword" type="password" name="password">
-      </div>
-      <div style="text-align: center">
-	<input id="MCLoginSubmit" type="submit" name="Login" value="Login"></input>
-      </div>
-    </form>
-    <p>
-      <a href='/register/'>Need an account?</a>
-    </p>
-  </center>
-</div>
 
-<script>
-	var old = document.getElementById('MCLoginFailure');
-	if (old)
-		old.outerHTML = '';
-	if ('{{ failed }}' == 'True') {
-		showError('Invalid username or password');
-	}
-	if ('{{ needs_approval }}' == 'True') {
-		showError('This account needs to be enabled by an administrator, please email epeacock@whoi.edu');
-	}
-	function showError(text) {
-		var failure = document.createElement('div')
-		failure.id = 'MCLoginFailure'
-		var center = document.getElementById('MCLoginDiv').children[0];
-		failure.innerHTML = text;
-		failure.style.color = 'red';
-		center.insertBefore(failure, center.children[1]);
-	}
-	function submitForm() {
-		document.getElementById("MCLoginForm").submit();
-	}
-</script>
+    <div id="blur">
+    </div>
+    
+    <div id="overlay">
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div id="alert" class="alert alert-danger alert-dismissable">
+              <a id="alert-close" href="#" class="close" aria-label="close">&times;</a>
+              <span id="alert-message">alert</span>
+            </div>
+            <form id="login-form" method='post'>
+              {% csrf_token %}
+              <div id="form-background"></div>
+              <div id="form-title">IFCB Annotate</div>
+              <div class="form-group">
+                <input type="username" class="form-control" id="form-username" placeholder="Username" required>
+              </div>
+              <div class="form-group">
+                <input type="password" class="form-control" id="form-password" placeholder="Password" required>
+              </div>
+              <div id="hidden-register">
+                  <div class="form-group">
+                        <input type="password" class="form-control" id="form-confirm" placeholder="Confirm Password">
+                  </div>
+                  <div class="form-group">
+                        <input type="email" class="form-control" id="form-email" placeholder="Email">
+                  </div>
+              </div>
+              <div class="form-row">
+                <div class="col-md-6">
+                    <button type="button" id="form-submit-1" class="btn btn-primary">Login</button>
+                </div>
+                <div class="col-md-6">
+                    <button type="button" id="form-submit-2" class="btn btn-secondary">Register</button>
+                </div>
+              </div>
+              <button type="submit" id="dummy-submit"></button>
+            </form>
+        </div>
+    </div>
+    
 {% endblock %}

@@ -39,8 +39,9 @@ def getAllDataForBins(bins, targets):
     for bin in bins:
         query += '%s, '
         params.append(bin)
-    query = query[:-2] + ') '
-    query += 'ORDER BY pid, p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC;'
+    query = query[:-2] + ');'
+    # now that JS wants to order itself, we don't order here
+    # query += 'ORDER BY pid, p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC;'
     
     conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
     cur = conn.cursor()
@@ -62,18 +63,16 @@ def getAllDataForBins(bins, targets):
             'user_power' : row[10],
             'username' : row[11]
         }
-        # since rows are already sorted by power and time, the first time we see a pid, we know the classification is accepted
         if not row[12] in data:
             data[row[12]] = {
                 'pid' : row[12], # sometimes in Javascript these dictionaries are disassociated from their keys, but we still need to know their PID
-                'accepted_classification' : dict,
                 'width' : targets[row[12]]['width'],
                 'height' : targets[row[12]]['height'],
-                'other_classifications' : [],
+                'classifications' : [dict],
                 'tags' : [],
             }
         else:
-            data[row[12]]['other_classifications'].append(dict)
+            data[row[12]]['classifications'].append(dict)
 
     # now loop all targets given by Param 2
     for pid,dims in targets.items():
@@ -84,7 +83,7 @@ def getAllDataForBins(bins, targets):
                 'pid' : pid,
                 'width' : dims['width'],
                 'height' : dims['height'],
-                'other_classifications' : [],
+                'classifications' : [],
                 'tags' : [],
             }
     
@@ -430,10 +429,7 @@ def addClassifierData(bins, classes, tags, data):
                     'user_power' : -1,
                     'username' : 'auto',
                 }
-                if not 'accepted_classification' in data[pid]:
-                    data[pid]['accepted_classification'] = dict
-                else:
-                    data[pid]['other_classifications'].append(dict)
+                data[pid]['classifications'].append(dict)
                 # this is a special case, where the classifier also annotates an 'external detritus' tag
                 if classification == 'Thalassiosira_dirty':
                     tag_id = None

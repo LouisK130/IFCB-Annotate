@@ -1,0 +1,52 @@
+{% extends 'master.html' %}
+{% load staticfiles %}
+
+{% block 'head' %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}"/>
+{% endblock %}
+
+{% block 'body' %}
+<div id='MCLoginDiv'>
+  <center>
+    <h1 id='MCLoginHeader'>Manual Classify Login</h1>
+    <form id="MCLoginForm" action="/login/" method="post">
+      {% csrf_token %}
+      <div style="text-align: right">
+	Username&nbsp;<input id="MCLoginUsername" type="text" name="username" autofocus="true">
+      </div>
+      <div style="text-align: right">
+	Password&nbsp;<input id="MCLoginPassword" type="password" name="password">
+      </div>
+      <div style="text-align: center">
+	<input id="MCLoginSubmit" type="submit" name="Login" value="Login"></input>
+      </div>
+    </form>
+    <p>
+      <a href='/register/'>Need an account?</a>
+    </p>
+  </center>
+</div>
+
+<script>
+	var old = document.getElementById('MCLoginFailure');
+	if (old)
+		old.outerHTML = '';
+	if ('{{ failed }}' == 'True') {
+		showError('Invalid username or password');
+	}
+	if ('{{ needs_approval }}' == 'True') {
+		showError('This account needs to be enabled by an administrator, please email epeacock@whoi.edu');
+	}
+	function showError(text) {
+		var failure = document.createElement('div')
+		failure.id = 'MCLoginFailure'
+		var center = document.getElementById('MCLoginDiv').children[0];
+		failure.innerHTML = text;
+		failure.style.color = 'red';
+		center.insertBefore(failure, center.children[1]);
+	}
+	function submitForm() {
+		document.getElementById("MCLoginForm").submit();
+	}
+</script>
+{% endblock %}

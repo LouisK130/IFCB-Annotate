@@ -13,4 +13,6 @@ urlpatterns = [
     url(r'^logout/$', views.LogoutPageView.as_view()),
     url(r'^getzip/$', views.ZipDownloadPageView.as_view()),
     url(r'^cachebins/$', views.CacheBinPageView.as_view()),
+    url(r'^validatebins/$', views.ValidateBinsView.as_view()),
+    url(r'^searchbins/$', views.SearchBinsView.as_view())
 ]
