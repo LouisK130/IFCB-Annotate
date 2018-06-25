@@ -27,6 +27,7 @@ for(var n = 0; n < zips_expected; n++) {
 var classSelect = document.getElementById('MCClassificationSelection');
 var tagSelect = document.getElementById('MCTagSelection');
 var filterSelect = document.getElementById('MCFilterByCompletionSelection');
+var orderSelect = document.getElementById('MCOrderBySelection');
 
 var classApplySelect = document.getElementById('ClassificationApplicationSelection');
 var tagApplySelect = document.getElementById('TagApplicationSelection');
@@ -54,6 +55,16 @@ if (batch_mode) {
 // see all completion levels by default
 filterSelect.value = 'ALL';
 filterSelect.onchange = reloadTargets;
+
+orderSelect.value = 'power';
+orderSelect.onchange = function() {
+    for (let pid in classifications) {
+        if ('classifications' in classifications[pid]) {
+            classifications[pid]['classifications'].sort(compareClassifications);
+        }
+    }
+    reloadTargets();
+}
 
 // select blank applications
 classApplySelect.value = '';
@@ -83,8 +94,12 @@ function hideLoading() {
 
 showLoading();
 setTimeout(function() {
-    for (var pid in classifications)
+    for (var pid in classifications) {
         labelAcceptedTagsForPid(pid);
+        if ('classifications' in classifications[pid]) {
+            classifications[pid]['classifications'].sort(compareClassifications);
+        }
+    }
     reloadTargets();
     if (current_targets.length == 0)
         moveToNextView();
@@ -243,9 +258,9 @@ function applyToTile(tile) {
     var verify_other_tag = false;
     for(var n = 0; n < current_targets.length; n++) {
         if (current_targets[n]['pid'] == pid) {
-            if ('other_classifications' in current_targets[n]) {
-                for(var z = 0; z < current_targets[n]['other_classifications'].length; z++) {
-                    var c = current_targets[n]['other_classifications'][z]
+            if ('classifications' in current_targets[n]) {
+                for(var z = 0; z < current_targets[n]['classifications'].length; z++) {
+                    var c = current_targets[n]['classifications'][z]
                     if (c['classification_id'] == clas) {
                         if (user_id == c['user_id']) {
                             verify_other = true;

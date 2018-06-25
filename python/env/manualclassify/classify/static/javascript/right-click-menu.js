@@ -246,13 +246,8 @@ function resizeMenu() {
 function getClassificationsForPid(pid) {
     var results = [];
     var c = classifications[pid];
-
-    if (c['accepted_classification'])
-        results.push(buildEntryLabels(c['accepted_classification']));
-    if (c['other_classifications']) {
-        for (var n = 0; n < c['other_classifications'].length; n++)
-            results.push(buildEntryLabels(c['other_classifications'][n]));
-    }
+    for (var n = 0; n < c['classifications'].length; n++)
+        results.push(buildEntryLabels(c['classifications'][n]));
 
     return results;
 }
