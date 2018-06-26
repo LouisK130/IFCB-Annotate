@@ -132,8 +132,6 @@ def getZipForBin(bin, timeseries):
     
 def downloadZipForBin(bin, timeseries):
 
-    bin = bin + '1'
-
     t = time.time()
     while os.path.isfile(ZIP_CACHE_PATH + '/' + bin + '_temp.zip'):
         if time.time() - t > 30: # 30 second timeout before just trying to download the file again
