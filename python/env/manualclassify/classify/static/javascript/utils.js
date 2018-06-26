@@ -341,6 +341,7 @@ function loadImagesFromZip(bin) {
         })
     }, function(error) {
         console.log('error reading zip');
+        console.log(error);
     });
 }
 

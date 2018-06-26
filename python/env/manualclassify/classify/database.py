@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 #     for all PIDs in the given bins
 # Output: a dictionary, indexed by PID, with values that are dictionaries containing all data for all classifications
 #    relevant to the given bins, ready to be passed to JS or to another function that will add the auto classifier data
-def getAllDataForBins(bins, targets):
+def getAllDataForBins(bins, targets, timeseries):
 
     # since timeseries_id should already be held in memory, no point in joining that table again in below query
-    timeseries_id = getTimeseriesId(utils.timeseries)
+    timeseries_id = getTimeseriesId(timeseries)
     
     params = [timeseries_id]
     
@@ -145,7 +145,7 @@ def getAllDataForBins(bins, targets):
 #        ]
 #    }
 # where ... represents all data for an entry that was updated or inserted
-def insertUpdates(updates, user_id, is_classifications, negations):
+def insertUpdates(updates, user_id, is_classifications, negations, timeseries):
 
     # if we don't have any updates, just stop
     if not updates or len(updates) == 0:
@@ -189,10 +189,10 @@ def insertUpdates(updates, user_id, is_classifications, negations):
             # if these are negations, each `id` is actually an array of ids
             for trueID in id:
                 query = query + '(%s, %s, %s, now(), %s, 1, 0, null, %s, true), '
-                params.extend([bin, roi, user_id, trueID, getTimeseriesId(utils.timeseries)])
+                params.extend([bin, roi, user_id, trueID, getTimeseriesId(timeseries)])
         else:
             query = query + '(%s, %s, %s, now(), %s, 1, 0, null, %s'
-            params.extend([bin, roi, user_id, id, getTimeseriesId(utils.timeseries)])
+            params.extend([bin, roi, user_id, id, getTimeseriesId(timeseries)])
             # if these are tags, we have to specificy 'false' for negation column
             if is_classifications:
                 query = query + '), '
@@ -398,7 +398,7 @@ def getTagList():
 # Param 4: a dictionary, indexed by pid and produced by database.getAllDataForBins(), containing all annotations for the given bins
 # Output: the same dictionary given in Param 4, modified to include annotations from the auto classifier
 
-def addClassifierData(bins, classes, tags, data):
+def addClassifierData(bins, classes, tags, data, timeseries):
     for bin in bins:
         auto_results = utils.getAutoResultsForBin(bin)
         if not auto_results:
@@ -425,7 +425,7 @@ def addClassifierData(bins, classes, tags, data):
                     'user_id' : -1,
                     'classification_id' : classification_id,
                     'level' : 1,
-                    'timeseries_id' : getTimeseriesId(utils.timeseries),
+                    'timeseries_id' : getTimeseriesId(timeseries),
                     'user_power' : -1,
                     'username' : 'auto',
                 }
@@ -442,7 +442,7 @@ def addClassifierData(bins, classes, tags, data):
                             'tag_id' : tag_id,
                             'user_power' : -1,
                             'level' : 1,
-                            'timeseries_id' : getTimeseriesId(utils.timeseries),
+                            'timeseries_id' : getTimeseriesId(timeseries),
                             'username' : 'auto',
                         }
                         data[pid]['tags'].append(dict)
