@@ -1,14 +1,14 @@
 <div id='MCFilterToolbox'>
   <div class='MCSelectLabel'><small><b>Select a classification to view:</b></small></div>
   <select class='MCSelectBox' id='MCClassificationSelection'>
-    <option value='ALL'>ALL</option>
+    <option value='ANY'>ANY</option>
     {% for label in classification_labels %}
     <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
     {% endfor %}
   </select>
   <div class='MCSelectLabel'><small><b>Select a tag to view:</b></small></div>
   <select class='MCSelectBox' id='MCTagSelection'>
-    <option value='ALL'>ALL</option>
+    <option value='ANY'>ANY</option>
     <option value='NONE'>NONE</option>
     {% for label in tag_labels %}
     <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
@@ -16,7 +16,7 @@
   </select>
   <div class='MCSelectLabel'><small><b>Filter by completion:</b></small></div>
   <select class='MCSelectBox' id='MCFilterByCompletionSelection'>
-    <option value='ALL'>ALL</option>
+    <option value='ANY'>ANY</option>
     <option value='ME'>Classified by me (and nobody more powerful)</option>
     <option value='OTHERS'>Classified by others</option>
     <option value='NONE'>Not classified by anyone</option>

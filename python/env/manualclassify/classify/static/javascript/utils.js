@@ -4,18 +4,18 @@ var queued_targets = {};
 
 // https://www.w3schools.com/js/js_cookies.asp
 function setCookie(cname, cvalue, exdays) {
-    var d = new Date();
+    let d = new Date();
     d.setTime(d.getTime() + (exdays*24*60*60*1000));
-    var expires = "expires="+ d.toUTCString();
+    let expires = "expires="+ d.toUTCString();
     document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
 
 function getCookie(cname) {
-    var name = cname + "=";
-    var decodedCookie = decodeURIComponent(document.cookie);
-    var ca = decodedCookie.split(';');
-    for(var i = 0; i <ca.length; i++) {
-        var c = ca[i];
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for(let i = 0; i <ca.length; i++) {
+        let c = ca[i];
         while (c.charAt(0) == ' ') {
             c = c.substring(1);
         }
@@ -26,25 +26,28 @@ function getCookie(cname) {
     return "";
 }
 
-function addRecentBinToCookies(new_bin) {
-    new_bin = timeseries + new_bin
-    var bins = getRecentBins();
-    var new_bins = [];
-    for (var n = 0; n < bins.length; n++) {
-        if (bins[n] != new_bin)
-            new_bins.push(bins[n]);
+function addRecentBinToCookies(new_bin, time, timeseries) {
+    let bins = getRecentBins(timeseries);
+    let new_bins = [];
+    for (let n = 0; n < bins.length; n++) {
+        if (bins[n][0] != new_bin)
+            new_bins.push(bins[n][0] + "|" + bins[n][1]);
     }
-    while (new_bins.length >= 50)
-        new_bins.splice(bins.length-1, 1);
-    new_bins.splice(0, 0, new_bin);
-    setCookie('MCRecentBins', new_bins.join(), 3650);
+    while (new_bins.length >= 10)
+        new_bins.splice(new_bins.length-1, 1);
+    new_bins.splice(0, 0, new_bin + "|" + time);
+    setCookie(timeseries + "_bins", new_bins.join("|"), 3650);
 }
 
-function getRecentBins() {
-    var bins_string = getCookie('MCRecentBins');
-    var bins = bins_string.split(',');
+function getRecentBins(timeseries) {
+    let bins_string = getCookie(timeseries + "_bins");
+    let items = bins_string.split('|');
     if (bins_string.length == 0)
-        bins = [];
+        items = [];
+    let bins = [];
+    for (let n = 0; n < items.length; n = n + 2) {
+        bins.push([items[n], items[n + 1]])
+    }
     return bins;
 }
 
@@ -160,7 +163,7 @@ function isClippedByBox(ele, box) {
         return true;
     if (in_column && in_row) // box clips a corner of element
         return true;
-    // this seems to (USUALLY) trigger a regular click event, so no need to do it twice
+    // this seems to (usually) trigger a regular click event, so no need to do it twice
     //if (box.left > rect.left && box.right < rect.right && box.top > rect.top && box.bottom < rect.bottom) // box is entirely within the element
     //return true;
     return false;
@@ -201,7 +204,7 @@ function compareClassifications(c1, c2) {
 function checkPidBelongsInView(pid, classification, tag, filter, include_unclassified) {
     if (classifications.hasOwnProperty(pid)) {
         
-        var t_ok = tag == 'ALL';
+        var t_ok = tag == 'ANY';
         if (!(t_ok)) {
             var acceptedTags = getAcceptedTagsForPid(pid);
             if (tag == 'NONE') {
@@ -213,15 +216,15 @@ function checkPidBelongsInView(pid, classification, tag, filter, include_unclass
         }
         
         if (!('classifications' in classifications[pid]) || classifications[pid]['classifications'].length == 0)
-            return t_ok && include_unclassified && (filter == 'ALL' || filter == 'NONE');
+            return t_ok && include_unclassified && (filter == 'ANY' || filter == 'NONE');
       
         let c = classifications[pid]['classifications'][0];
         
-        var c_ok = classification == 'ALL' || c['classification_id'] == classification;
+        var c_ok = classification == 'ANY' || c['classification_id'] == classification;
 
         var f_ok = false;
         switch (filter) {
-        case 'ALL':
+        case 'ANY':
             f_ok = true;
             break;
         case 'ME':

@@ -62,10 +62,10 @@ function createContextMenu() {
         
         if (n == -1) {
             var verify_c = document.getElementById('MCClassificationSelection').value;
-            if (verify_c == 'ALL')
+            if (verify_c == 'ANY')
                 verify_c = '';
             var verify_t = document.getElementById('MCTagSelection').value;
-            if (verify_t == 'ALL' || verify_t == 'NONE')
+            if (verify_t == 'ANY' || verify_t == 'NONE')
                 verify_t = '';
             option = createApplicationOption(verify_c, verify_t);
             option.style.borderTop = '2px solid';

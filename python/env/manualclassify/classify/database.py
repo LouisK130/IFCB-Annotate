@@ -252,7 +252,7 @@ def insertUpdates(updates, user_id, is_classifications, negations):
 
 # Param 1: an array of strings, representing bin names
 # Param 2: an integer representing a class id
-# Param 3: an integer repsenting a tag id, OR a string 'ALL' or 'NONE'
+# Param 3: an integer repsenting a tag id, OR a string 'ANY' or 'NONE'
 # Output: the same array of strings from Param 1, minus any bins which don't have at least one target classified as Param 2/3
 def filterBins(bins, classID, tagID):
     if classID == '' or tagID == '':
@@ -283,7 +283,7 @@ def filterBins(bins, classID, tagID):
     
     params.append(classID)
                 
-    if not tagID == 'ALL':
+    if not tagID == 'ANY':
         query = query + (''
                 ', '
                 'TA AS ( '
@@ -314,7 +314,7 @@ def filterBins(bins, classID, tagID):
     query = query + (''
             ' SELECT DISTINCT ON (bin) bin FROM CF')
             
-    if not tagID == 'ALL':
+    if not tagID == 'ANY':
     
         tag_query = 'TA' if tagID == 'NONE' else 'TF'
         

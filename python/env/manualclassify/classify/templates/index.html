@@ -28,16 +28,16 @@
     
     <li id="view-template" class="list-group-item">
         <div class="row">
-            <div class="col-md-6">
-                <select class="selectpicker" data-container="body">
+            <div class="col-xs-6">
+                <select class="selectpicker" data-container="body" data-live-search="true">
                 {% for label in classification_labels %}
                     <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
                 {% endfor %}
                 </select>
             </div>
-            <div class="col-md-6">
-                <select class="selectpicker" data-container="body">
-                    <option value='ALL'>ALL</option>
+            <div class="col-xs-6">
+                <select class="selectpicker" data-container="body" data-live-search="true" data-selected-text-format="count" multiple>
+                    <option value='ANY' selected>ANY</option>
                     <option value='NONE'>NONE</option>
                     {% for label in tag_labels %}
                         <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
@@ -77,10 +77,10 @@
                         <textarea class="form-control" id="manual-entry" placeholder="Entries can be separated by commas or spaces."></textarea>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="manual-back" class="btn btn-secondary">Back</button>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="manual-add" class="btn btn-success">Add</button>
                         </div>
                     </div>
@@ -112,10 +112,10 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="date-back" class="btn btn-secondary">Back</button>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="date-search" class="btn btn-success">Search</button>
                         </div>
                     </div>
@@ -124,10 +124,10 @@
                     <div class="form-title">Search Results</div>
                     <ul id="date-list" class='list-group'></ul>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="results-back" class="btn btn-secondary">Back</button>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="results-add-all" class="btn btn-success">Add All</button>
                         </div>
                     </div>
@@ -156,10 +156,10 @@
                       {% endfor %}
                     </select>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="timeseries-back" class="btn btn-secondary">Back</button>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="timeseries-next" class="btn btn-primary">Next</button>
                         </div>
                     </div>
@@ -170,10 +170,10 @@
                         <li id="none-selected" class='list-group-item'>None Selected</li>
                     </ul>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="bin-back" class="btn btn-secondary">Back</button>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="bin-next" class="btn btn-primary">Next</button>
                         </div>
                     </div>
@@ -187,10 +187,10 @@
                         </li>
                     </ul>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="views-back" class="btn btn-secondary">Back</button>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-xs-6">
                             <button type="button" id="views-next" class="btn btn-primary">Finish</button>
                         </div>
                     </div>
@@ -255,7 +255,7 @@
     <p style='display:table-row'>
       <label for='MCBatchTag' style='display:table-cell;padding-right:5px;'><b>Tag:</b></label>
       <select id='MCBatchTag' style='display:table-cell'>
-	<option value='ALL'>ALL</option>
+	<option value='ANY'>ANY</option>
 	<option value='NONE'>NONE</option>
 	{% for label in tag_labels %}
 	<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>

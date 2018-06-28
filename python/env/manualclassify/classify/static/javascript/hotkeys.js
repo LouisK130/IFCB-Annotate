@@ -2,7 +2,7 @@ var FORWARD_KEY = 78; // N
 var PREVIOUS_KEY = 80; // P
 var CONTEXT_MENU_KEY = 76; // L
 var SUBMIT_UPDATES_KEY = 13; // ENTER
-var VERIFY_ALL_KEY = 219; // [
+var VERIFY_ANY_KEY = 219; // [
 
 document.addEventListener('keydown', generalKeyDown, false);
 
@@ -11,7 +11,7 @@ function generalKeyDown(e) {
         e.keyCode == PREVIOUS_KEY ||
         e.keyCode == CONTEXT_MENU_KEY ||
         e.keyCode == SUBMIT_UPDATES_KEY ||
-        e.keyCode == VERIFY_ALL_KEY) {
+        e.keyCode == VERIFY_ANY_KEY) {
         if (document.activeElement.className == 'MCSelectBox') {
             document.activeElement.blur();
             e.preventDefault();
@@ -42,17 +42,17 @@ function generalKeyDown(e) {
         case SUBMIT_UPDATES_KEY:
             submitUpdates();
             break;
-        case VERIFY_ALL_KEY:
+        case VERIFY_ANY_KEY:
             var targets = getAllVisibleTargets();
             var c = document.getElementById('ClassificationApplicationSelection');
             var t = document.getElementById('TagApplicationSelection');
             var old_c = c.value;
             var old_t = t.value;
             var verify_c = document.getElementById('MCClassificationSelection').value;
-            if (verify_c == 'ALL')
+            if (verify_c == 'ANY')
                 verify_c = '';
             var verify_t = document.getElementById('MCTagSelection').value;
-            if (verify_t == 'ALL' || verify_t == 'NONE')
+            if (verify_t == 'ANY' || verify_t == 'NONE')
                 verify_t = '';
             c.value = verify_c;
             t.value = verify_t;
@@ -125,7 +125,7 @@ function moveToPreviousView() {
     submitUpdates();
     var c = document.getElementById('MCClassificationSelection');
     var t = document.getElementById('MCTagSelection');
-    if (t.value == 'NONE' || t.value == 'ALL') {
+    if (t.value == 'NONE' || t.value == 'ANY') {
         if (c.selectedIndex != 1) {
             c.selectedIndex = c.selectedIndex - 1;
             t.selectedIndex = t.options.length - 1;

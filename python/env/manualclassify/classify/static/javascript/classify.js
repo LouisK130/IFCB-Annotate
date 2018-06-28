@@ -53,7 +53,7 @@ if (batch_mode) {
 }
 
 // see all completion levels by default
-filterSelect.value = 'ALL';
+filterSelect.value = 'ANY';
 filterSelect.onchange = reloadTargets;
 
 orderSelect.value = 'power';
@@ -501,7 +501,7 @@ function sortOptions(a,b) {
 }
 
 // sort select options alphabetically
-// I want to keep ALL And NONE on top
+// I want to keep ANY And NONE on top
 // probably not the most elegant way to do this but meh
 function sortSelectBoxes(c, t, cSpecial, tSpecial) {
     var c_array = Array.apply(null, c.options);

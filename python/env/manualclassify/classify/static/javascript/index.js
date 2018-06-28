@@ -10,13 +10,7 @@ $(function() {
     let recents = $('#recent-bins');
     let alert = $('#alert');
     
-    $('#date-start').datetimepicker({
-        widgetPositioning: {
-            horizontal: 'auto',
-            vertical: 'bottom'
-        },
-        widgetParent: 'body > .row > .col-md-12'
-    });
+    $('#date-start').datetimepicker();
     $('#date-end').datetimepicker();
 
     
@@ -59,7 +53,7 @@ $(function() {
     });
     
     $(document).on('click', '.glyphicon-remove', function() {
-        let bin = $(this).parent().detach();
+        let bin = $(this).closest('li').detach();
         if (bin.data('recent')) {
             $('#no-recents').css('display', 'none');
             $('#recent-list').append(bin);
@@ -73,6 +67,9 @@ $(function() {
         }
         if ($('#bin-list li').length == 1) {
             $('#none-selected').css('display', 'block');
+        }
+        if ($('#views-list li').length == 1) {
+            $('#add-view-item').css('max-height', 'calc(100% - 5px');
         }
     });
     
@@ -125,19 +122,11 @@ $(function() {
             }
         });
         
-        let recent_bins = getRecentBins();
-        let some = false;
+        let recent_bins = getRecentBins(TIMESERIES);
         for (let n = 0; n < recent_bins.length; n++) {
-            let txt = recent_bins[n];
-            if (txt.indexOf(TIMESERIES) == 0) {
-                for (let i = 0; i < 3; i++) {
-                    let b = createBinItem(txt.replace(TIMESERIES, ""), "PLACEHOLDER FIX ME", true);
-                    $('#recent-list').append(b);
-                    some = true;
-                }
-            }
-        }
-        if (some) {
+            let item = recent_bins[n];
+            let b = createBinItem(item[0], item[1], true);
+            $('#recent-list').append(b);
             $('#no-recents').css("display", "none");
         }
         
@@ -205,6 +194,17 @@ $(function() {
         
     });
     
+    $('#recent-clear').click(function() {
+        $('#recent-list li').each(function() {
+            if ($(this).attr('id') == 'no-recents') {
+                $(this).removeAttr("style");
+            } else {
+                $(this).remove();
+            }
+        });
+        setCookie(TIMESERIES + "_bins", "", 3650);
+    });
+    
     $('#add-manual').click(function() {
         
         $('#options-page1').stop().animate({
@@ -241,7 +241,7 @@ $(function() {
     $('#manual-add').click(function() {
         let bins = $('#manual-entry').val().split(/[\s,]+/).filter(Boolean);
         if (bins.length == 0) {
-            showAlert("Please input at least one bin.", true);
+            showAlert("Please input at least one bin.", 'alert-danger');
             return;
         }
         
@@ -283,12 +283,12 @@ $(function() {
                     $('#none-selected').css('display', 'none');
                 }
                 if (data.bad.length > 0) {
-                    showAlert(data.bad.length + " invalid bins were omitted.", true);
+                    showAlert(data.bad.length + " invalid bins were omitted.", 'alert-danger');
                 }
                 done();
             },
             error : function(){
-                showAlert("Something went wrong validating bins. Please try again later.", true);
+                showAlert("Something went wrong validating bins. Please try again later.", 'alert-danger');
                 done();
             }
         });
@@ -306,6 +306,7 @@ $(function() {
             }, 500, function() {
                 $('#options-date').css({
                     'height' : 'auto',
+                    'overflow' : 'visible'
                 });
             });
         });
@@ -329,7 +330,7 @@ $(function() {
         let start = $('#date-start input');
         let end = $('#date-end input');
         if (!start.val() || !end.val()) {
-            showAlert("Please pick two times to search between.", true);
+            showAlert("Please pick two times to search between.", 'alert-danger');
             return;
         }
         
@@ -360,13 +361,15 @@ $(function() {
             success : function(data) {
                 done();
                 if (data.bins.length == 0) {
-                    showAlert("No bins found in that range.", true);
+                    showAlert("No bins found in that range.", 'alert-danger');
                     return;
                 }
                 if (data.bins.length > 100) {
-                    showAlert("There are too many bins in that range. Try narrowing it down.", true);
+                    showAlert("There are too many bins in that range. Try narrowing it down.", 'alert-danger');
                     return;
                 }
+                
+                $('#options-date').css('overflow', 'hidden');
                 
                 $('#bin-list li').each(function() {
                     $(this).data("results", false);
@@ -391,7 +394,7 @@ $(function() {
                 });
             },
             error : function(){
-                showAlert("Something went wrong searching for bins. Please try again later.", true);
+                showAlert("Something went wrong searching for bins. Please try again later.", 'alert-danger');
                 done();
             }
         });
@@ -421,9 +424,12 @@ $(function() {
     
     $('#bin-next').click(function() {
         if ($('#none-selected').css('display') != 'none') {
-            showAlert("You must select at least 1 bin.", true);
+            showAlert("You must select at least 1 bin.", 'alert-danger');
             return;
         } else {
+            if ($('#bin-list li').length > 11) {
+                showAlert("You've specified more than 10 bins; you'll see them in batches of 10.", 'alert-warning');
+            }
             $('#bin-page').animate({
                 'height' : 0
             }, 500, function() {
@@ -483,12 +489,19 @@ $(function() {
     });
     
     $('#views-next').click(function() {
+        let bins = $('#bin-list .bin-name');
+        let string = ""
+        for (let n = 0; n < bins.length; n++) {
+            addRecentBinToCookies(bins[n].innerHTML, $(bins[n]).parent().find('.bin-date')[0].innerHTML, TIMESERIES);
+            string = string + bins[n].innerHTML + ","
+        }
+        string = string.substring(0, string.length - 1);
         var form = document.createElement('form');
         form.action = '/classify/';
         form.method = 'POST';
         
-        form.appendChild(createInput('bins', 'D20180525T142354_IFCB010'));
-        form.appendChild(createInput('timeseries', 'http://ifcb-data.whoi.edu/mvco/'));
+        form.appendChild(createInput('bins', string));
+        form.appendChild(createInput('timeseries', TIMESERIES));
         form.appendChild(createInput('import', true));
         form.appendChild(createInput('batchmode', false));
         form.appendChild(createInput('csrfmiddlewaretoken', getCookie('csrftoken')));
@@ -505,7 +518,7 @@ $(function() {
         v.removeAttr('id');
         v.find('.bootstrap-select').remove();
         $('#add-view-item').css('max-height', '45px');
-        $('#add-view-btn').css('top', '23px');
+        // $('#add-view-btn').css('top', '23px');
         v.insertBefore($('#add-view-item'));
         v.find('select').each(function() {
             $(this).selectpicker();
@@ -526,14 +539,11 @@ $(function() {
     }
 
     // if red is false, the alert is green
-    function showAlert(message, red) {
-        if(red) {
-            alert.removeClass('alert-success');
-            alert.addClass('alert-danger');
-        } else {
-            alert.removeClass('alert-danger');
-            alert.addClass('alert-success');
-        }
+    function showAlert(message, cls) {
+        alert.removeClass('alert-success');
+        alert.removeClass('alert-danger');
+        alert.removeClass('alert-warning');
+        alert.addClass(cls);
         $('#alert-message').html(message);
         alert.css('opacity', '0');
         alert.fadeTo(500, 1.0)
