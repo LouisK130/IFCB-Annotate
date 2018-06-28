@@ -51,6 +51,13 @@
       <input id='MCBatchEnd' type='date'>
     </p>
     <p style='display:table-row'>
+      <label for='MCBatchOrdering' style='display:table-cell;padding-right:5px;'><b>Order Annotations By:</b></label>
+      <select id='MCBatchOrdering'>
+        <option value="power" selected>Most powerful user</option>
+        <option value="time">Most recent</option>
+      </select>
+    </p>
+    <p style='display:table-row'>
       <label for='MCBatchClass' style='display:table-cell;padding-right:5px;'><b>Class:</b></label>
       <select id='MCBatchClass' style='display:table-cell'>
 	{% for label in classification_labels %}

@@ -43,15 +43,6 @@ classSelect.onchange = reloadTargets;
 tagSelect.value = 'NONE';
 tagSelect.onchange = reloadTargets;
 
-if (batch_mode) {
-    console.log(batchclass);
-    console.log(batchtag);
-    classSelect.value = batchclass;
-    tagSelect.value = batchtag;
-    classSelect.disabled = true;
-    tagSelect.disabled = true;
-}
-
 // see all completion levels by default
 filterSelect.value = 'ALL';
 filterSelect.onchange = reloadTargets;
@@ -64,6 +55,15 @@ orderSelect.onchange = function() {
         }
     }
     reloadTargets();
+}
+
+if (batch_mode) {
+    classSelect.value = batchclass;
+    tagSelect.value = batchtag;
+    classSelect.disabled = true;
+    tagSelect.disabled = true;
+    orderSelect.disabled = true;
+    orderSelect.value = batchOrdering;
 }
 
 // select blank applications

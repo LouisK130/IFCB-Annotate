@@ -254,7 +254,8 @@ def insertUpdates(updates, user_id, is_classifications, negations, timeseries):
 # Param 2: an integer representing a class id
 # Param 3: an integer repsenting a tag id, OR a string 'ALL' or 'NONE'
 # Output: the same array of strings from Param 1, minus any bins which don't have at least one target classified as Param 2/3
-def filterBins(bins, classID, tagID):
+def filterBins(bins, classID, tagID, ordering):
+    print(bins)
     if classID == '' or tagID == '':
         return bins
     
@@ -274,12 +275,18 @@ def filterBins(bins, classID, tagID):
         
     query = query[:-2]
     
-    query = query + (') '
-                    'ORDER BY c.bin, c.roi, p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC '
-                '), '
-                'CF AS ( '
-                    'SELECT * FROM CA WHERE classification_id = %s '
-                ')')
+    query = query + ') ORDER BY '
+    if ordering == 'power':
+        query = query + 'c.bin, c.roi, p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC '
+    elif ordering == 'time':
+        query = query + 'c.bin, c.roi, c.verification_time DESC NULLS LAST, c.time DESC, p.power DESC '
+    else:
+        logging.error("Unknown ordering option: " + ordering)
+        return
+    query = query + ('), '
+    'CF AS ( '
+        'SELECT * FROM CA WHERE classification_id = %s '
+    ')')
     
     params.append(classID)
                 
@@ -299,9 +306,12 @@ def filterBins(bins, classID, tagID):
     
         query = query[:-2]
         
-        query = query + (') '
-                    'ORDER BY t.bin, t.roi, t.tag_id, p.power DESC, t.verification_time DESC NULLS LAST, t.time DESC '
-                ')')
+        query = query + ') ORDER BY '
+        if ordering == 'power':
+            query = query + 't.bin, t.roi, t.tag_id, p.power DESC, t.verification_time DESC NULLS LAST, t.time DESC '
+        elif ordering == 'time':
+            query = query + 't.bin, t.roi, t.tag_id, t.verification_time DESC NULLS LAST, t.time DESC, p.power DESC '
+        query = query + ')'
                 
         if not tagID == 'NONE':
             query = query + (''
@@ -341,6 +351,7 @@ def filterBins(bins, classID, tagID):
     bins = []
     
     for row in rows:
+        print(row[0])
         bins.append(row[0])
 
     return bins

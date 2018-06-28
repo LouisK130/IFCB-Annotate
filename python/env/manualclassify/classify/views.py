@@ -144,14 +144,19 @@ class ClassifyPageView(TemplateView):
                 
             batchclass = request.POST.get('batchclass', '')
             batchtag = request.POST.get('batchtag', '')
+            ordering = request.POST.get('ordering', '')
+            
+            if len(bins) == 0 or (len(bins) == 1 and bins[0] == ''):
+                request.session['failed'] = 'You must specify at least one bin.'
+                return redirect('/')
                 
-            bins = database.filterBins(bins, batchclass, batchtag)
+            bins = database.filterBins(bins, batchclass, batchtag, ordering)
+            
+            if len(bins) == 0:
+                request.session['failed'] = 'No specified bins have annotations in that batch class.'
+                return redirect('/')
             
             current_bins = bins[:batchsize]
-            
-        if len(current_bins) == 1 and current_bins[0] == '':
-            request.session['failed'] = 'You must supply at least one valid bin'
-            return redirect('/')
         
         targets = utils.getTargets(current_bins, request.session['timeseries'])
         
@@ -185,6 +190,7 @@ class ClassifyPageView(TemplateView):
             JS_values['batchsize'] = batchsize
             JS_values['batchclass'] = batchclass
             JS_values['batchtag'] = batchtag
+            JS_values['batchOrdering'] = ordering
             
         return render(request, 'classify.html', JS_values)
 

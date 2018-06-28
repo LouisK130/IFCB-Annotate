@@ -180,12 +180,13 @@ function submitForm(raw) {
         
         form.appendChild(createInput('batchclass', document.getElementById('MCBatchClass').value))
         form.appendChild(createInput('batchtag', document.getElementById('MCBatchTag').value))
+        form.appendChild(createInput('ordering', document.getElementById('MCBatchOrdering').value))
         
         setBatchSize(batchSize);
-	setBatchClass(batchClass);
-	setBatchTag(batchTag);
+        setBatchClass(batchClass);
+        setBatchTag(batchTag);
         setBatchStart(bstart);
-	setBatchEnd(bend);
+        setBatchEnd(bend);
     }
     
     form.insertAdjacentHTML('beforeend', csrf_token_form);
