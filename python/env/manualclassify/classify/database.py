@@ -255,7 +255,6 @@ def insertUpdates(updates, user_id, is_classifications, negations, timeseries):
 # Param 3: an integer repsenting a tag id, OR a string 'ALL' or 'NONE'
 # Output: the same array of strings from Param 1, minus any bins which don't have at least one target classified as Param 2/3
 def filterBins(bins, classID, tagID, ordering):
-    print(bins)
     if classID == '' or tagID == '':
         return bins
     
@@ -351,7 +350,6 @@ def filterBins(bins, classID, tagID, ordering):
     bins = []
     
     for row in rows:
-        print(row[0])
         bins.append(row[0])
 
     return bins

@@ -93,6 +93,7 @@ function moveToNextView() {
         form.appendChild(createInput('batchsize', batchsize));
         form.appendChild(createInput('batchclass', batchclass));
         form.appendChild(createInput('batchtag', batchtag));
+        form.appendChild(createInput('ordering', batchOrdering));
         
         form.insertAdjacentHTML('beforeend', csrf_token_form);
         document.body.appendChild(form);
