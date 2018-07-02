@@ -58,34 +58,34 @@ def parseBinToTargets(bin, timeseries):
         with open(TARGETS_CACHE_PATH + '/' + bin) as f:
             return json.load(f)
     else:
-        # create the temp file first so we know it's being downloaded
         try:
+            # create the temp file first so we know it's being downloaded
             f = open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w+')
             f.close()
+            
+            logging.info('started downloading: ' + timeseries + bin + '_roisizes')
+            with closing(requests.get(timeseries + bin + '_roisizes', stream=True)) as r:
+                if r.status_code == 404:
+                    logging.error('Invalid bin: ' + bin)
+                    return False
+                data = json.loads(r.text)
+                n = 0
+                while n < len(data['targetNumber']):
+                    pid = bin + '_' + str(data['targetNumber'][n]).zfill(5)
+                    # reversed because regardless of how they go through IFCB, on display these values are backwards
+                    targets[pid] = {
+                        'width' : data['height'][n],
+                        'height' : data['width'][n],
+                    }
+                    n += 1
+            with open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w') as f:
+                json.dump(targets, f)
+            os.rename(TARGETS_CACHE_PATH + '/' + bin + '_temp', TARGETS_CACHE_PATH + '/' + bin)
+            logging.info('finished downloading: ' + timeseries + bin + '_roisizes')
+            return targets
         except:
             logging.error('Bad bin: ' + bin)
             return False
-        
-        logging.info('started downloading: ' + timeseries + bin + '_roisizes')
-        with closing(requests.get(timeseries + bin + '_roisizes', stream=True)) as r:
-            if r.status_code == 404:
-                logging.error('Invalid bin: ' + bin)
-                return False
-            data = json.loads(r.text)
-            n = 0
-            while n < len(data['targetNumber']):
-                pid = bin + '_' + str(data['targetNumber'][n]).zfill(5)
-                # reversed because regardless of how they go through IFCB, on display these values are backwards
-                targets[pid] = {
-                    'width' : data['height'][n],
-                    'height' : data['width'][n],
-                }
-                n += 1
-        with open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w') as f:
-            json.dump(targets, f)
-        os.rename(TARGETS_CACHE_PATH + '/' + bin + '_temp', TARGETS_CACHE_PATH + '/' + bin)
-        logging.info('finished downloading: ' + timeseries + bin + '_roisizes')
-        return targets
     
 # dictionary with key = values:
 # pid = {'height' : height, 'width' : width}
