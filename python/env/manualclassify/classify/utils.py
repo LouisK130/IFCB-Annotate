@@ -59,8 +59,12 @@ def parseBinToTargets(bin, timeseries):
             return json.load(f)
     else:
         # create the temp file first so we know it's being downloaded
-        f = open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w+')
-        f.close()
+        try:
+            f = open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w+')
+            f.close()
+        except:
+            logging.error('Bad bin: ' + bin)
+            return False
         
         logging.info('started downloading: ' + timeseries + bin + '_roisizes')
         with closing(requests.get(timeseries + bin + '_roisizes', stream=True)) as r:

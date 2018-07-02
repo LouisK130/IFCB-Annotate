@@ -100,7 +100,7 @@ class ClassifyPageView(TemplateView):
         binsInput = request.POST.get('bins', '')
         bins = re.split(',', binsInput)
         shouldImport = json.loads(request.POST.get('import', 'false')) # boolean conversion with json lib
-        request.session['timeseries'] = request.POST.get('timeseries', '')
+        ts = request.POST.get('timeseries')
         batchmode = json.loads(request.POST.get('batchmode', 'false'))
         
         classList = database.getClassificationList()
@@ -138,9 +138,9 @@ class ClassifyPageView(TemplateView):
                     return redirect('/')
 
                 if len(bins) == 1 and bins[0] == '':
-                    bins = utils.getBinsInRange(batchstart, batchend, request.session['timeseries'])
+                    bins = utils.getBinsInRange(batchstart, batchend, ts)
                 else:
-                    bins = utils.removeDuplicates(bins + utils.getBinsInRange(batchstart, batchend, request.session['timeseries']))
+                    bins = utils.removeDuplicates(bins + utils.getBinsInRange(batchstart, batchend, ts))
                 
             batchclass = request.POST.get('batchclass', '')
             batchtag = request.POST.get('batchtag', '')
@@ -158,23 +158,23 @@ class ClassifyPageView(TemplateView):
             
             current_bins = bins[:batchsize]
         
-        targets = utils.getTargets(current_bins, request.session['timeseries'])
+        targets = utils.getTargets(current_bins, ts)
         
         if not targets:
             request.session['bins'] = bins
             request.session['failed'] = 'One or more of the chosen bins was invalid for the chosen timeseries'
             return redirect('/')
 
-        classifications = database.getAllDataForBins(current_bins, targets, request.session['timeseries'])
+        classifications = database.getAllDataForBins(current_bins, targets, ts)
         
         logger.info('{} total targets found'.format(len(targets)))
         
         if shouldImport:
             logger.info('including auto results')
-            classifications = database.addClassifierData(current_bins, classList, tagList, classifications, request.session['timeseries'])
+            classifications = database.addClassifierData(current_bins, classList, tagList, classifications, ts)
         
         JS_values = {
-            'timeseries' : request.session['timeseries'],
+            'timeseries' : ts,
             'classification_labels' : classList,
             'tag_labels' : tagList,
             'classifications' : json.dumps(classifications),
@@ -199,14 +199,14 @@ class SubmitUpdatesPageView(TemplateView):
         if request.method == 'POST':
             if not request.user.is_authenticated:
                 return redirect(settings.LOGIN_URL)
-            request.session['timeseries'] = request.POST.get('timeseries', '')
+            ts = request.POST.get('timeseries')
             c_updates = json.loads(request.POST.get('classifications', ''))
             t_updates = json.loads(request.POST.get('tags', ''))
             t_n_updates = json.loads(request.POST.get('tagnegations', ''))
             id = request.user.pk
-            result1 = database.insertUpdates(c_updates, id, True, False, request.session['timeseries'])
-            result2 = database.insertUpdates(t_updates, id, False, False, request.session['timeseries'])
-            result3 = database.insertUpdates(t_n_updates, id, False, True, request.session['timeseries'])
+            result1 = database.insertUpdates(c_updates, id, True, False, ts)
+            result2 = database.insertUpdates(t_updates, id, False, False, ts)
+            result3 = database.insertUpdates(t_n_updates, id, False, True, ts)
             result = dict()
             result.update(result1)
             result.update(result2)
@@ -217,12 +217,13 @@ class ZipDownloadPageView(TemplateView):
     def post(self, request, **kwargs):
         if request.method == 'POST':
             bin = request.POST.get('bin', '')
+            ts = request.POST.get('timeseries')
             if bin == '':
                 return HttpResponse('failure')
-            zip = utils.getZipForBin(bin, request.session['timeseries'])
+            zip = utils.getZipForBin(bin, ts)
             if not zip:
-                return HttpResponse("Failed to download zip: " + request.session['timeseries'] + bin + '.zip')
-            response = HttpResponse(utils.getZipForBin(bin, request.session['timeseries']), content_type='application/zip')
+                return HttpResponse("Failed to download zip: " + ts + bin + '.zip')
+            response = HttpResponse(utils.getZipForBin(bin, ts), content_type='application/zip')
             response['Content-Disposition'] = 'attachment; filename=' + bin + '.zip'
             return response
 
@@ -230,15 +231,15 @@ class CacheBinPageView(TemplateView):
     def post(self, request, **kwargs):
         if request.method == 'POST':
             bins = request.POST.get('bins', '')
-            request.session['timeseries'] = request.POST.get('timeseries', '')
+            ts = request.POST.get('timeseries')
             bins = re.split(',', bins)
             if len(bins) > 0 and bins[0] != '':
                 for bin in bins:
                     logger.info('CACHING ' + bin + '...')
                     if not utils.areTargetsCached(bin):
-                        utils.parseBinToTargets(bin, request.session['timeseries'])
+                        utils.parseBinToTargets(bin, ts)
                     if not utils.areAutoResultsCached(bin):
-                        utils.getAutoResultsForBin(bin, request.session['timeseries'])
+                        utils.getAutoResultsForBin(bin, ts)
                     if not utils.isZipDownloaded(bin):
-                        utils.downloadZipForBin(bin, request.session['timeseries'])
+                        utils.downloadZipForBin(bin, ts)
         return HttpResponse('')

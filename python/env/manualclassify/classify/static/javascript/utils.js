@@ -308,7 +308,7 @@ function downloadZip(bin) {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/getzip/')
     xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    var params = 'csrfmiddlewaretoken=' + csrf_token + '&bin=' + bin;
+    var params = 'csrfmiddlewaretoken=' + csrf_token + '&bin=' + bin + '&timeseries=' + timeseries;
     xhr.responseType = 'blob';
     xhr.onload = function() {
         zips[bin] = xhr.response;
