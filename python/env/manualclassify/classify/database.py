@@ -409,7 +409,7 @@ def getTagList():
 
 def addClassifierData(bins, classes, tags, data, timeseries):
     for bin in bins:
-        auto_results = utils.getAutoResultsForBin(bin)
+        auto_results = utils.getAutoResultsForBin(bin, timeseries)
         if not auto_results:
             continue;
         for pid, classification in auto_results.items():
