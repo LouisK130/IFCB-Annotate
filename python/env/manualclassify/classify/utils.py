@@ -239,5 +239,8 @@ def getBinsInRange(start, end, timeseries):
     with closing(requests.get(url, stream=True)) as r:
         data = json.loads(r.text)
         for dict in data:
-            bins.append(dict['pid'].replace(timeseries, ''))
+            bin = dict['pid']
+            if bin.find('/') >= 0:
+                bin = bin.rsplit('/', 1)[1]
+            bins.append(bin)
     return bins

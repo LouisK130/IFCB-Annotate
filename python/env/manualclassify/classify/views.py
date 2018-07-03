@@ -106,6 +106,10 @@ class ClassifyPageView(TemplateView):
         classList = database.getClassificationList()
         tagList = database.getTagList()
         
+        for i in range(0, len(bins)):
+            if bins[i].find('/') >= 0:
+                bins[i] = bins[i].rsplit('/', 1)[1]
+        
         current_bins = bins
         
         if batchmode:
