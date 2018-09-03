@@ -45,7 +45,7 @@ CLASSIFIER_CONVERSION_TABLE = {
     'kiteflagellates' : 'Chrysochromulina lanceolata',
 }
     
-def parseBinToTargets(bin):
+def parseBinToTargets(bin, timeseries):
     targets = {}
     
     t = time.time()
@@ -85,7 +85,7 @@ def parseBinToTargets(bin):
     
 # dictionary with key = values:
 # pid = {'height' : height, 'width' : width}
-def getTargets(bins):
+def getTargets(bins, timeseries):
     targets = {}
     for bin in bins:
         logging.info('[SERVING] ' + bin + '...')
@@ -93,7 +93,7 @@ def getTargets(bins):
             with open(TARGETS_CACHE_PATH + '/' + bin) as f:
                 new_targets = json.load(f)
         else:
-            new_targets = parseBinToTargets(bin)
+            new_targets = parseBinToTargets(bin, timeseries)
         if new_targets == False:
             return False
         targets.update(new_targets)
@@ -123,12 +123,12 @@ def getUserName(user_id):
 def isZipDownloaded(bin):
     return os.path.isfile(ZIP_CACHE_PATH + '/' + bin + '.zip')
     
-def getZipForBin(bin):
+def getZipForBin(bin, timeseries):
     if not isZipDownloaded(bin):
-        downloadZipForBin(bin)
+        downloadZipForBin(bin, timeseries)
     return open(ZIP_CACHE_PATH + '/' + bin + '.zip', 'rb').read()
     
-def downloadZipForBin(bin):
+def downloadZipForBin(bin, timeseries):
 
     t = time.time()
     while os.path.isfile(ZIP_CACHE_PATH + '/' + bin + '_temp.zip'):
@@ -164,7 +164,7 @@ def removeDuplicates(arr):
 # Param 1: a string, representing the name of the bin to read scores for
 # Output: a dictionary, indexed by pid, with string values representing the name of the winner class for that pid
 
-def getAutoResultsForBin(bin):
+def getAutoResultsForBin(bin, timeseries):
     classifications = {}
     path = timeseries + bin + '_class_scores.csv'
     

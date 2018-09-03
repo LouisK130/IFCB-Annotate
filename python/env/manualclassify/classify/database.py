@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 #     for all PIDs in the given bins
 # Output: a dictionary, indexed by PID, with values that are dictionaries containing all data for all classifications
 #    relevant to the given bins, ready to be passed to JS or to another function that will add the auto classifier data
-def getAllDataForBins(bins, targets):
+def getAllDataForBins(bins, targets, timeseries):
 
     # since timeseries_id should already be held in memory, no point in joining that table again in below query
-    timeseries_id = getTimeseriesId(utils.timeseries)
+    timeseries_id = getTimeseriesId(timeseries)
     
     params = [timeseries_id]
     
@@ -129,7 +129,7 @@ def getAllDataForBins(bins, targets):
 # Since this function is practically identical for classifications/tags (with only minor SQL differences), it handles both use cases
 # This may make the function overly complex and hard to maintain, so I may change it in the future, but it works for now
 
-# Param 1: a dinctionary, indexed by PID, with integer values representing the new classification/tag id to assign that PID to
+# Param 1: a dictionary, indexed by PID, with integer values representing the new classification/tag id to assign that PID to
 # Param 2: an integer, representing the user id of the user submitting these updates
 # Param 3: a boolean, representing whether these updates are classifications (True) or tags (False)
 # Param 4: a boolean, representing whether these updates are negations (True) or not (False) -- only relevant if Param 3 is False
@@ -145,7 +145,7 @@ def getAllDataForBins(bins, targets):
 #        ]
 #    }
 # where ... represents all data for an entry that was updated or inserted
-def insertUpdates(updates, user_id, is_classifications, negations):
+def insertUpdates(updates, user_id, is_classifications, negations, timeseries):
 
     # if we don't have any updates, just stop
     if not updates or len(updates) == 0:
@@ -185,19 +185,15 @@ def insertUpdates(updates, user_id, is_classifications, negations):
         bin = pid[:i]
         roi = pid[i+1:]
         
-        if negations:
-            # if these are negations, each `id` is actually an array of ids
+        if not is_classifications:
+            # if these are tags or negations, each `id` is actually an array of ids
+            neg = 'true' if negations else 'false'
             for trueID in id:
-                query = query + '(%s, %s, %s, now(), %s, 1, 0, null, %s, true), '
-                params.extend([bin, roi, user_id, trueID, getTimeseriesId(utils.timeseries)])
+                query = query + '(%s, %s, %s, now(), %s, 1, 0, null, %s, ' + neg + '), '
+                params.extend([bin, roi, user_id, trueID, getTimeseriesId(timeseries)])
         else:
-            query = query + '(%s, %s, %s, now(), %s, 1, 0, null, %s'
-            params.extend([bin, roi, user_id, id, getTimeseriesId(utils.timeseries)])
-            # if these are tags, we have to specificy 'false' for negation column
-            if is_classifications:
-                query = query + '), '
-            else:
-                query = query + ', false), '
+            query = query + '(%s, %s, %s, now(), %s, 1, 0, null, %s), '
+            params.extend([bin, roi, user_id, id, getTimeseriesId(timeseries)])
 
     # trim off the trailing space and comma
     query = query[:-2]
@@ -248,15 +244,16 @@ def insertUpdates(updates, user_id, is_classifications, negations):
     conn.close()
     return return_updates
 
-# takes a set of bins and filters out those which have no annotations matching the given class/tag combo
-
-# Param 1: an array of strings, representing bin names
-# Param 2: an integer representing a class id
-# Param 3: an integer repsenting a tag id, OR a string 'ANY' or 'NONE'
-# Output: the same array of strings from Param 1, minus any bins which don't have at least one target classified as Param 2/3
-def filterBins(bins, classID, tagID):
-    if classID == '' or tagID == '':
+def filterBins(bins, views, sortby):
+    print(bins)
+    if len(views) == 0 or len(bins) == 0:
         return bins
+        
+    # there's definitely a better way to do this,
+    # but I'm gonna do it recursively and hope it's not too slow
+    
+    classID = views[0][0]
+    tagIDs = views[0][1]
     
     params = []
         
@@ -275,62 +272,70 @@ def filterBins(bins, classID, tagID):
     query = query[:-2]
     
     query = query + (') '
-                    'ORDER BY c.bin, c.roi, p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC '
-                '), '
-                'CF AS ( '
-                    'SELECT * FROM CA WHERE classification_id = %s '
-                ')')
+                    'ORDER BY c.bin, c.roi, ')
+                    
+    if sortby == 'power':
+        query = query + 'p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC), '
+    elif sortby == 'date':
+        query = query + 'c.verification_time DESC NULLS LAST, c.time DESC, p.power DESC), '
+    else:
+        print("UNKNOWN SORTBY: " + sortby)
+        return
+        
+    query = query + ('CF AS ( '
+                        'SELECT * FROM CA WHERE classification_id = %s '
+                    ')')
     
     params.append(classID)
-                
-    if not tagID == 'ANY':
-        query = query + (''
-                ', '
-                'TA AS ( '
-                    'SELECT DISTINCT ON (t.bin, t.roi, t.tag_id) t.*, p.power '
-                    'FROM classify_tag t, auth_user_groups g, auth_group p '
-                    'WHERE t.user_id = g.user_id '
-                    'AND p.id = g.group_id '
-                    'AND t.bin IN (')
-                    
-        for bin in bins:
-            query += '%s, '
-            params.append(bin)
-    
-        query = query[:-2]
-        
-        query = query + (') '
-                    'ORDER BY t.bin, t.roi, t.tag_id, p.power DESC, t.verification_time DESC NULLS LAST, t.time DESC '
-                ')')
-                
-        if not tagID == 'NONE':
-            query = query + (''
-                    ', '
-                    'TF AS ( '
-                        'SELECT * FROM TA WHERE tag_id = %s AND negation = false '
-                    ')')
-            params.append(tagID)
-                
-    query = query + (''
-            ' SELECT DISTINCT ON (bin) bin FROM CF')
-            
-    if not tagID == 'ANY':
-    
-        tag_query = 'TA' if tagID == 'NONE' else 'TF'
-        
-        if tagID == 'NONE':
-            query = query + (' '
-                    'WHERE NOT EXISTS ')
-        else:
-            query = query + (' '
-                    'WHERE EXISTS ')
-        query = query + (''
-                        '(SELECT 1 FROM ' + tag_query + ' '
-                            'WHERE ' + tag_query + '.roi = CF.roi '
-                            'AND ' + tag_query + '.bin = CF.bin'
-                        ')')
 
-    query = query + ';'
+    query = query + (''
+            ', '
+            'TA AS ( '
+                'SELECT DISTINCT ON (t.bin, t.roi, t.tag_id) t.*, p.power '
+                'FROM classify_tag t, auth_user_groups g, auth_group p '
+                'WHERE t.user_id = g.user_id '
+                'AND p.id = g.group_id '
+                'AND t.bin IN (')
+                
+    for bin in bins:
+        query += '%s, '
+        params.append(bin)
+
+    query = query[:-2]
+    
+    query = query + ') ORDER BY t.bin, t.roi, t.tag_id, '
+    
+    if sortby == 'power':
+        query = query + 'p.power DESC, t.verification_time DESC NULLS LAST, t.time DESC)'
+    elif sortby == 'date':
+        query = query + 't.verification_time DESC NULLS LAST, t.time DESC, p.power DESC)'
+        
+    query = query + (', '
+                    'TF AS ( '
+                        'SELECT * FROM TA WHERE negation = false')
+
+    if len(tagIDs) > 0 and not (tagIDs[0] == 'ANY' or tagIDs[0] == 'SMART'):
+        
+        query = query + ' AND tag_id in ('
+        for id in tagIDs:
+            query += '%s, '
+            params.append(id)
+        
+        query = query[:-2] + ')'
+    
+    query = query + ('), B AS ('
+                        'SELECT DISTINCT ON (bin, tag_id) CF.bin FROM TF, CF '
+                        'WHERE TF.roi = CF.roi AND TF.bin = CF.bin) '
+                    )
+    count = '= 0'
+    if len(tagIDs) > 0:
+        if tagIDs[0] == 'ANY' or tagIDs[0] == 'SMART':
+            count = '> 0'
+        else:
+            count = '= ' + str(len(tagIDs))
+    query = query + (''
+            'SELECT DISTINCT ON (bin) bin FROM CF WHERE bin IN '
+            '(SELECT bin FROM B GROUP BY bin HAVING COUNT(*) ' + count + ');')
     
     conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
     cur = conn.cursor()
@@ -343,7 +348,7 @@ def filterBins(bins, classID, tagID):
     for row in rows:
         bins.append(row[0])
 
-    return bins
+    return filterBins(bins, views[1:], sortby)
     
 # we cache timeseries info here, so we don't make the same call to the database thousands of times
 # format:
@@ -398,9 +403,9 @@ def getTagList():
 # Param 4: a dictionary, indexed by pid and produced by database.getAllDataForBins(), containing all annotations for the given bins
 # Output: the same dictionary given in Param 4, modified to include annotations from the auto classifier
 
-def addClassifierData(bins, classes, tags, data):
+def addClassifierData(bins, classes, tags, data, timeseries):
     for bin in bins:
-        auto_results = utils.getAutoResultsForBin(bin)
+        auto_results = utils.getAutoResultsForBin(bin, timeseries)
         if not auto_results:
             continue;
         for pid, classification in auto_results.items():
@@ -425,7 +430,7 @@ def addClassifierData(bins, classes, tags, data):
                     'user_id' : -1,
                     'classification_id' : classification_id,
                     'level' : 1,
-                    'timeseries_id' : getTimeseriesId(utils.timeseries),
+                    'timeseries_id' : getTimeseriesId(timeseries),
                     'user_power' : -1,
                     'username' : 'auto',
                 }
@@ -442,7 +447,7 @@ def addClassifierData(bins, classes, tags, data):
                             'tag_id' : tag_id,
                             'user_power' : -1,
                             'level' : 1,
-                            'timeseries_id' : getTimeseriesId(utils.timeseries),
+                            'timeseries_id' : getTimeseriesId(timeseries),
                             'username' : 'auto',
                         }
                         data[pid]['tags'].append(dict)

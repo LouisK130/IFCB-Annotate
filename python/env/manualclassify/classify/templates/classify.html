@@ -2,29 +2,83 @@
 {% load staticfiles %}
 
 {% block 'head' %}
-<link rel="stylesheet" type="text/css" href="{% static 'css/classify.css' %}"/>
-<link rel="stylesheet" type="text/css" href="{% static 'css/filter-toolbox.css' %}"/>
-<link rel="stylesheet" type="text/css" href="{% static 'css/application-toolbox.css' %}"/>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/classify.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/filter-toolbox.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/application-toolbox.css' %}"/>
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
 {% endblock %}
 
 {% block 'body' %}
 {% csrf_token %}
-<div id='MCToolboxContainer'>
-  <center><a href='/'>Manual Classify</a>
-  </center>
-  {% include 'filter-toolbox.html' %}
-  {% include 'application-toolbox.html' %}
-  <button type='button' id='MCSubmitUpdates' onclick='submitUpdates();'>Save Updates</button>
-  <center>
-    <p id='MCCurrentBinsLabel'>Currently viewing:</p>
-    <div id='MCCurrentBins'>
-      <p style='margin-top:0px;margin-bottom:5px;padding:0;'><b>{{ timeseries }}</b></p>
-    </div>
-    <div id='MCLoading'>
-    </div>
-  </center>
+
+<div id="blur">
 </div>
-<div id='MCTargetContainer'></div>
+
+<div id="overlay">
+</div>
+
+<div class="row">
+    <div id="header">
+        <a id="brand" href="/">
+            <strong>IFCB Annotate</strong>
+        </a>
+        <div id="top-right-buttons" class="btn-group-horizontal">
+            <span>{{ username }}</span>
+            <a href="/admin" id="admin" class="btn btn-info">Admin</a>
+            <a href="/logout" id="logout" class="btn btn-danger">Logout</a>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xs-2">
+        <div id='MCToolboxContainer'>
+            <div class="form-background"></div>
+              {% include 'filter-toolbox.html' %}
+              {% include 'application-toolbox.html' %}
+              <button type='button' id='MCSubmitUpdates' class="btn btn-primary" onclick='submitUpdates();'>Save Updates</button>
+              <!--<center>
+                <p id='MCCurrentBinsLabel'>Currently viewing:</p>
+                <div id='MCCurrentBins'>
+                  <p style='margin-top:0px;margin-bottom:5px;padding:0;'><b>{{ timeseries }}</b></p>
+                </div>
+              </center>-->
+              <div class="row" id="view-details">
+                <div class="col-xs-4">
+                    <button type="button" id="previous-view" class="btn btn-secondary btn-xs">Back</button>
+                </div>
+                <div class="col-xs-4">
+                    <p id="view-label">View 1 / ?</p>
+                </div>
+                <div class="col-xs-4">
+                    <button type="button" id="next-view" class="btn btn-primary btn-xs">Next</button>
+                </div>
+              </div>
+              <div class="row" id="bin-details">
+                <div class="col-xs-4">
+                    <button type="button" id="previous-batch" class="btn btn-secondary btn-xs">Back</button>
+                </div>
+                <div class="col-xs-4">
+                    <p id="bin-label">Bins 1 - ? / ?</p>
+                </div>
+                <div class="col-xs-4">
+                    <button type="button" id="next-batch" class="btn btn-primary btn-xs">Next</button>
+                </div>
+              </div>
+              <center><div id='MCLoading'></div></center>
+        </div>
+        <div id="hide-toolbox">
+            <div class="form-background"></div>
+            <p>Hide</p>
+        </div>
+    </div>
+    <div id='MCTargetContainer'>
+        <div class='form-background'></div>
+    </div>
+</div>
 
 <script type='text/javascript' src="{% static 'javascript/lib/zip.js' %}"></script>
 <!-- Get data first, then load js for this page -->
@@ -37,18 +91,11 @@
     var bins = {{ bins|safe }}
     var user_id = {{ user_id|safe }}
     var username = '{{ username }}'
-    var batch_mode = '{{ batchmode }}' == 'True'
-    if (batch_mode) {
-        var batchsize = {{ batchsize|safe }}
-        var shouldImport = '{{ shouldImport }}' == 'True'
-        var batchclass = '{{ batchclass }}'
-        var batchtag = '{{ batchtag }}'
-        if (parseInt(batchclass))
-            batchclass = parseInt(batchclass);
-        if (parseInt(batchtag))
-            batchtag = parseInt(batchtag);
-    }
+    var shouldImport = '{{ shouldImport }}' == 'True'
     var classification_labels = {};
+    var sortby = '{{ sortby }}';
+    var views = {{ views|safe }};
+    var binIndex = {{ index }};
     {% for label in classification_labels %}
     classification_labels['{{ label.id }}'] = '{{ label.name }}';
     {% endfor %}

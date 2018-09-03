@@ -61,13 +61,19 @@ function createContextMenu() {
         var option;
         
         if (n == -1) {
-            var verify_c = document.getElementById('MCClassificationSelection').value;
+            var verify_c = $('#class-select')[0].value;
             if (verify_c == 'ANY')
                 verify_c = '';
-            var verify_t = document.getElementById('MCTagSelection').value;
-            if (verify_t == 'ANY' || verify_t == 'NONE')
-                verify_t = '';
-            option = createApplicationOption(verify_c, verify_t);
+            let ts = $('#tag-select')[0].selectedOptions;
+            let v_tags = [];
+            for (let n = 0; n < ts.length; n++) {
+                if (ts[n].value == 'ANY') {
+                    v_tags = [];
+                    break;
+                }
+                v_tags.push(parseInt(ts[n].value));
+            }
+            option = createApplicationOption(verify_c, v_tags);
             option.style.borderTop = '2px solid';
             option.style.marginTop = '-2px';
         }
@@ -99,7 +105,7 @@ function createApplicationOption(c, t) {
     div.style.marginTop = '-1px';
     div.style.height = '25px';
     div.classification = c;
-    div.tag = t;
+    div.tags = t;
     div.style.cursor = 'hand';
     
     div.onmouseover = function() {
@@ -111,8 +117,10 @@ function createApplicationOption(c, t) {
     }
     
     div.onclick = function() {
-        document.getElementById('ClassificationApplicationSelection').value = this.classification;
-        document.getElementById('TagApplicationSelection').value = this.tag;
+        let c = $('#class-apply-select');
+        let t = $('#tag-apply-select');
+        c.selectpicker('val', this.classification);
+        t.selectpicker('val', this.tags);
         document.getElementById('MCContextMenu').outerHTML = "";
     }
     

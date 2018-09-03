@@ -1,35 +1,137 @@
-var FORWARD_KEY = 78; // N
-var PREVIOUS_KEY = 80; // P
-var CONTEXT_MENU_KEY = 76; // L
-var SUBMIT_UPDATES_KEY = 13; // ENTER
-var VERIFY_ANY_KEY = 219; // [
+let FORWARD_KEY = 78; // N
+let PREVIOUS_KEY = 80; // P
+let CONTEXT_MENU_KEY = 76; // L
+let SUBMIT_UPDATES_KEY = 13; // ENTER
+let VERIFY_ANY_KEY = 219; // [
+let OPEN_SELECT_1 = 49 // 1
+let OPEN_SELECT_2 = 50 // 2
+let OPEN_SELECT_3 = 51 // 3
+let OPEN_SELECT_4 = 52 // 4
+
+let bound_keys = [
+        FORWARD_KEY,
+        PREVIOUS_KEY,
+        CONTEXT_MENU_KEY,
+        SUBMIT_UPDATES_KEY,
+        VERIFY_ANY_KEY,
+        OPEN_SELECT_1,
+        OPEN_SELECT_2,
+        OPEN_SELECT_3,
+        OPEN_SELECT_4
+    ];
+
+let UNCLASSIFIED_CLASS = 40;
 
 document.addEventListener('keydown', generalKeyDown, false);
 
+let pids_in_views = {};
+let ordered_views = [];
+
+function setupViews() {
+    if (views.length == 0) {
+        for (let c in pids_in_views) {
+            for (let t in pids_in_views[c]) {
+                let t_arr = t.split(',');
+                if (t_arr.length == 1 && t_arr[0] == '')
+                    t_arr = []
+                ordered_views.push([c, t_arr]);
+            }
+        }
+        ordered_views.sort(compareViews);
+    } else {
+        for (let n = 0; n < views.length; n++) {
+            if (views[n][1] != 'SMART') {
+                ordered_views.push(views[n]);
+            } else {
+                let temp = [];
+                if (views[n][0] in pids_in_views) {
+                    for (let t in pids_in_views[views[n][0]]) {
+                        let t_arr = t.split(',');
+                        if (t_arr.length == 1 && t_arr[0] == '')
+                            t_arr = []
+                        temp.push([views[n][0], t_arr]);
+                    }
+                    temp.sort(compareViews);
+                    for (let n = 0; n < temp.length; n++)
+                        ordered_views.push(temp[n]);
+                }
+            }
+        }
+    }
+}
+
+// TODO: Make this sort by APPARENT order (seen in select-boxes) rather than ID
+function compareViews(a, b) {
+    if (a[0] < b[0])
+        return -1;
+    if (b[0] < a[0])
+        return 1;
+    if (a[1].length < b[1].length)
+        return -1;
+    if (b[1].length < a[1].length)
+        return 1;
+    for (let n = 0; n < a[1].length; n++) {
+        if (a[1][n] < b[1][n])
+            return -1;
+        if (b[1][n] < a[1][n])
+            return 1;
+    }
+    // they are the same view somehow
+    return 0;
+}
+
+function sortPidIntoView(pid, old_class, old_tags) {
+    if (!(pid in classifications))
+        return;
+    let target = classifications[pid];
+    let c;
+    if (!('classifications' in target) || target['classifications'].length == 0) {
+        c = UNCLASSIFIED_CLASS;
+    } else {
+        c = target['classifications'][0]['classification_id'];
+    }
+    if (!(c in pids_in_views)) {
+        pids_in_views[c] = {};
+    }
+    let tags = getAcceptedTagsForPid(pid);
+    if (!(tags in pids_in_views[c])) {
+        pids_in_views[c][tags] = [];
+    }
+    pids_in_views[c][tags].push(classifications[pid]);
+    if (old_class && old_tags) {
+        if (old_class in pids_in_views) {
+            if (old_tags in pids_in_views[old_class]) {
+                let o = pids_in_views[old_class][old_tags];
+                for (let n = 0; n < o.length; o++) {
+                    if (o[n]['pid'] == pid) {
+                        o.splice(n, 1);
+                        break;
+                    }
+                }
+                if (o.length == 0)
+                    delete pids_in_view[old_class][old_tags];
+                if (pids_in_view[old_class].length == 0)
+                    delete pids_in_view[old_class];
+            }
+        }
+    }
+}
+
 function generalKeyDown(e) {
-    if (e.keyCode == FORWARD_KEY ||
-        e.keyCode == PREVIOUS_KEY ||
-        e.keyCode == CONTEXT_MENU_KEY ||
-        e.keyCode == SUBMIT_UPDATES_KEY ||
-        e.keyCode == VERIFY_ANY_KEY) {
-        if (document.activeElement.className == 'MCSelectBox') {
-            document.activeElement.blur();
-            e.preventDefault();
+    if (bound_keys.includes(e.keyCode)) {
+        if (document.activeElement != document.body) {
+            return;
         }
         switch (e.keyCode) {
         case FORWARD_KEY:
-	    showLoading();
-	    setTimeout(function() {
-		moveToNextView();
-		hideLoading();
-	    }, 10);
+            setTimeout(function() {
+                moveToNextView();
+            }, 10);
             break;
         case PREVIOUS_KEY:
-	    showLoading();
-	    setTimeout(function() {
-		moveToPreviousView();
-		hideLoading();
-	    }, 10);
+            setTimeout(function() {
+                moveToPreviousView();
+            }, 10);
             break;
         case CONTEXT_MENU_KEY:
 			let menu = document.getElementById('MCContextMenu');
@@ -44,102 +146,66 @@ function generalKeyDown(e) {
             break;
         case VERIFY_ANY_KEY:
             var targets = getAllVisibleTargets();
-            var c = document.getElementById('ClassificationApplicationSelection');
-            var t = document.getElementById('TagApplicationSelection');
-            var old_c = c.value;
-            var old_t = t.value;
-            var verify_c = document.getElementById('MCClassificationSelection').value;
-            if (verify_c == 'ANY')
-                verify_c = '';
-            var verify_t = document.getElementById('MCTagSelection').value;
-            if (verify_t == 'ANY' || verify_t == 'NONE')
-                verify_t = '';
-            c.value = verify_c;
-            t.value = verify_t;
+            var c = $('#class-apply-select');
+            var t = $('#tag-apply-select');
+            var old_c = c.selectpicker('val');
+            var old_t = t.selectpicker('val');
+            c.selectpicker('val', $('#class-select').selectpicker('val'));
+            t.selectpicker('val', $('#tag-select').selectpicker('val'));
             for (var n = 0; n < targets.length; n++) {
                 var pid = targets[n].id.replace('MCTarget_', '');
                 if (!(pid in classification_updates) && !(pid in tag_updates))
                     targets[n].click();
             }
-            c.value = old_c;
-            t.value = old_t;
+            c.selectpicker('val', old_c);
+            t.selectpicker('val', old_t);
+            break;
+        case OPEN_SELECT_1:
+            $('#class-select').selectpicker('toggle');
+            break;
+        case OPEN_SELECT_2:
+            $('#tag-select').selectpicker('toggle');
+            break;
+        case OPEN_SELECT_3:
+            $('#class-apply-select').selectpicker('toggle');
+            break;
+        case OPEN_SELECT_4:
+            $('#tag-apply-select').selectpicker('toggle');
             break;
         }
     }
 
 }
 
-function moveToNextView() {
-    submitUpdates();
-    var c = document.getElementById('MCClassificationSelection');
-    var t = document.getElementById('MCTagSelection');
-    if (batch_mode) {
-        // load next batch
-        var form = document.createElement('form');
-        form.action = '/classify/';
-        form.method = 'POST';
-        
-        var rest_of_bins = bins.slice(batchsize)
-        
-        if (rest_of_bins.length == 0)
-            return;
-        
-        rest_of_bins = rest_of_bins.join(',');
-        
-        form.appendChild(createInput('bins', rest_of_bins));
-        form.appendChild(createInput('timeseries', timeseries));
-        form.appendChild(createInput('import', shouldImport));
-        form.appendChild(createInput('batchmode', true));
-        form.appendChild(createInput('batchsize', batchsize));
-        form.appendChild(createInput('batchclass', batchclass));
-        form.appendChild(createInput('batchtag', batchtag));
-        
-        form.insertAdjacentHTML('beforeend', csrf_token_form);
-        document.body.appendChild(form);
+let current_view = -1;
 
-        form.submit();
+function moveToNextView() {
+    current_view = current_view + 1;
+    if (current_view >= ordered_views.length) {
+        current_view = ordered_views.length - 1;
         return;
     }
-    else {
-        if (t.selectedIndex == t.options.length-1) {
-            if (c.selectedIndex != c.options.length-1) {
-                c.selectedIndex = c.selectedIndex + 1;
-                t.value = 'NONE';
-            }
-            else {
-		return;
-            }
-        }
-        else {
-            t.selectedIndex = t.selectedIndex + 1;
-        }
-        reloadTargets();
-        if (current_targets.length == 0)
-	    moveToNextView();
-    }
+    loadView();
 }
 
 function moveToPreviousView() {
-    if (batch_mode)
+    current_view = current_view - 1;
+    if (current_view < 0) {
+        current_view = 0
         return;
+    }
+    loadView();
+}
+
+function loadView() {
     submitUpdates();
-    var c = document.getElementById('MCClassificationSelection');
-    var t = document.getElementById('MCTagSelection');
-    if (t.value == 'NONE' || t.value == 'ANY') {
-        if (c.selectedIndex != 1) {
-            c.selectedIndex = c.selectedIndex - 1;
-            t.selectedIndex = t.options.length - 1;
-        }
-        else {
-            return;
-        }
-    }
-    else {
-        t.selectedIndex = t.selectedIndex - 1;
-    }
+    let c = $('#class-select');
+    let t = $('#tag-select');
+    c.selectpicker('val', ordered_views[current_view][0]);
+    t.selectpicker('val', ordered_views[current_view][1]);
+    console.log(ordered_views[current_view]);
     reloadTargets();
-    if (current_targets.length == 0)
-	moveToPreviousView();
+    $('#view-label').text('View ' + (current_view + 1) + ' / ' + ordered_views.length);
 }
 
 function getAllVisibleTargets() {
@@ -151,4 +217,31 @@ function getAllVisibleTargets() {
             visible.push(targets[n]);
     }
     return visible;
+}
+
+function moveToPreviousBatch() {
+    if (binIndex > 0) {
+        loadBinIndex(Math.max(binIndex - BATCH_SIZE, 0));
+    }
+}
+
+function moveToNextBatch() {
+    if (binIndex + BATCH_SIZE < bins.length) {
+        loadBinIndex(binIndex + BATCH_SIZE);
+    }
+}
+
+function loadBinIndex(i) {
+    let form = document.createElement('form');
+    form.action = '/classify/';
+    form.method = 'POST';
+    form.appendChild(createInput('bins', bins));
+    form.appendChild(createInput('timeseries', timeseries));
+    form.appendChild(createInput('import', shouldImport));
+    form.appendChild(createInput('sortby', sortby));
+    form.appendChild(createInput('views', JSON.stringify(views)));
+    form.appendChild(createInput('index', i));
+    form.insertAdjacentHTML('beforeend', csrf_token_form);
+    document.body.appendChild(form);
+    form.submit();
 }

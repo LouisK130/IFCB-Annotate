@@ -12,6 +12,10 @@ $(function() {
     
     $('#date-start').datetimepicker();
     $('#date-end').datetimepicker();
+    
+    if (failed != "") {
+        showAlert(failed, 'alert-danger');
+    }
 
     
     // don't actually delete the alert, we'll want to show it again later
@@ -326,9 +330,10 @@ $(function() {
         });
     });
     
+    let start = $('#date-start input');
+    let end = $('#date-end input');
+    
     $('#date-search').click(function() {
-        let start = $('#date-start input');
-        let end = $('#date-end input');
         if (!start.val() || !end.val()) {
             showAlert("Please pick two times to search between.", 'alert-danger');
             return;
@@ -365,8 +370,7 @@ $(function() {
                     return;
                 }
                 if (data.bins.length > 100) {
-                    showAlert("There are too many bins in that range. Try narrowing it down.", 'alert-danger');
-                    return;
+                    showAlert("Showing only the first 100 results. Use \"Add All\" to add both visible and hidden bins.", 'alert-danger');
                 }
                 
                 $('#options-date').css('overflow', 'hidden');
@@ -417,9 +421,15 @@ $(function() {
     });
     
     $('#results-add-all').click(function() {
-        $('#date-list .glyphicon-plus').each(function() {
-            $(this).click()
+        $('#date-list li').each(function() {
+            $(this).remove();
         });
+        let item = createRangeItem(start.val(), end.val());
+        $(item).data('range-start', start.val());
+        $(item).data('range-end', end.val());
+        $('#bin-list').append(item);
+        $('#none-selected').css('display', 'none');
+        $('#results-back').click();
     });
     
     $('#bin-next').click(function() {
@@ -427,9 +437,6 @@ $(function() {
             showAlert("You must select at least 1 bin.", 'alert-danger');
             return;
         } else {
-            if ($('#bin-list li').length > 11) {
-                showAlert("You've specified more than 10 bins; you'll see them in batches of 10.", 'alert-warning');
-            }
             $('#bin-page').animate({
                 'height' : 0
             }, 500, function() {
@@ -439,6 +446,13 @@ $(function() {
                     'height' : height
                 }, 500, function() {
                     $('#views-page').css('height', 'auto');
+                });
+                let width = $('#views-page .radio').css('width', 'auto').width();
+                $('#views-page .radio').width(0);
+                $('#views-page .radio').animate({
+                    'width' : width
+                }, 500, function() {
+                    $('#views-page .radio').css('width', 'auto');
                 });
                 $('#views-list').animate({
                     'width' : 500
@@ -465,6 +479,9 @@ $(function() {
         $('#views-page').animate({
             'height' : 0
         }, 500, function() {
+            $('#views-page .radio').animate({
+                'width' : 0
+            }, 500);
             let height = $('#bin-page').css('height', 'auto').height();
             $('#bin-page').height(0);
             $('#bin-page').animate({
@@ -496,14 +513,49 @@ $(function() {
             string = string + bins[n].innerHTML + ","
         }
         string = string.substring(0, string.length - 1);
+        
+        let timeranges = [];
+        
+        $('#bin-list').find('.time-range').each(function() {
+            let tr = [];
+            let dates = $(this).find('.bin-date');
+            tr.push(dates[0].innerHTML);
+            tr.push(dates[1].innerHTML);
+            timeranges.push(tr);
+        });
+        
+        let views = [];
+        
+        $('#views-list').find('.list-group-item').each(function() {
+            if ($(this).attr('id') == 'add-view-item') {
+                return;
+            }
+            let selects = $(this).find('select');
+            let view = [];
+            view.push(Math.round(selects[0].value));
+            let tags = [];
+            for (let n = 0; n < selects[1].selectedOptions.length; n++) {
+                let opt = selects[1].selectedOptions[n];
+                if (opt.value == 'ANY') {
+                    tags = ['ANY'];
+                    break;
+                }
+                tags.push(opt.value);
+            }
+            view.push(tags);
+            views.push(view);
+        });
+        
         var form = document.createElement('form');
         form.action = '/classify/';
         form.method = 'POST';
         
         form.appendChild(createInput('bins', string));
+        form.appendChild(createInput('timeranges', JSON.stringify(timeranges)));
         form.appendChild(createInput('timeseries', TIMESERIES));
-        form.appendChild(createInput('import', true));
-        form.appendChild(createInput('batchmode', false));
+        form.appendChild(createInput('import', $("#import-checkbox")[0].checked));
+        form.appendChild(createInput('views', JSON.stringify(views)));
+        form.appendChild(createInput('sortby', $('#views-page input:radio:checked').val()));
         form.appendChild(createInput('csrfmiddlewaretoken', getCookie('csrftoken')));
         
         $('body').append(form);
@@ -537,8 +589,18 @@ $(function() {
             </li>
         `;
     }
+    
+    function createRangeItem(begin, end) {
+        return `
+            <li class='list-group-item time-range'>
+                <div class='title'>Time Range</div>
+                <div class='bin-date'>` + begin + `</div>
+                <div class='bin-date'>` + end + `</div>
+                <span role='button' class='glyphicon glyphicon-remove'></span>
+            </li>
+        `;
+    }
 
-    // if red is false, the alert is green
     function showAlert(message, cls) {
         alert.removeClass('alert-success');
         alert.removeClass('alert-danger');

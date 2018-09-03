@@ -37,8 +37,8 @@
             </div>
             <div class="col-xs-6">
                 <select class="selectpicker" data-container="body" data-live-search="true" data-selected-text-format="count" multiple>
-                    <option value='ANY' selected>ANY</option>
-                    <option value='NONE'>NONE</option>
+                    <option value='SMART' selected>SMART</option>
+                    <option value='ANY'>ANY</option>
                     {% for label in tag_labels %}
                         <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
                     {% endfor %}
@@ -169,6 +169,10 @@
                     <ul id="bin-list" class='list-group'>
                         <li id="none-selected" class='list-group-item'>None Selected</li>
                     </ul>
+                    <div class="row centered">
+                        <input class="form-check-input" type="checkbox" id="import-checkbox">
+                        <label class="form-check-label" for="import-checkbox">Import Auto-Classifier Results</label>
+                    </div>
                     <div class="row">
                         <div class="col-xs-6">
                             <button type="button" id="bin-back" class="btn btn-secondary">Back</button>
@@ -187,6 +191,18 @@
                         </li>
                     </ul>
                     <div class="row">
+                        <div class="col-xs-6 centered">
+                            <div class="radio">
+                                <label><input type="radio" value="power" name="sort-by" checked>Sort by user power</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-6 centered">
+                            <div class="radio">
+                                <label><input type="radio" value="date" name="sort-by">Sort by annotation date</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="col-xs-6">
                             <button type="button" id="views-back" class="btn btn-secondary">Back</button>
                         </div>
@@ -199,87 +215,12 @@
             <div id="footer-text">Created at <a href="http://www.whoi.edu">Woods Hole Oceanographic Institution</a></div>
         </div>
     </div>
-    
-<!--<div id="MCIndexDiv">
-  <b>Enter bin manually: </b>
-  <br>
-  <input type="textarea" id ='MCBinsText' style='margin-top:3px;margin-bottom:3px;';>
-  <input type="button" id='MCBinsAddBtn' value="Add">
-  <div id='MCRecentBinsDiv'>
-    <b>Recent bins viewed:</b><br>
-    <select id='MCRecentBinsSelect' size='10'></select>
-    <input type='button' id='MCRecentBinsAddBtn' value='Add'>
-  </div>
-  <div>
-    <b>Chosen bins:</b><br>
-    <select id='MCBins' size='10'>
-      {% for bin in bins %}
-      <option value='{{ bin }}'>{{ bin }}</option>
-      {% endfor %}
-    </select>
-    <input type='button' id='MCBinsRemoveBtn' value='Remove'>
-  </div>
-  <div>
-    <b>Chosen Timeseries:</b><br>
-    <select id='MCTimeSeries'>
-      {% for timeseries in timeseries_list %}
-      <option value='{{ timeseries }}'>{{ timeseries }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div>
-    <b><label for="MCBatchMode">Batch mode:</label></b>
-    <input type="checkbox" id="MCBatchMode">
-  </div>
-  <div id='MCBatchModeOptions' style='display:none;line-height:25px;'>
-    <p style='display:table-row;'>
-      <label for='MCBatchSize' class='MCBatchOption'><b>Batch size:</b></label>
-      <input type='number' min='1' name='MCBatchSize' id='MCBatchSize'></input>
-    </p>
-    <p style='display:table-row'>
-      <label for='MCBatchStart' style='display:table-cell;padding-right:5px;'><b>Start date:</b></label>
-      <input id='MCBatchStart' type='date'>
-    </p>
-    <p style='display:table-row'>
-      <label for='MCBatchEnd' style='display:table-cell;padding-right:5px;'><b>End date:</b></label>
-      <input id='MCBatchEnd' type='date'>
-    </p>
-    <p style='display:table-row'>
-      <label for='MCBatchClass' style='display:table-cell;padding-right:5px;'><b>Class:</b></label>
-      <select id='MCBatchClass' style='display:table-cell'>
-	{% for label in classification_labels %}
-	<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
-	{% endfor %}
-      </select>
-    </p>
-    <p style='display:table-row'>
-      <label for='MCBatchTag' style='display:table-cell;padding-right:5px;'><b>Tag:</b></label>
-      <select id='MCBatchTag' style='display:table-cell'>
-	<option value='ANY'>ANY</option>
-	<option value='NONE'>NONE</option>
-	{% for label in tag_labels %}
-	<option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
-	{% endfor %}
-      </select>
-    </p>
-  </div>
-  <input type='button' id='MCBinsSubmit' value='Begin Classifying Raw'>
-  <br>
-  <input type='button' id='MCBinsSubmitAndImport' value='Begin Classifying and Import Auto Data'>
-</div>
-<div id='MCLinks'>
-  <b>{{ username }}</b> <img src="{% static 'images/person_icon.png' %}" height="20px" width="20px"/>
-  <br>
-  <a href='/logout/'>Logout</a>
-  <br>
-  <a href='/admin/'>Admin</a>
-</div>
--->
 
-<script>
-    var csrf_token_form = "{% csrf_token %}"
-    var csrf_token = '{{ csrf_token }}'
-    var failed = '{{ failed }}'
-</script>
+    <script>
+        var csrf_token_form = "{% csrf_token %}"
+        var csrf_token = '{{ csrf_token }}'
+        var failed = '{{ failed }}'
+    </script>
+    
 {% endblock %}
 

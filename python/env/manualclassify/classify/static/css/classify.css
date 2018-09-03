@@ -6,14 +6,185 @@ body {
     -ms-user-select: none;
     user-select: none;
 }
-#MCToolboxContainer {
-    position: fixed;
+
+#blur {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	background-image: url("../images/collage-background.png");
+   -webkit-filter: blur(4px);
+   -moz-filter: blur(4px);
+   -o-filter: blur(4px);
+   -ms-filter: blur(4px);
+   filter: blur(4px);
 }
-#MCTargetContainer {
+
+#overlay {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	background-color: #515151;
+	opacity: 0.5;
+}
+
+.form-background {
+	height: 100%;
+	width: 100%;
+	position: absolute;
+    top: 0;
+    left: 0;
+	background-color: black;
+	opacity: 0.5;
+	z-index: -1;
+	border-radius: 8px;
+}
+
+body > .row {
+    padding: 0;
+    margin: 0;
+}
+
+body > .row > .col-xs-2 {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    padding-left: 5px;
+    padding-top: 5px;
+    padding-right: 2.5px;
+    z-index: 10;
+}
+
+body > .row > .col-xs-10 {
+    padding-top: 5px;
+    padding-right: 5px;
+    padding-left: 2.5px;
+}
+
+#header {
+    position: relative;
+    background-color: black;
+    width: 100%;
+    overflow: auto;
+    animation: 1500ms ease-out 0s 1 slideDown;
+}
+
+#header span {
+    color: white;
+    font-weight: bold;
+}
+
+#brand {
+    float: left;
+    margin-left: 10px;
+    font-size: 28px;
+    color: white;
     position: absolute;
-    top: 7px;
-    left: 216px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Roboto';
 }
+
+#top-right-buttons {
+    float: right;
+    margin-right: 10px;
+}
+
+#top-right-buttons > .btn {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    min-width: 100px;
+    margin-left: 10px;
+}
+
+#hide-toolbox {
+    display: inline-block;
+    color: white;
+    padding-left: 5px;
+    padding-right: 5px;
+    border: solid 2px black;
+    border-bottom: 0;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    font-weight: bold;
+    position: absolute;
+    right: -25px;
+    top: 25px;
+    cursor: pointer;
+    transform: rotate(90deg);
+}
+
+#hide-toolbox .form-background {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+#hide-toolbox p {
+    margin: 0;
+}
+
+.animate-rotate {
+    transition: .25s linear;
+    -webkit-transform: rotate(90deg);
+}
+
+#MCToolboxContainer {
+    position: relative;
+    border: solid 2px black;
+	border-radius: 16px;
+    padding-bottom: 5px;
+    margin-right: 5px;
+}
+
+#MCTargetContainer {
+    position: relative;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border: solid 2px black;
+	border-radius: 16px;
+    z-index: 0;
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-left: 3px;
+    padding-top: 3px;
+}
+
+#MCTargetContainer .form-background {
+    opacity: 0.75;
+}
+
+#view-label {
+    color: white;
+}
+
+#bin-label {
+    color: white;
+}
+
+#view-details {
+    margin: 0;
+    margin-bottom: 5px;
+    border-top: 1px solid black;
+    padding-top: 10px;
+}
+
+#bin-details {
+    margin: 0;
+    margin-bottom: 5px;
+}
+
+.col-xs-4 {
+    text-align: center;
+    overflow-x: visible;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.col-xs-4 p {
+    overflow-x: visible;
+    width: 100%;
+}
+
 div.MCTarget {
     outline-style: solid;
     outline-color: black;
@@ -50,11 +221,13 @@ div.MCEndSetMarkerInner {
     top: 45%;
 }
 #MCSubmitUpdates {
-    margin:0 auto;
-    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 5px;
     display: block;
     width: 150px;
     text-align: center;
+    margin-bottom: 10px;
 }
 #MCRightClickMenu {
     position: fixed;
@@ -72,9 +245,14 @@ div.MCDetailEntryPiece {
     display: inline-block;
     border-right: 1px solid;
     text-align: center;
-    padding: 2px;
     vertical-align: middle;
+    padding: 4px;
 }
+
+.MCDetailActionButton {
+    line-height: 17px;
+}
+
 #MCCurrentBinsLabel {
     margin-top: 10px;
     margin-bottom: 3px;
@@ -82,7 +260,19 @@ div.MCDetailEntryPiece {
     border-top: black solid 1px;
     padding-top: 5px;
     font-weight: bold;
+    font-family: 'Roboto';
+    color: white;
 }
 #MCCurrentBins {
     font-size: small;
+    font-family: 'Roboto';
+    color: white;
+}
+#MCLoading {
+    font-family: 'Roboto';
+    color: white;
+}
+
+.col-xs-2 {
+    min-width: 200px;
 }

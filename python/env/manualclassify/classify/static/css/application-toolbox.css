@@ -1,21 +1,37 @@
 #MCApplicationToolbox {
-    height: auto;
-    width: 200px;
-    outline-style: solid;
-    outline-color: black;
-    outline-width: 2px;
-    background-color: #ffffff;
     margin-top: 10px;
+    border-top: 1px solid black;
+    padding-top: 5px;
 }
 #MCNumberAppliedLabel {
     width: 100%;
     text-align: center;
     display: inline-block;
     margin-top: 3px;
+    color: white;
+    font-size: 12px;
 }
 #MCNumberTaggedLabel {
     width: 100%;
     text-align: center;
     display: inline-block;
     margin-bottom: 3px;
+    color: white;
+    font-size: 12px;
+}
+
+#MCApplicationToolbox .bootstrap-select {
+    margin-left: 5% !important;
+}
+
+#MCApplicationToolbox .row {
+    margin: 0;
+    display: table;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.col-xs-6 {
+    display: table-cell;
+    float: none;
 }

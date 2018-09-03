@@ -16,6 +16,8 @@ from classify import utils, database, config
 
 logger = logging.getLogger(__name__)
 
+BATCH_SIZE = 10
+
 def alertResponse(msg, red=True):
     return HttpResponse(json.dumps({
         'red' : red,
@@ -102,6 +104,14 @@ class SearchBinsView(TemplateView):
         r = requests.get(url)
         for dict in r.json():
             bin = dict['pid'].replace(ts, '')
+            # less than ideal workaround for http(s) issue
+            ts_alt = None
+            if ts.find("https") >= 0:
+                ts_alt = ts.replace("https", "http")
+            else:
+                ts_alt = ts.replace("http", "https")
+            bin = bin.replace(ts_alt, '')
+            ts_alt = ts.replace("https", "http")
             date = iso8601.parse_date(dict['date']).strftime("%b %e, %Y %I:%M %p").replace(" 0", " ")
             bins.append((bin, date))
         return HttpResponse(json.dumps({
@@ -152,91 +162,60 @@ class ClassifyPageView(TemplateView):
         binsInput = request.POST.get('bins', '')
         bins = re.split(',', binsInput)
         shouldImport = json.loads(request.POST.get('import', 'false')) # boolean conversion with json lib
-        utils.timeseries = request.POST.get('timeseries', '')
-        batchmode = json.loads(request.POST.get('batchmode', 'false'))
+        ts = request.POST.get('timeseries', '')
+        ranges = json.loads(request.POST.get('timeranges', '[]'))
+        index = int(request.POST.get('index', 0))
+        views = json.loads(request.POST.get('views', '[]'))
+        sortby = request.POST.get('sortby', 'power')
+        
+        if index == 0:
+            for range in ranges:
+                start = range[0]
+                end = range[1]
+                if len(bins) == 1 and bins[0] == '':
+                    bins = utils.getBinsInRange(batchstart, batchend, ts)
+                else:
+                    bins = utils.removeDuplicates(bins + utils.getBinsInRange(batchstart, batchend, ts))
+                    
+            bins = database.filterBins(bins, views, sortby)
+            
+        if len(bins) == 0 or (len(bins) == 1 and bins[0] == ''):
+            request.session['failed'] = 'None of those bins had results in those views.'
+            return redirect('/')
         
         classList = database.getClassificationList()
         tagList = database.getTagList()
         
-        current_bins = bins
+        current_bins = bins[index:index+BATCH_SIZE]
         
-        if batchmode:
-            batchsize = int(request.POST.get('batchsize', 5))
-            
-            if batchsize > 20:
-                request.session['failed'] = 'Batch size cannot be greater than 20'
-                return redirect('/')
-            
-            if 'batchstart' in request.POST:
-            
-                batchstart = request.POST.get('batchstart', '')
-                batchend = request.POST.get('batchend', '')
-                
-                if batchstart == '' or batchend == '':
-                    request.session['failed'] = 'Invalid date(s) given for batch mode range'
-                    return redirect('/')
-                    
-                batchstart = datetime.strptime(batchstart, '%Y-%m-%d')
-                batchend = datetime.strptime(batchend, '%Y-%m-%d')
-                
-                if batchend < batchstart:
-                    temp = batchend
-                    batchend = batchstart
-                    batchstart = temp
-                    
-                delta = batchend - batchstart
-                if delta.total_seconds() / 86400 > 365:
-                    request.session['failed'] = 'Date range cannot be greater than 365 days'
-                    return redirect('/')
-
-                if len(bins) == 1 and bins[0] == '':
-                    bins = utils.getBinsInRange(batchstart, batchend, utils.timeseries)
-                else:
-                    bins = utils.removeDuplicates(bins + utils.getBinsInRange(batchstart, batchend, utils.timeseries))
-                
-            batchclass = request.POST.get('batchclass', '')
-            batchtag = request.POST.get('batchtag', '')
-                
-            bins = database.filterBins(bins, batchclass, batchtag)
-            
-            current_bins = bins[:batchsize]
-            
-        if len(current_bins) == 1 and current_bins[0] == '':
-            request.session['failed'] = 'You must supply at least one valid bin'
-            return redirect('/')
-        
-        targets = utils.getTargets(current_bins)
+        targets = utils.getTargets(current_bins, ts)
         
         if not targets:
             request.session['bins'] = bins
-            request.session['failed'] = 'One or more of the chosen bins was invalid for the chosen timeseries'
+            request.session['failed'] = 'One or more of the chosen bins was invalid for the chosen timeseries.'
             return redirect('/')
 
-        classifications = database.getAllDataForBins(current_bins, targets)
+        classifications = database.getAllDataForBins(current_bins, targets, ts)
         
         logger.info('{} total targets found'.format(len(targets)))
         
         if shouldImport:
             logger.info('including auto results')
-            classifications = database.addClassifierData(current_bins, classList, tagList, classifications)
+            classifications = database.addClassifierData(current_bins, classList, tagList, classifications, ts)
         
         JS_values = {
-            'timeseries' : utils.timeseries,
+            'timeseries' : ts,
             'classification_labels' : classList,
             'tag_labels' : tagList,
             'classifications' : json.dumps(classifications),
             'bins' : json.dumps(bins),
             'user_id' : request.user.pk,
             'username' : request.user.username,
-            'batchmode' : batchmode,
-            'batchsize' : 5,
             'shouldImport' : shouldImport,
+            'index' : index,
+            'sortby' : sortby,
+            'views' : json.dumps(views)
         }
-        
-        if batchmode:
-            JS_values['batchsize'] = batchsize
-            JS_values['batchclass'] = batchclass
-            JS_values['batchtag'] = batchtag
             
         return render(request, 'classify.html', JS_values)
 
@@ -245,14 +224,14 @@ class SubmitUpdatesPageView(TemplateView):
         if request.method == 'POST':
             if not request.user.is_authenticated:
                 return redirect(settings.LOGIN_URL)
-            utils.timeseries = request.POST.get('timeseries', '')
+            timeseries = request.POST.get('timeseries', '')
             c_updates = json.loads(request.POST.get('classifications', ''))
             t_updates = json.loads(request.POST.get('tags', ''))
             t_n_updates = json.loads(request.POST.get('tagnegations', ''))
             id = request.user.pk
-            result1 = database.insertUpdates(c_updates, id, True, False)
-            result2 = database.insertUpdates(t_updates, id, False, False)
-            result3 = database.insertUpdates(t_n_updates, id, False, True)
+            result1 = database.insertUpdates(c_updates, id, True, False, timeseries)
+            result2 = database.insertUpdates(t_updates, id, False, False, timeseries)
+            result3 = database.insertUpdates(t_n_updates, id, False, True, timeseries)
             result = dict()
             result.update(result1)
             result.update(result2)
@@ -263,9 +242,10 @@ class ZipDownloadPageView(TemplateView):
     def post(self, request, **kwargs):
         if request.method == 'POST':
             bin = request.POST.get('bin', '')
+            ts = request.POST.get('timeseries', '')
             if bin == '':
                 return HttpResponse('failure')
-            response = HttpResponse(utils.getZipForBin(bin), content_type='application/zip')
+            response = HttpResponse(utils.getZipForBin(bin, ts), content_type='application/zip')
             response['Content-Disposition'] = 'attachment; filename=' + bin + '.zip'
             return response
 
@@ -273,15 +253,15 @@ class CacheBinPageView(TemplateView):
     def post(self, request, **kwargs):
         if request.method == 'POST':
             bins = request.POST.get('bins', '')
-            utils.timeseries = request.POST.get('timeseries', '')
+            timeseries = request.POST.get('timeseries', '')
             bins = re.split(',', bins)
             if len(bins) > 0 and bins[0] != '':
                 for bin in bins:
                     logger.info('CACHING ' + bin + '...')
                     if not utils.areTargetsCached(bin):
-                        utils.parseBinToTargets(bin)
+                        utils.parseBinToTargets(bin, timeseries)
                     if not utils.areAutoResultsCached(bin):
-                        utils.getAutoResultsForBin(bin)
+                        utils.getAutoResultsForBin(bin, timeseries)
                     if not utils.isZipDownloaded(bin):
-                        utils.downloadZipForBin(bin)
+                        utils.downloadZipForBin(bin, timeseries)
         return HttpResponse('')

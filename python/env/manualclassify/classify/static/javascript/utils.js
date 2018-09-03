@@ -99,6 +99,45 @@ function getBatchEnd() {
     return getCookie('MCBatchEnd') || null;
 }
 
+function sameArray(one, two) {
+    let r = one.length == two.length;
+    if (r) {
+        for (let n = 0; n < one.length; n++) {
+            if (!two.includes(one[n])) {
+                try {
+                    if (!two.includes(parseInt(one[n])))
+                        return false;
+                } catch(err) {
+                    return false;
+                }
+            }
+        }
+    }
+    return r;
+}
+
+function serializeTags(tags) {
+    let s = '['
+    for (let n = 0; n < tags.length; n++) {
+        s = s + tags[n] + '!';
+    }
+    if (tags.length > 0) {
+        s = s.substring(0, s.length - 1);
+    }
+    return s + ']'
+}
+
+function deserializeTags(str) {
+    str = str.substring(1, str.length - 1);
+    let arr = str.split('!');
+    let r = [];
+    for (let n = 0; n < arr.length; n++) {
+        if (arr[n] != '')
+            r.push(arr[n]);
+    }
+    return r;
+}
+
 function getRecentApplications() {
     var combos_string = getCookie('MCRecentApplications');
     var oldCombos = combos_string.split(',');
@@ -109,44 +148,45 @@ function getRecentApplications() {
         var s = oldCombos[n].split('/');
         if (s[0] == 'BLANK')
             s[0] = '';
-        if (s[1] == 'BLANK')
-            s[1] = '';
-        combos[n] = [s[0], s[1]];
+        combos[n] = [s[0], deserializeTags(s[1])];
     }
     return combos;
 }
 
-function addRecentApplicationToCookies(classification, tag) {
+function addRecentApplicationToCookies(classification, tags) {
     var combos = getRecentApplications();
     var new_combos = [];
     for (var n = 0; n < combos.length; n++) {
-        if (!(combos[n][0] == classification && combos[n][1] == tag)) {
-            new_combos.push(combos[n][0] + '/' + combos[n][1]);
+        if (!(combos[n][0] == classification && sameArray(combos[n][1], tags))) {
+            new_combos.push(combos[n][0] + '/' + serializeTags(combos[n][1]));
         }
     }
     while (new_combos.length >= 14)
         new_combos.splice(new_combos.length-1, 1);
     if (classification == '')
         classification = 'BLANK';
-    if (tag == '')
-        tag = 'BLANK';
-    new_combos.splice(0, 0, classification + '/' + tag);
+    new_combos.splice(0, 0, classification + '/' + serializeTags(tags));
     setCookie('MCRecentApplications', new_combos.join(), 3650);
 }
 
-function getLabelsForCombo(classification, tag) {
-    var c;
-    var t;
-    var cSelect = document.getElementById('ClassificationApplicationSelection');
-    var tSelect = document.getElementById('TagApplicationSelection');
+function getLabelsForCombo(classification, tags) {
+    var c = '';
+    var t = '';
+    var cSelect = $('#class-apply-select')[0];
+    var tSelect = $('#tag-apply-select')[0];
     for (var n = 0; n < cSelect.options.length; n++) {
         if (cSelect.options[n].value == classification)
             c = cSelect.options[n].text;
     }
     for (var n = 0; n < tSelect.options.length; n++) {
-                if (tSelect.options[n].value == tag)
-                    t = tSelect.options[n].text;
+                if (tags.includes(tSelect.options[n].value))
+                    t = t + tSelect.options[n].text + ', '
     }
+    t = t.substring(0, t.length - 2);
+    if (tags.includes('CLEAR'))
+        t = 'CLEAR';
+    if (tags.includes('ANY'))
+        t = 'ANY';
     return [c, t];
 }
 
@@ -188,30 +228,30 @@ function moreRecent(c1, c2) {
 }
 
 function compareClassifications(c1, c2) {
-    let order = document.getElementById('MCOrderBySelection').value;
-    if (order == 'power') {
+    if (sortby == 'power') {
         if (c1['user_power'] == c2['user_power']) {
             return moreRecent(c1, c2) == c2;
         } else {
             return morePowerful(c1, c2) == c2;
         }
-    } else if (order == "time") {
+    } else if (sortby == "date") {
         // the miniscule possibility of a tie in time is ignored here
         return moreRecent(c1, c2) == c2;
     }
 }
 
-function checkPidBelongsInView(pid, classification, tag, filter, include_unclassified) {
+function checkPidBelongsInView(pid, classification, tags, filter, include_unclassified) {
     if (classifications.hasOwnProperty(pid)) {
         
-        var t_ok = tag == 'ANY';
-        if (!(t_ok)) {
+        var t_ok = tags.includes('ANY');
+        if (!t_ok) {
             var acceptedTags = getAcceptedTagsForPid(pid);
-            if (tag == 'NONE') {
-                t_ok = (acceptedTags.length == 0);
-            }
-            else {
-                t_ok = (acceptedTags.indexOf(parseInt(tag)) >= 0);
+            t_ok = tags.length == acceptedTags.length;
+            for (let n = 0; n < tags.length; n++) {
+                if (!acceptedTags.includes(parseInt(tags[n]))) {
+                    t_ok = false;
+                    break;
+                }
             }
         }
         
@@ -242,10 +282,10 @@ function checkPidBelongsInView(pid, classification, tag, filter, include_unclass
     return false;
 }
 
-function getTargetsInCategory(classification, tag, filter, include_unclassified) {
+function getTargetsInCategory(classification, tags, filter, include_unclassified) {
     var targets = [];
     for(var pid in classifications) {
-        if (checkPidBelongsInView(pid, classification, tag, filter, include_unclassified))
+        if (checkPidBelongsInView(pid, classification, tags, filter, include_unclassified))
             targets.push(classifications[pid])
     }
     targets.sort(compareTargets);
@@ -261,35 +301,36 @@ function getAcceptedTagsForPid(pid) {
                 results.push(tags[n]['tag_id']);
         }
     }
-    return results;
+    return results.sort();
 }
 
 function makeUpdatesToClassifications(updates) {
-    for (pid in updates['classifications']) {
+    let to_sort = new Set();
+    for (let pid in updates['classifications']) {
         if (pid in classifications) { // should be unnecessary...
             var c = classifications[pid];
-            var h = c['height'];
-            var w = c['width'];
             var update = updates['classifications'][pid]
-            var to_remove = null;
             var oc = c['classifications'];
             for (var n = 0; n < oc.length; n++) {
                 if (oc[n]['user_id'] = update['user_id'] && oc[n]['classification_id'] == update['classification_id']) {
-                    to_remove = n;
+                    oc.splice(n, 1);
                     break;
                 }
             }
-            if (to_remove != null)
-                oc.splice(to_remove, 1);
+            let old_c = -1;
+            if (oc.length > 0)
+                oc[0]['classification_id'];
+            let old_t = getAcceptedTagsForPid(pid);
             c['classifications'].push(update);
+            c['classifications'].sort(compareClassifications);
+            sortPidIntoView(pid, old_c, old_t);
         }
-        c['classifications'].sort(compareClassifications);
     }
-    for (pid in updates['tags']) {
+    for (let pid in updates['tags']) {
         if (pid in classifications) {
+            let c = classifications[pid];
             outerLoop:
             for (var n = 0; n < updates['tags'][pid].length; n++) {
-                var c = classifications[pid];
                 var u = updates['tags'][pid][n];
                 if (!(c['tags']))
                     c['tags'] = [];
@@ -302,7 +343,12 @@ function makeUpdatesToClassifications(updates) {
                 }
                 c['tags'].push(u);
             }
+            let old_c = -1;
+            if (c['classifications'].length > 0)
+                old_c = c['classifications'][0]['classification_id'];
+            let old_t = getAcceptedTagsForPid(pid);
             labelAcceptedTagsForPid(pid);
+            sortPidIntoView(pid, old_c, old_t);
         }
     }
 }
@@ -311,19 +357,19 @@ function downloadZip(bin) {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/getzip/')
     xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    var params = 'csrfmiddlewaretoken=' + csrf_token + '&bin=' + bin;
+    var params = 'csrfmiddlewaretoken=' + csrf_token + '&bin=' + bin + '&timeseries=' + timeseries;
     xhr.responseType = 'blob';
     xhr.onload = function() {
         zips[bin] = xhr.response;
         loadImagesFromZip(bin);
         zips_downloaded++;
-        if (batch_mode && zips_downloaded == batchsize) // don't cache until current zips are done
+        if (zips_downloaded == BATCH_SIZE) // don't cache until current zips are done
             cacheBinsOnServer();
     }
     xhr.onerror = function() {
         console.log('something went wrong downloading zip');
         zips_downloaded++;
-        if (batch_mode && zips_downloaded == batchsize)
+        if (zips_downloaded == BATCH_SIZE)
             cacheBinsOnServer();
     }
     xhr.send(params);
@@ -384,10 +430,10 @@ function keepElementOnScreen(ele) {
 function getLabelById(id, tag) {
     var options;
     if (tag) {
-        options = document.getElementById('MCTagSelection').options;
+        options = $('#tag-select')[0].options;
     }
     else {
-        options = document.getElementById('MCClassificationSelection').options;
+        options = $('#class-select')[0].options;
     }
     for (var n = 0; n < options.length; n++) {
         var o = options[n];
@@ -454,14 +500,12 @@ function createInput(name, value) {
 }
 
 function cacheBinsOnServer() {
-    if (batch_mode) {
-        var to_cache = bins.slice(batchsize, batchsize*2).join(',');
-        if (to_cache != '') {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/cachebins/')
-            xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-            var params = 'csrfmiddlewaretoken=' + csrf_token + '&bins=' + to_cache + '&timeseries=' + timeseries;
-            xhr.send(params);
-        }
+    var to_cache = bins.slice(binIndex + BATCH_SIZE, binIndex + (BATCH_SIZE * 2)).join(',');
+    if (to_cache != '') {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/cachebins/')
+        xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        var params = 'csrfmiddlewaretoken=' + csrf_token + '&bins=' + to_cache + '&timeseries=' + timeseries;
+        xhr.send(params);
     }
 }

@@ -1,3 +1,5 @@
+let BATCH_SIZE = 10;
+
 var classification_updates = {};
 var tag_updates = {};
 var tag_negations = {};
@@ -6,151 +8,172 @@ var target_counter = 0;
 var loaded = 0;
 var current_targets = [];
 
-var set_size = getCookie('MCSetSize');
-if (set_size == "")
-    set_size = 100;
-document.getElementById('MCSetSize').value = set_size
-
 var zips_downloaded = 0;
-var zips_expected = batch_mode ? Math.min(batchsize, bins.length) : bins.length;
-var current_bins_ele = document.getElementById('MCCurrentBins');
-for(var n = 0; n < zips_expected; n++) {
-    addRecentBinToCookies(bins[n]);
-    downloadZip(bins[n]);
-    var label = document.createElement('p');
-    label.innerHTML = bins[n];
-    label.style.padding = '0';
-    label.style.margin = '0';
-    current_bins_ele.appendChild(label);
-}
+var zips_expected = Math.min(BATCH_SIZE, bins.length - binIndex);
 
-var classSelect = document.getElementById('MCClassificationSelection');
-var tagSelect = document.getElementById('MCTagSelection');
-var filterSelect = document.getElementById('MCFilterByCompletionSelection');
-var orderSelect = document.getElementById('MCOrderBySelection');
+$(function() {
+    var set_size = getCookie('MCSetSize');
+    if (set_size == "")
+        set_size = 100;
+    $('#MCSetSize')[0].value = set_size;
 
-var classApplySelect = document.getElementById('ClassificationApplicationSelection');
-var tagApplySelect = document.getElementById('TagApplicationSelection');
 
-sortSelectBoxes(classSelect, tagSelect, 1, 2); // stuck this in a function since it's more complex than I expected
-sortSelectBoxes(classApplySelect, tagApplySelect, 2, 2); 
-
-// select first classification
-classSelect.selectedIndex = 1;
-classSelect.onchange = reloadTargets;
-
-// select 'NONE' tags
-tagSelect.value = 'NONE';
-tagSelect.onchange = reloadTargets;
-
-if (batch_mode) {
-    console.log(batchclass);
-    console.log(batchtag);
-    classSelect.value = batchclass;
-    tagSelect.value = batchtag;
-    classSelect.disabled = true;
-    tagSelect.disabled = true;
-}
-
-// see all completion levels by default
-filterSelect.value = 'ANY';
-filterSelect.onchange = reloadTargets;
-
-orderSelect.value = 'power';
-orderSelect.onchange = function() {
-    for (let pid in classifications) {
-        if ('classifications' in classifications[pid]) {
-            classifications[pid]['classifications'].sort(compareClassifications);
-        }
+    //var current_bins_ele = document.getElementById('MCCurrentBins');
+    for(var n = binIndex; n < binIndex + zips_expected; n++) {
+        addRecentBinToCookies(bins[n]);
+        downloadZip(bins[n]);
+        /*var label = document.createElement('p');
+        label.innerHTML = bins[n];
+        label.style.padding = '0';
+        label.style.margin = '0';
+        current_bins_ele.appendChild(label);*/
     }
-    reloadTargets();
-}
+    
+    let binMax = Math.min(binIndex + BATCH_SIZE, bins.length);
+    $('#bin-label').text('Bins ' + (binIndex + 1) + ' - ' + binMax + ' / ' + bins.length);
 
-// select blank applications
-classApplySelect.value = '';
-tagApplySelect.value = '';
+    var classSelect = document.getElementById('class-select');
+    var tagSelect = document.getElementById('tag-select');
+    var filterSelect = document.getElementById('filter-select');
 
-// choosing a new classification to apply resets tag application
-classApplySelect.onchange = function() {
-    document.getElementById('TagApplicationSelection').value = '';
-}
+    var classApplySelect = document.getElementById('class-apply-select');
+    var tagApplySelect = document.getElementById('tag-apply-select');
 
-// redo layout when window is resized
-var timeout = setTimeout(layoutMosaic, 0); // define the timer and call layout once immediately
-document.body.onresize = function() {
-    clearTimeout(timeout);
-    timeout = setTimeout(layoutMosaic, 200);
-}
+    // select first classification
+    classSelect.selectedIndex = 1;
+    classSelect.onchange = reloadTargets;
 
-function showLoading() {
-    loading = document.getElementById('MCLoading');
-    loading.innerHTML = 'Loading ...';
-}
+    // select 'NONE' tags
+    tagSelect.value = 'NONE';
+    tagSelect.onchange = reloadTargets;
 
-function hideLoading() {
-    loading = document.getElementById('MCLoading');
-    loading.innerHTML = '';
-}
+    // see all completion levels by default
+    filterSelect.value = 'ANY';
+    filterSelect.onchange = reloadTargets;
 
-showLoading();
-setTimeout(function() {
-    for (var pid in classifications) {
-        labelAcceptedTagsForPid(pid);
-        if ('classifications' in classifications[pid]) {
-            classifications[pid]['classifications'].sort(compareClassifications);
-        }
+    // select blank applications
+    classApplySelect.value = '';
+    tagApplySelect.value = '';
+
+    // choosing a new classification to apply resets tag application
+    classApplySelect.onchange = function() {
+        tagApplySelect.value = '';
     }
-    reloadTargets();
-    if (current_targets.length == 0)
+
+    // redo layout when window is resized
+    var timeout = setTimeout(layoutMosaic, 0); // define the timer and call layout once immediately
+    document.body.onresize = function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(layoutMosaic, 50);
+    }
+
+    showLoading();
+    setTimeout(function() {
+        for (var pid in classifications) {
+            labelAcceptedTagsForPid(pid);
+            if ('classifications' in classifications[pid]) {
+                classifications[pid]['classifications'].sort(compareClassifications);
+            }
+            sortPidIntoView(pid, null, null);
+        }
+        setupViews();
         moveToNextView();
-    hideLoading();
-}, 50); // delayed because container needs time to size properly first
+        hideLoading();
+    }, 50); // delayed because container needs time to size properly first
+    
+    $('#previous-view').click(moveToPreviousView);
+    $('#next-view').click(moveToNextView);
+    $('#previous-batch').click(moveToPreviousBatch);
+    $('#next-batch').click(moveToNextBatch);
 
-// load more when scrolled down
-window.addEventListener("scroll", function(){
-    var D = document;
-    dHeight = Math.max(
-        D.body.scrollHeight, D.documentElement.scrollHeight,
-        D.body.offsetHeight, D.documentElement.offsetHeight,
-        D.body.clientHeight, D.documentElement.clientHeight
-    )
-    var winheight= window.innerHeight || (document.documentElement || document.body).clientHeight
-    var scrollTop = window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop
-    var trackLength = dHeight - winheight
-    if (trackLength == scrollTop) {
-        var disabledElement = document.getElementById('MCDisablePage');
-        if (!disabledElement && loaded == target_counter) {
-            var set = parseInt(document.getElementById('MCSetSize').value);
-            if (set <= 0)
-                set = 100;
-            loadMore(target_counter+set);
+    // load more when scrolled down
+    window.addEventListener("scroll", function(){
+        var D = document;
+        dHeight = Math.max(
+            D.body.scrollHeight, D.documentElement.scrollHeight,
+            D.body.offsetHeight, D.documentElement.offsetHeight,
+            D.body.clientHeight, D.documentElement.clientHeight
+        )
+        var winheight= window.innerHeight || (document.documentElement || document.body).clientHeight
+        var scrollTop = window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop
+        var trackLength = dHeight - winheight
+        if (trackLength == scrollTop) {
+            var disabledElement = document.getElementById('MCDisablePage');
+            if (!disabledElement && loaded == target_counter) {
+                var set = parseInt(document.getElementById('MCSetSize').value);
+                if (set <= 0)
+                    set = 100;
+                loadMore(target_counter+set);
+            }
         }
-    }
-}, false)
+    }, false)
 
-// update set size
-var setSizeElement = document.getElementById('MCSetSize');
-setSizeElement.onchange = function() {
-    var set = parseInt(this.value);
-    if (set <= 0)
-        set = 100;
-    setCookie('MCSetSize', set, 3650); // 10 years expiration...
-}
+    // update set size
+    var setSizeElement = document.getElementById('MCSetSize');
+    setSizeElement.onchange = function() {
+        var set = parseInt(this.value);
+        if (set <= 0)
+            set = 100;
+        setCookie('MCSetSize', set, 3650); // 10 years expiration...
+    }
+    
+    let hide = $('#hide-toolbox');
+    hide.click(function() {
+        let tb = $('.col-xs-2');
+        let tc = $('#MCTargetContainer');
+        let w = tb.width();
+        let p = hide.find('p');
+        if (p.text() == 'Hide') {
+            tb.animate({
+                'margin-left' : -w + 'px'
+            }, 250);
+            p.text('Show');
+            tc.animate({
+                'width' : tc.width() + w + 'px'
+            }, 250, function() {
+                layoutMosaic();
+            });
+        } else {
+            tb.animate({
+                'margin-left' : '5px'
+            }, 250);
+            tc.animate({
+                'width' : tc.width() - w + 'px'
+            }, 250, function() {
+                layoutMosaic();
+            });
+            p.text("Hide");
+        }
+    });
+    
+});
 
 // Above this is initialization
 // Below this is function declarations
 
+function showLoading() {
+    $('#MCLoading')[0].innerHTML = 'Loading ...';
+}
+
+function hideLoading() {
+    $('#MCLoading')[0].innerHTML = '';
+}
+
 function reloadTargets() {
-    var c_select = document.getElementById('MCClassificationSelection');
-    var t_select = document.getElementById('MCTagSelection');
-    var f_select = document.getElementById('MCFilterByCompletionSelection');
+    let c = $('#class-select')[0];
+    let t = $('#tag-select')[0];
+    let f = $('#filter-select')[0];
     classification_updates = {};
     tag_updates = {};
     tag_negations = {};
     target_counter = 0;
     loaded = 0;
-    var include_unclassified = c_select.options[c_select.selectedIndex].text.substring(0,5) == 'other';
-    current_targets = getTargetsInCategory(c_select.value, t_select.value, f_select.value, include_unclassified);
+    let tags = [];
+    for (let n = 0; n < t.selectedOptions.length; n++) {
+        tags.push(t.selectedOptions[n].value);
+    }
+    var include_unclassified = c.options[c.selectedIndex].text.substring(0,5) == 'other';
+    current_targets = getTargetsInCategory(c.value, tags, f.value, include_unclassified);
     updateLoadedCounter();
     updateAppliedCounter();
     var targets = document.getElementsByClassName('MCTarget');
@@ -166,13 +189,22 @@ function reloadTargets() {
 }
 
 function layoutMosaic() {
+        
+    let tb = $('.col-xs-2');
+    if (tb.css('margin-left').substring(0, 1) == '-') {
+        tb.css('margin-left', '-' + tb.width() + 'px');
+    }
+    
     var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
     var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+    let x = $('#MCToolboxContainer')[0].getBoundingClientRect().right;
     var targetContainer = document.getElementById('MCTargetContainer');
-    var targetContainerX = targetContainer.getBoundingClientRect().left;
-    width = width - targetContainerX - 20; // ensures there's no extra horizontal scrollbar
+    width = width - x - 30;
+    //targetContainer.style.left = x + 'px';
     targetContainer.style.width = width + "px";
-    targetContainer.style.height = (height - 10) + "px";
+    if (targetContainer.getBoundingClientRect().height < (height - 75)) {
+        targetContainer.style.minHeight = (height - 75) + 'px';
+    }
     var targets = document.getElementsByClassName('MCTarget');
     width -= 5;
     for (var n = 0; n < targets.length; n++) {
@@ -251,11 +283,19 @@ function createTile(pid, width, height) {
 
 function applyToTile(tile) {
     var pid = tile.id.replace('MCTarget_', '');
-    var filter = document.getElementById('MCClassificationSelection').value;
-    var clas = document.getElementById('ClassificationApplicationSelection').value;
-    var tag = document.getElementById('TagApplicationSelection').value;
+    var filter = $('#class-select')[0].value;
+    var clas = $('#class-apply-select')[0].value;
+    let ts = $('#tag-apply-select')[0];
+    let tags = [];
+    for (let n = 0; n < ts.selectedOptions.length; n++) {
+        if (ts.selectedOptions[n].value == 'CLEAR') {
+            tags = ['CLEAR'];
+            break;
+        } else {
+            tags.push(parseInt(ts.selectedOptions[n].value));
+        }
+    }
     var verify_other = false;
-    var verify_other_tag = false;
     for(var n = 0; n < current_targets.length; n++) {
         if (current_targets[n]['pid'] == pid) {
             if ('classifications' in current_targets[n]) {
@@ -265,14 +305,6 @@ function applyToTile(tile) {
                         if (user_id == c['user_id']) {
                             verify_other = true;
                         }
-                    }
-                }
-            }
-            if ('tags' in current_targets[n]) {
-                for (var z = 0; z < current_targets[n]['tags'].length; z++) {
-                    var t = current_targets[n]['tags'][z];
-                    if (t['tag_id'] == tag && user_id == t['user_id']) {
-                        verify_other_tag = true;
                     }
                 }
             }
@@ -297,19 +329,24 @@ function applyToTile(tile) {
         else
             c_label.innerHTML = '<b>' + clas + '</b>';
     }
-    if (tag == 'CLEAR') {
-        delete tag_updates[pid];
-        t_label.innerHTML = '';
+    if (tags.length > 0) {
+        if (tags[0] == 'CLEAR') {
+            delete tag_updates[pid];
+            t_label.innerHTML = '';
+        } else {
+            tag_updates[pid] = tags;
+            t_label.style.color = 'blue';
+            if (tags.length > 1) {
+                let s = serializeTags(tags);
+                s = s.substring(1, s.length - 1);
+                s = s.replace(/!/g, ', ');
+                t_label.innerHTML = '<small><b>' + s + '</b></small>';
+            } else {
+                t_label.innerHTML = '<b>' + tags[0] + '</b>';
+            }
+        }
     }
-    else if (tag != '') {
-        tag_updates[pid] = tag;
-        t_label.style.color = 'blue';
-        if (verify_other_tag)
-            t_label.innerHTML = '<small><b>V: ' + tag + '</b></small>';
-        else
-            t_label.innerHTML = '<b>' + tag + '</b>';
-    }
-    addRecentApplicationToCookies(clas, tag);
+    addRecentApplicationToCookies(clas, tags);
     updateAppliedCounter();
 }
 
@@ -336,9 +373,9 @@ function submitUpdates() {
             
             var new_targets = [];
             
-            var c_select = document.getElementById('MCClassificationSelection');
-            var t_select = document.getElementById('MCTagSelection');
-            var f_select = document.getElementById('MCFilterByCompletionSelection');
+            var c_select = $('#class-select')[0];
+            var t_select = $('#tag-select')[0];
+            var f_select = $('#filter-select')[0];
             var include_unclassified = c_select.options[c_select.selectedIndex].text.substring(0,5) == 'other';
             
             makeUpdatesToClassifications(response); // this function updates JS with results from DB
@@ -346,7 +383,7 @@ function submitUpdates() {
             for (var n = 0; n < current_targets.length; n++) {
                 
                 var pid = current_targets[n]['pid'];
-                var current_classification = document.getElementById('MCClassificationSelection').value;
+                var current_classification = c_select.value;
                 
                 if (pid in tag_updates)
                     document.getElementById('MCNewTag_' + pid).style.color = '#56f442';
@@ -490,50 +527,4 @@ function updateAppliedCounter() {
     else {
         window.onbeforeunload = null;
     }
-}
-
-function sortOptions(a,b) {
-    var a = a.text.toLowerCase();
-    var b = b.text.toLowerCase();
-    if (a > b) return 1;
-    if (a < b) return -1;
-    return 0;
-}
-
-// sort select options alphabetically
-// I want to keep ANY And NONE on top
-// probably not the most elegant way to do this but meh
-function sortSelectBoxes(c, t, cSpecial, tSpecial) {
-    var c_array = Array.apply(null, c.options);
-    var t_array = Array.apply(null, t.options);
-    
-    // pull out all special options we want to remain at the top
-    var c_preserve = [];
-    for (var n = 0; n < cSpecial; n++)
-        c_preserve.push(c_array.shift());
-    
-    var t_preserve = [];
-    for (var n = 0; n < tSpecial; n++)
-        t_preserve.push(t_array.shift());
-    
-    // sort
-    c_array.sort(sortOptions);
-    t_array.sort(sortOptions);
-    
-    // put special options back in
-    for (var n = c_preserve.length-1; n >= 0; n--)
-        c_array.unshift(c_preserve[n]);
-    
-    for (var n = t_preserve.length-1; n >= 0; n--)
-        t_array.unshift(t_preserve[n]);
-    
-    // empty current options array
-    c.innerHTML = '';
-    t.innerHTML = '';
-    
-    // add sorted options
-    for (var n = 0; n < c_array.length; n++)
-        c.add(c_array[n]);
-    for (var n = 0; n < t_array.length; n++)
-        t.add(t_array[n]);
 }

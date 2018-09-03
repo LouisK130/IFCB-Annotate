@@ -1,34 +1,31 @@
 <div id='MCFilterToolbox'>
-  <div class='MCSelectLabel'><small><b>Select a classification to view:</b></small></div>
-  <select class='MCSelectBox' id='MCClassificationSelection'>
-    <option value='ANY'>ANY</option>
+    <div class='MCSelectLabel'>Select classification to view:</div>
+    <select id="class-select" class="selectpicker" data-container="body" data-live-search="true" data-width="90%">
     {% for label in classification_labels %}
-    <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+        <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
     {% endfor %}
-  </select>
-  <div class='MCSelectLabel'><small><b>Select a tag to view:</b></small></div>
-  <select class='MCSelectBox' id='MCTagSelection'>
-    <option value='ANY'>ANY</option>
-    <option value='NONE'>NONE</option>
-    {% for label in tag_labels %}
-    <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
-    {% endfor %}
-  </select>
-  <div class='MCSelectLabel'><small><b>Filter by completion:</b></small></div>
-  <select class='MCSelectBox' id='MCFilterByCompletionSelection'>
-    <option value='ANY'>ANY</option>
-    <option value='ME'>Classified by me (and nobody more powerful)</option>
-    <option value='OTHERS'>Classified by others</option>
-    <option value='NONE'>Not classified by anyone</option>
-  </select>
-  <div class='MCSelectLabel'><small><b>Order annotations by:</b></small></div>
-  <select class='MCSelectBox' id='MCOrderBySelection'>
-    <option value='power'>Most powerful user</option>
-    <option value='time'>Most recent</option>
-  </select>
-  <center><small><b><a id='MCSetSizeLabel'>Set size: </a></b></small>
-    <input type='number' min='1' name='MCSetSize' id='MCSetSize'></input></center>
-  <!--<div id='MaxWidthInputLabel'><small><b>Max image width:</b></small></div>
-      <input type="number" id='MaxWidthInput' value=400></input>-->
-  <small><div id='MCNumberLoadedLabel'>0 loaded of 0</div></small>
+    </select>
+    <div class='MCSelectLabel'>Select tag(s) to view:</div>
+    <select id="tag-select" class="selectpicker" data-container="body" data-live-search="true" data-selected-text-format="count" multiple data-width="90%">
+        <option value='ANY' selected>ANY</option>
+        {% for label in tag_labels %}
+            <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+        {% endfor %}
+    </select>
+    <div class='MCSelectLabel'>Filter by:</div>
+    <select id="filter-select" class="selectpicker" data-container="body" data-width="90%">
+        <option value='ANY'>No filter</option>
+        <option value='ME'>Top level annotation by me</option>
+        <option value='OTHERS'>Top level annotation by someone else</option>
+        <option value='NONE'>Not annotated by anyone</option>
+    </select>
+    <div class='MCSelectLabel'>Set size:</div>
+    <div class="row">
+        <div class="col-xs-6">
+            <input type='number' class="form-control" min='1' value="100" id='MCSetSize'></input></center>
+        </div>
+        <div class="col-xs-6">
+            <div id='MCNumberLoadedLabel'>0 loaded of 0</div>
+        </div>
+    </div>
 </div>

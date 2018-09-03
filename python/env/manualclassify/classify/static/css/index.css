@@ -3,7 +3,7 @@ html,body {
 	height: 100%;
 }
 
-.row {
+body > .row {
 	height: 100%;
 	padding: 0;
 	margin: 0;
@@ -17,7 +17,7 @@ html,body {
 }
 
 #header {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     background-color: black;
@@ -227,6 +227,7 @@ html,body {
     overflow-x: hidden;
     overflow-y: auto;
     background-color: white;
+    margin-bottom: 10px;
 }
 
 #views-list {
@@ -234,6 +235,7 @@ html,body {
     overflow-x: hidden;
     overflow-y: auto;
     background-color: white;
+    margin-bottom: 10px;
 }
 
 #views-caption {
@@ -260,6 +262,20 @@ html,body {
     overflow-y: auto;
     overflow-x: hidden;
     background-color: white;
+}
+
+.radio {
+    margin: auto;
+    margin-bottom: 10px;
+    width: 0;
+    max-height: 22px;
+}
+
+.radio label {
+    font-family: 'Roboto';
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
 }
 
 #date-results {
@@ -303,6 +319,16 @@ html,body {
     font-weight: bold;
     font-size: 12px;
     margin-right: 5px;
+}
+
+.time-range .title {
+    font-weight: bold;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+.time-range {
+    max-height: 65px;
 }
 
 .bin-date {
@@ -367,6 +393,18 @@ html,body {
 
 #dummy-submit {
     display: none;
+}
+
+.form-check-label {
+    font-family: 'Roboto';
+    color: white;
+    font-size: 12px;
+    transform: translateY(-3px);
+    margin-bottom: 10px;
+}
+
+.centered {
+    text-align: center;
 }
 
 #blur {

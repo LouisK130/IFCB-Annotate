@@ -118,11 +118,21 @@ function cancelPendingEntry() {
         document.getElementById('MCNewClassification_' + pid).innerHTML = '';
         break;
     case 'tag':
-        delete tag_updates[pid];
-        document.getElementById('MCNewTag_' + pid).innerHTML = '';
+        let i = tag_updates[pid].indexOf(e.labelID);
+        if (i >= 0)
+            tag_updates[pid].splice(i, 1);
+        if (tag_updates[pid].length == 0) {
+            delete tag_updates[pid];
+            document.getElementById('MCNewTag_' + pid).innerHTML = ''
+        } else {
+            let s = serializeTags(tag_updates[pid]);
+            s = s.substring(1, s.length - 1);
+            s = s.replace(/!/g, ', ');
+            document.getElementById('MCNewTag_' + pid).innerHTML = '<small><b>' + s + '</b></small>';
+        }
         break;
     case 'tagNegation':
-        var i = tag_negations[pid].indexOf(e.labelID);
+        i = tag_negations[pid].indexOf(e.labelID);
         if (i >= 0)
             tag_negations[pid].splice(i, 1);
         if(tag_negations[pid].length == 0)
@@ -226,12 +236,11 @@ function resizeMenu() {
         var cell = cells[n];
         cell.style.width = widths[cell.cellType] + 'px';
         cell.style.height = heights[cell.parentNode.id] + 'px';
-        cell.style.lineHeight = cell.style.height;
+        cell.style.lineHeight = (heights[cell.parentNode.id] - 8) + 'px'; // padding compensation;
         if (firstrow == cell.parentNode.id) {
             total_width += widths[cell.cellType];
         }
     }
-    total_width += 29; // hardcoded compensation for .offsetWidth not including padding + borders (it should?!)
     document.getElementById('MCRightClickMenu').style.width = total_width + 'px';
 
     var btns = document.getElementsByClassName('MCDetailActionButton');
@@ -281,14 +290,16 @@ function getPendingClassificationsForPid(pid) {
 function getPendingTagsForPid(pid) {
     var results = [];
     if (tag_updates[pid]) {
-        var dict = {};
-        dict['user'] = username;
-        dict['time'] = 'PENDING';
-        dict['verifications'] = 'N/A';
-        dict['label'] = getLabelById(tag_updates[pid], true)
-        dict['id'] = tag_updates[pid];
-        dict['color'] = 'blue';
-        results.push(dict)
+        for (let n = 0; n < tag_updates[pid].length; n++) {
+            var dict = {};
+            dict['user'] = username;
+            dict['time'] = 'PENDING';
+            dict['verifications'] = 'N/A';
+            dict['label'] = getLabelById(tag_updates[pid][n], true)
+            dict['id'] = tag_updates[pid][n];
+            dict['color'] = 'blue';
+            results.push(dict)
+        }
     }
     if (tag_negations[pid]) {
         var tn = tag_negations[pid];
