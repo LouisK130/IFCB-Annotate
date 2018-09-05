@@ -78,6 +78,7 @@ class ValidateBinsView(TemplateView):
         bad = []
         for bin in bins:
             url = ts + bin + '_short.json'
+            print(url)
             r = requests.get(url, allow_redirects=True)
             if r.status_code == 200:
                 bin = r.json()['pid'].replace(ts, '')
@@ -172,10 +173,12 @@ class ClassifyPageView(TemplateView):
             for range in ranges:
                 start = range[0]
                 end = range[1]
+                start = datetime.strptime(start, '%m/%d/%Y %I:%M %p')
+                end = datetime.strptime(end, '%m/%d/%Y %I:%M %p')
                 if len(bins) == 1 and bins[0] == '':
-                    bins = utils.getBinsInRange(batchstart, batchend, ts)
+                    bins = utils.getBinsInRange(start, end, ts)
                 else:
-                    bins = utils.removeDuplicates(bins + utils.getBinsInRange(batchstart, batchend, ts))
+                    bins = utils.removeDuplicates(bins + utils.getBinsInRange(start, end, ts))
                     
             bins = database.filterBins(bins, views, sortby)
             

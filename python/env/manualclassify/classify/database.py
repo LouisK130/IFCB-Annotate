@@ -245,9 +245,8 @@ def insertUpdates(updates, user_id, is_classifications, negations, timeseries):
     return return_updates
 
 def filterBins(bins, views, sortby):
-    print(bins)
     if len(views) == 0 or len(bins) == 0:
-        return bins
+        return []
         
     # there's definitely a better way to do this,
     # but I'm gonna do it recursively and hope it's not too slow
@@ -287,68 +286,84 @@ def filterBins(bins, views, sortby):
                     ')')
     
     params.append(classID)
-
-    query = query + (''
-            ', '
-            'TA AS ( '
-                'SELECT DISTINCT ON (t.bin, t.roi, t.tag_id) t.*, p.power '
-                'FROM classify_tag t, auth_user_groups g, auth_group p '
-                'WHERE t.user_id = g.user_id '
-                'AND p.id = g.group_id '
-                'AND t.bin IN (')
-                
-    for bin in bins:
-        query += '%s, '
-        params.append(bin)
-
-    query = query[:-2]
     
-    query = query + ') ORDER BY t.bin, t.roi, t.tag_id, '
-    
-    if sortby == 'power':
-        query = query + 'p.power DESC, t.verification_time DESC NULLS LAST, t.time DESC)'
-    elif sortby == 'date':
-        query = query + 't.verification_time DESC NULLS LAST, t.time DESC, p.power DESC)'
-        
-    query = query + (', '
-                    'TF AS ( '
-                        'SELECT * FROM TA WHERE negation = false')
+    if len(tagIDs) == 0 or not (tagIDs[0] == 'ANY' or tagIDs[0] == 'SMART'):
 
-    if len(tagIDs) > 0 and not (tagIDs[0] == 'ANY' or tagIDs[0] == 'SMART'):
-        
-        query = query + ' AND tag_id in ('
-        for id in tagIDs:
+        query = query + (''
+                ', '
+                'TA AS ( '
+                    'SELECT DISTINCT ON (t.bin, t.roi, t.tag_id) t.*, p.power '
+                    'FROM classify_tag t, auth_user_groups g, auth_group p '
+                    'WHERE t.user_id = g.user_id '
+                    'AND p.id = g.group_id '
+                    'AND t.bin IN (')
+                    
+        for bin in bins:
             query += '%s, '
-            params.append(id)
+            params.append(bin)
+
+        query = query[:-2]
         
-        query = query[:-2] + ')'
-    
-    query = query + ('), B AS ('
-                        'SELECT DISTINCT ON (bin, tag_id) CF.bin FROM TF, CF '
-                        'WHERE TF.roi = CF.roi AND TF.bin = CF.bin) '
-                    )
-    count = '= 0'
-    if len(tagIDs) > 0:
-        if tagIDs[0] == 'ANY' or tagIDs[0] == 'SMART':
-            count = '> 0'
+        query = query + ') ORDER BY t.bin, t.roi, t.tag_id, '
+        
+        if sortby == 'power':
+            query = query + 'p.power DESC, t.verification_time DESC NULLS LAST, t.time DESC)'
+        elif sortby == 'date':
+            query = query + 't.verification_time DESC NULLS LAST, t.time DESC, p.power DESC)'
+
+        if len(tagIDs) > 0:
+        
+            query = query + (', '
+                    'TF AS ( '
+                        'SELECT bin, roi, COUNT(*) AS cnt FROM TA '
+                        'WHERE negation = false AND tag_id in (')
+
+            for id in tagIDs:
+                query += '%s, '
+                params.append(id)
+            
+            query = query[:-2] + ') GROUP BY (bin, roi)'
+        
+            query = query + ('), PC AS ('
+                                    'SELECT bin, roi, COUNT(*) AS cnt FROM TA '
+                                    'WHERE negation = false GROUP BY (bin, roi))'
+                            )
+            
+            query = query + ('SELECT DISTINCT ON (bin) CF.bin FROM TF, CF, PC '
+                                'WHERE TF.roi = CF.roi AND TF.bin = CF.bin '
+                                'AND CF.bin = PC.bin AND CF.roi = PC.roi '
+                                'AND PC.cnt = TF.cnt AND PC.cnt = ' + str(len(tagIDs)) + ';'
+                            )
+            
         else:
-            count = '= ' + str(len(tagIDs))
-    query = query + (''
-            'SELECT DISTINCT ON (bin) bin FROM CF WHERE bin IN '
-            '(SELECT bin FROM B GROUP BY bin HAVING COUNT(*) ' + count + ');')
-    
+         
+            query = query + (' SELECT DISTINCT ON (bin) bin FROM CF '
+                             'WHERE bin || \'_\' || roi NOT IN ('
+                                'SELECT CF.bin || \'_\' || CF.roi AS pid FROM CF, TA '
+                                    'WHERE CF.bin = TA.bin AND CF.roi = TA.roi'
+                             ');')
+    else:
+        query = query + ' SELECT DISTINCT ON (bin) bin FROM CF;'
+        
     conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
     cur = conn.cursor()
     cur.execute(query, params)
     conn.commit()
     rows = cur.fetchall()
     
-    bins = []
+    # print(cur.query)
+    
+    good_bins = []
     
     for row in rows:
-        bins.append(row[0])
+        good_bins.append(row[0])
+        
+    # print("View: [" + str(classID) + ", " + str(tagIDs) + "]")
+    # print(good_bins)
 
-    return filterBins(bins, views[1:], sortby)
+    good_bins.extend(filterBins(bins, views[1:], sortby))
+    
+    return utils.removeDuplicates(good_bins)
     
 # we cache timeseries info here, so we don't make the same call to the database thousands of times
 # format:

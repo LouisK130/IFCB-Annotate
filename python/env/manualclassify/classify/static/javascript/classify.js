@@ -445,6 +445,8 @@ function enablePage() {
 function loadMore(n) {
     var bins = [];
     deleteLoadMoreButton();
+    if (target_counter == current_targets.length)
+        return;
     if (target_counter == 0) {
         var markers = document.getElementsByClassName('MCEndSetMarker');
         for (var z = 0; z < markers.length; z++) {

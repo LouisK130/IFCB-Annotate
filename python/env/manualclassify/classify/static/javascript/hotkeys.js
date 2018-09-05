@@ -109,9 +109,9 @@ function sortPidIntoView(pid, old_class, old_tags) {
                     }
                 }
                 if (o.length == 0)
-                    delete pids_in_view[old_class][old_tags];
-                if (pids_in_view[old_class].length == 0)
-                    delete pids_in_view[old_class];
+                    delete pids_in_views[old_class][old_tags];
+                if (pids_in_views[old_class].length == 0)
+                    delete pids_in_views[old_class];
             }
         }
     }

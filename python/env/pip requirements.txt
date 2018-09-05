@@ -1,4 +1,4 @@
-django
+django==1.11
 requests
 psycopg2
 iso8601
