@@ -240,53 +240,28 @@ function compareClassifications(c1, c2) {
     }
 }
 
-function checkPidBelongsInView(pid, classification, tags, filter, include_unclassified) {
-    if (classifications.hasOwnProperty(pid)) {
-        
-        var t_ok = tags.includes('ANY');
-        if (!t_ok) {
-            var acceptedTags = getAcceptedTagsForPid(pid);
-            t_ok = tags.length == acceptedTags.length;
-            for (let n = 0; n < tags.length; n++) {
-                if (!acceptedTags.includes(parseInt(tags[n]))) {
-                    t_ok = false;
-                    break;
-                }
-            }
-        }
-        
-        if (!('classifications' in classifications[pid]) || classifications[pid]['classifications'].length == 0)
-            return t_ok && include_unclassified && (filter == 'ANY' || filter == 'NONE');
-      
-        let c = classifications[pid]['classifications'][0];
-        
-        var c_ok = classification == 'ANY' || c['classification_id'] == classification;
-
-        var f_ok = false;
-        switch (filter) {
+function checkPidFilter(c, filter) {
+    switch (filter) {
         case 'ANY':
-            f_ok = true;
-            break;
+            return true;
         case 'ME':
-            f_ok = c['user_id'] == user_id;
-            break;
+            return c['user_id'] == user_id;
         case 'OTHERS':
-            f_ok = c['user_id'] && c['user_id'] > 0 && c['user_id'] != user_id;
-            break;
+            return c['user_id'] && c['user_id'] > 0 && c['user_id'] != user_id;
         case 'NONE':
-            f_ok = !c['user_id'] || c['user_id'] < 0;
-            break;
-        }
-        return c_ok && t_ok && f_ok;
+            return !c['user_id'] || c['user_id'] < 0;
     }
     return false;
 }
 
-function getTargetsInCategory(classification, tags, filter, include_unclassified) {
+function getTargetsInCategory(classification, tags, filter) {
     var targets = [];
-    for(var pid in classifications) {
-        if (checkPidBelongsInView(pid, classification, tags, filter, include_unclassified))
-            targets.push(classifications[pid])
+    if (!(classification in pids_in_views) || !(tags in pids_in_views[classification]))
+        return [];
+    for(let n = 0; n < pids_in_views[classification][tags].length; n++) {
+        let t = pids_in_views[classification][tags][n];
+        if (checkPidFilter(t[0], filter))
+            targets.push(t)
     }
     targets.sort(compareTargets);
     return targets;

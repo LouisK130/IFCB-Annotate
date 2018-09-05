@@ -173,7 +173,7 @@ function reloadTargets() {
         tags.push(t.selectedOptions[n].value);
     }
     var include_unclassified = c.options[c.selectedIndex].text.substring(0,5) == 'other';
-    current_targets = getTargetsInCategory(c.value, tags, f.value, include_unclassified);
+    current_targets = getTargetsInCategory(c.value, tags, f.value);
     updateLoadedCounter();
     updateAppliedCounter();
     var targets = document.getElementsByClassName('MCTarget');

@@ -34,7 +34,7 @@ function setupViews() {
                 let t_arr = t.split(',');
                 if (t_arr.length == 1 && t_arr[0] == '')
                     t_arr = []
-                ordered_views.push([c, t_arr]);
+                ordered_views.push([c, t_arr.sort()]);
             }
         }
         ordered_views.sort(compareViews);
@@ -49,7 +49,7 @@ function setupViews() {
                         let t_arr = t.split(',');
                         if (t_arr.length == 1 && t_arr[0] == '')
                             t_arr = []
-                        temp.push([views[n][0], t_arr]);
+                        temp.push([views[n][0], t_arr.sort()]);
                     }
                     temp.sort(compareViews);
                     for (let n = 0; n < temp.length; n++)
@@ -203,7 +203,6 @@ function loadView() {
     let t = $('#tag-select');
     c.selectpicker('val', ordered_views[current_view][0]);
     t.selectpicker('val', ordered_views[current_view][1]);
-    console.log(ordered_views[current_view]);
     reloadTargets();
     $('#view-label').text('View ' + (current_view + 1) + ' / ' + ordered_views.length);
 }
