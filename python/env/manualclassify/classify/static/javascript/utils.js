@@ -240,7 +240,10 @@ function compareClassifications(c1, c2) {
     }
 }
 
-function checkPidFilter(c, filter) {
+function checkPidFilter(target, filter) {
+    if (target['classifications'].length == 0)
+        return filter == 'ANY';
+    let c = target['classifications'][0];
     switch (filter) {
         case 'ANY':
             return true;
@@ -250,6 +253,21 @@ function checkPidFilter(c, filter) {
             return c['user_id'] && c['user_id'] > 0 && c['user_id'] != user_id;
         case 'NONE':
             return !c['user_id'] || c['user_id'] < 0;
+        case 'DIFFER':
+            if (target['classifications'].length < 2)
+                return false;
+            let old = sortby;
+            if (sortby == 'power') {
+                sortby = 'date';
+            }
+            else {
+                sortby = 'power';
+            }
+            target['classifications'].sort(compareClassifications);
+            let c2 = target['classifications'][0];
+            sortby = old;
+            target['classifications'].sort(compareClassifications);
+            return c != c2;
     }
     return false;
 }
@@ -260,7 +278,7 @@ function getTargetsInCategory(classification, tags, filter) {
         return [];
     for(let n = 0; n < pids_in_views[classification][tags].length; n++) {
         let t = pids_in_views[classification][tags][n];
-        if (checkPidFilter(t[0], filter))
+        if (checkPidFilter(t, filter))
             targets.push(t)
     }
     targets.sort(compareTargets);
