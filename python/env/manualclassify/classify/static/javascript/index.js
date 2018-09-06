@@ -536,7 +536,10 @@ $(function() {
             let tags = [];
             for (let n = 0; n < selects[1].selectedOptions.length; n++) {
                 let opt = selects[1].selectedOptions[n];
-                if (opt.value == 'ANY') {
+                if (opt.value == 'SMART') {
+                    tags = ['SMART'];
+                    break;
+                } else if (opt.value == 'ANY') {
                     tags = ['ANY'];
                     break;
                 }

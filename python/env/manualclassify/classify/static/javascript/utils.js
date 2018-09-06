@@ -242,7 +242,7 @@ function compareClassifications(c1, c2) {
 
 function checkPidFilter(target, filter) {
     if (target['classifications'].length == 0)
-        return filter == 'ANY';
+        return filter == 'ANY' || filter == 'NONE';
     let c = target['classifications'][0];
     switch (filter) {
         case 'ANY':

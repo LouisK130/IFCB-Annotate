@@ -68,7 +68,13 @@
                     <button type="button" id="next-batch" class="btn btn-primary btn-xs">Next</button>
                 </div>
               </div>
-              <center><div id='MCLoading'></div></center>
+              <center>
+                <p id='MCCurrentBinsLabel'>Currently viewing:</p>
+                <div id='MCCurrentBins'>
+                    <p style='margin-top:0px;margin-bottom:5px;padding:0;'><b>{{ timeseries }}</b></p>
+                </div>
+                <div id='MCLoading'></div>
+              </center>
         </div>
         <div id="hide-toolbox">
             <div class="form-background"></div>

@@ -62,22 +62,49 @@ function setupViews() {
 
 // TODO: Make this sort by APPARENT order (seen in select-boxes) rather than ID
 function compareViews(a, b) {
-    if (a[0] < b[0])
-        return -1;
-    if (b[0] < a[0])
-        return 1;
-    if (a[1].length < b[1].length)
-        return -1;
-    if (b[1].length < a[1].length)
-        return 1;
+    let c1 = getAlphabeticClassID(a[0]);
+    let c2 = getAlphabeticClassID(b[0]);
+    let t1 = [];
     for (let n = 0; n < a[1].length; n++) {
-        if (a[1][n] < b[1][n])
+        t1[n] = getAlphabeticTagID(a[1][n]);
+    }
+    let t2 = [];
+    for (let n = 0; n < b[1].length; n++) {
+        t2[n] = getAlphabeticTagID(b[1][n]);
+    }
+    if (c1 < c2)
+        return -1;
+    if (c2 < c1)
+        return 1;
+    if (t1.length < t2.length)
+        return -1;
+    if (t2.length < t1.length)
+        return 1;
+    for (let n = 0; n < t1.length; n++) {
+        if (t1[n] < t1[n])
             return -1;
-        if (b[1][n] < a[1][n])
+        if (t2[n] < t1[n])
             return 1;
     }
     // they are the same view somehow
     return 0;
+}
+
+function getAlphabeticID(id, ele) {
+    let s = $(ele)[0];
+    for (let n = 0; n < s.options.length; n++) {
+        if (s.options[n].value == id)
+            return n;
+    }
+    return -1;
+}
+
+function getAlphabeticClassID(id) {
+    return getAlphabeticID(id, '#class-select');
+}
+
+function getAlphabeticTagID(id) {
+    return getAlphabeticID(id, '#tag-select');
 }
 
 function sortPidIntoView(pid, old_class, old_tags) {

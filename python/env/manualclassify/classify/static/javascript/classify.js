@@ -18,15 +18,15 @@ $(function() {
     $('#MCSetSize')[0].value = set_size;
 
 
-    //var current_bins_ele = document.getElementById('MCCurrentBins');
+    let current_bins_ele = document.getElementById('MCCurrentBins');
     for(var n = binIndex; n < binIndex + zips_expected; n++) {
         addRecentBinToCookies(bins[n]);
         downloadZip(bins[n]);
-        /*var label = document.createElement('p');
+        let label = document.createElement('p');
         label.innerHTML = bins[n];
         label.style.padding = '0';
         label.style.margin = '0';
-        current_bins_ele.appendChild(label);*/
+        current_bins_ele.appendChild(label);
     }
     
     let binMax = Math.min(binIndex + BATCH_SIZE, bins.length);
