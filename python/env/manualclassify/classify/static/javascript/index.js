@@ -13,6 +13,8 @@ $(function() {
     $('#date-start').datetimepicker();
     $('#date-end').datetimepicker();
     
+    $.fn.selectpicker.Constructor.DEFAULTS.liveSearchStyle = 'startsWith';
+    
     if (failed != "") {
         showAlert(failed, 'alert-danger');
     }

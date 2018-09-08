@@ -11,6 +11,8 @@ var current_targets = [];
 var zips_downloaded = 0;
 var zips_expected = Math.min(BATCH_SIZE, bins.length - binIndex);
 
+$.fn.selectpicker.Constructor.DEFAULTS.liveSearchStyle = 'startsWith';
+
 $(function() {
     var set_size = getCookie('MCSetSize');
     if (set_size == "")
@@ -68,15 +70,15 @@ $(function() {
     }
 
     showLoading();
-    setTimeout(function() {
-        for (var pid in classifications) {
-            labelAcceptedTagsForPid(pid);
-            if ('classifications' in classifications[pid]) {
-                classifications[pid]['classifications'].sort(compareClassifications);
-            }
-            sortPidIntoView(pid, null, null);
+    for (var pid in classifications) {
+        labelAcceptedTagsForPid(pid);
+        if ('classifications' in classifications[pid]) {
+            classifications[pid]['classifications'].sort(compareClassifications);
         }
-        setupViews();
+        sortPidIntoView(pid, null, null);
+    }
+    setupViews();
+    setTimeout(function() {
         moveToNextView();
         hideLoading();
     }, 50); // delayed because container needs time to size properly first
@@ -172,7 +174,6 @@ function reloadTargets() {
     for (let n = 0; n < t.selectedOptions.length; n++) {
         tags.push(t.selectedOptions[n].value);
     }
-    var include_unclassified = c.options[c.selectedIndex].text.substring(0,5) == 'other';
     current_targets = getTargetsInCategory(c.value, tags, f.value);
     updateLoadedCounter();
     updateAppliedCounter();
@@ -244,6 +245,8 @@ function createTile(pid, width, height) {
     
     tile.onclick = function() {
         applyToTile(this);
+        if (document.activeElement)
+            document.activeElement.blur();
     }
     
     var img = document.createElement('img');
@@ -373,22 +376,23 @@ function submitUpdates() {
             
             var new_targets = [];
             
-            var c_select = $('#class-select')[0];
-            var t_select = $('#tag-select')[0];
-            var f_select = $('#filter-select')[0];
-            var include_unclassified = c_select.options[c_select.selectedIndex].text.substring(0,5) == 'other';
+            var c_select = $('#class-select');
+            var t_select = $('#tag-select');
+            var f_select = $('#filter-select');
             
             makeUpdatesToClassifications(response); // this function updates JS with results from DB
 
             for (var n = 0; n < current_targets.length; n++) {
                 
-                var pid = current_targets[n]['pid'];
-                var current_classification = c_select.value;
+                let target = current_targets[n];
+                let pid = target['pid'];
                 
-                if (pid in tag_updates)
+                if (target['pid'] in tag_updates)
                     document.getElementById('MCNewTag_' + pid).style.color = '#56f442';
                 
-                if (checkPidBelongsInView(pid, c_select.value, t_select.value, f_select.value, include_unclassified)) {
+                if (target['view'][0] == c_select.selectpicker('val') &&
+                    sameArray(target['view'][1], t_select.selectpicker('val')) &&
+                    checkPidFilter(target, f_select.selectpicker('val'))) {
                     
                     if (pid in classification_updates) {
                         document.getElementById('MCTarget_' + pid).style.outlineColor = '#56f442';

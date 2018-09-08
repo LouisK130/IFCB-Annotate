@@ -60,7 +60,6 @@ function setupViews() {
     }
 }
 
-// TODO: Make this sort by APPARENT order (seen in select-boxes) rather than ID
 function compareViews(a, b) {
     let c1 = getAlphabeticClassID(a[0]);
     let c2 = getAlphabeticClassID(b[0]);
@@ -107,7 +106,7 @@ function getAlphabeticTagID(id) {
     return getAlphabeticID(id, '#tag-select');
 }
 
-function sortPidIntoView(pid, old_class, old_tags) {
+function sortPidIntoView(pid) {
     if (!(pid in classifications))
         return;
     let target = classifications[pid];
@@ -125,10 +124,12 @@ function sortPidIntoView(pid, old_class, old_tags) {
         pids_in_views[c][tags] = [];
     }
     pids_in_views[c][tags].push(classifications[pid]);
-    if (old_class && old_tags) {
-        if (old_class in pids_in_views) {
-            if (old_tags in pids_in_views[old_class]) {
-                let o = pids_in_views[old_class][old_tags];
+    if ('view' in target) {
+        let oc = target['view'][0];
+        let ot = target['view'][1];
+        if (oc in pids_in_views) {
+            if (ot in pids_in_views[oc]) {
+                let o = pids_in_views[oc][ot];
                 for (let n = 0; n < o.length; o++) {
                     if (o[n]['pid'] == pid) {
                         o.splice(n, 1);
@@ -136,12 +137,13 @@ function sortPidIntoView(pid, old_class, old_tags) {
                     }
                 }
                 if (o.length == 0)
-                    delete pids_in_views[old_class][old_tags];
-                if (pids_in_views[old_class].length == 0)
-                    delete pids_in_views[old_class];
+                    delete pids_in_views[oc][ot];
+                if (pids_in_views[oc].length == 0)
+                    delete pids_in_views[oc];
             }
         }
     }
+    target['view'] = [c, tags];
 }
 
 function generalKeyDown(e) {
