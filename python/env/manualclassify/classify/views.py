@@ -78,10 +78,9 @@ class ValidateBinsView(TemplateView):
         bad = []
         for bin in bins:
             url = ts + bin + '_short.json'
-            print(url)
             r = requests.get(url, allow_redirects=True)
             if r.status_code == 200:
-                bin = r.json()['pid'].replace(ts, '')
+                bin = utils.binWithoutTimeseries(ts, r.json()['pid'])
                 date = iso8601.parse_date(r.json()['date']).strftime("%b %e, %Y %I:%M %p").replace(" 0", " ")
                 good.append((bin, date))
             else:
@@ -104,15 +103,7 @@ class SearchBinsView(TemplateView):
         bins = []
         r = requests.get(url)
         for dict in r.json():
-            bin = dict['pid'].replace(ts, '')
-            # less than ideal workaround for http(s) issue
-            ts_alt = None
-            if ts.find("https") >= 0:
-                ts_alt = ts.replace("https", "http")
-            else:
-                ts_alt = ts.replace("http", "https")
-            bin = bin.replace(ts_alt, '')
-            ts_alt = ts.replace("https", "http")
+            bin = utils.binWithoutTimeseries(ts, dict['pid'])
             date = iso8601.parse_date(dict['date']).strftime("%b %e, %Y %I:%M %p").replace(" 0", " ")
             bins.append((bin, date))
         return HttpResponse(json.dumps({

@@ -319,6 +319,7 @@ $(function() {
     });
     
     $('#date-back').click(function() {
+        $('#options-date').css('overflow', 'hidden')
         $('#options-date').stop().animate({
             'height' : 0
         }, 500, function() {

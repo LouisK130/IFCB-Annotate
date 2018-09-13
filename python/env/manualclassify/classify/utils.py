@@ -231,3 +231,12 @@ def getBinsInRange(start, end, timeseries):
         for dict in data:
             bins.append(dict['pid'].replace(timeseries, ''))
     return bins
+
+def binWithoutTimeseries(ts, bin):
+    bin = bin.replace(ts, '')
+    ts_alt = None
+    if ts.find("https") >= 0:
+        ts_alt = ts.replace("https", "http")
+    else:
+        ts_alt = ts.replace("http", "https")
+    return bin.replace(ts_alt, '')
