@@ -382,7 +382,7 @@ $(function() {
                     $(this).data("results", false);
                 });
                 
-                for (let n = 0; n < data.bins.length; n++) {
+                for (let n = 0; n < Math.min(100, data.bins.length); n++) {
                     let bin = data.bins[n][0];
                     let date = data.bins[n][1];
                     let item = createBinItem(bin, date, true);
