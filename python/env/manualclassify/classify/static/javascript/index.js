@@ -373,7 +373,7 @@ $(function() {
                     return;
                 }
                 if (data.bins.length > 100) {
-                    showAlert("Showing only the first 100 results. Use \"Add All\" to add both visible and hidden bins.", 'alert-danger');
+                    showAlert("Showing only the first 100 results. Use \"Add All\" to add both visible and hidden bins.", 'alert-warning');
                 }
                 
                 $('#options-date').css('overflow', 'hidden');

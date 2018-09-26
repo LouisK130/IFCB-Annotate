@@ -21,7 +21,7 @@ if not os.path.exists(TARGETS_CACHE_PATH):
     os.makedirs(TARGETS_CACHE_PATH, exist_ok=True)
 if not os.path.exists(AUTO_RESULTS_CACHE_PATH):
     os.makedirs(AUTO_RESULTS_CACHE_PATH, exist_ok=True)
-    
+
 CLASSIFIER_CONVERSION_TABLE = {
     'Asterionellopsis' : 'Asterionellopsis glacialis',
     'Corethron' : 'Corethron hystrix',
@@ -44,16 +44,16 @@ CLASSIFIER_CONVERSION_TABLE = {
     'clusterflagellate' : 'Corymbellus',
     'kiteflagellates' : 'Chrysochromulina lanceolata',
 }
-    
+
 def parseBinToTargets(bin, timeseries):
     targets = {}
-    
+
     t = time.time()
     while os.path.isfile(TARGETS_CACHE_PATH + '/' + bin + '_temp'):
         if time.time() - t > 30: # 30 second timeout before just trying to download the file again
             break
         time.sleep(1)
-        
+
     if areTargetsCached(bin):
         with open(TARGETS_CACHE_PATH + '/' + bin) as f:
             return json.load(f)
@@ -61,7 +61,7 @@ def parseBinToTargets(bin, timeseries):
         # create the temp file first so we know it's being downloaded
         f = open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w')
         f.close()
-        
+
         logging.info('started downloading: ' + timeseries + bin + '_roisizes')
         with closing(requests.get(timeseries + bin + '_roisizes', stream=True)) as r:
             if r.status_code == 404:
@@ -82,7 +82,7 @@ def parseBinToTargets(bin, timeseries):
         os.rename(TARGETS_CACHE_PATH + '/' + bin + '_temp', TARGETS_CACHE_PATH + '/' + bin)
         logging.info('finished downloading: ' + timeseries + bin + '_roisizes')
         return targets
-    
+
 # dictionary with key = values:
 # pid = {'height' : height, 'width' : width}
 def getTargets(bins, timeseries):
@@ -98,7 +98,7 @@ def getTargets(bins, timeseries):
             return False
         targets.update(new_targets)
     return targets
-    
+
 def areTargetsCached(bin):
     return os.path.isfile(TARGETS_CACHE_PATH + '/' + bin)
 
@@ -107,27 +107,27 @@ def formatROI(roi):
     while len(roi_s) != 5:
         roi_s = '0' + roi_s
     return roi_s
-    
+
 def getUserPower(user_id):
     user = User.objects.get(id=user_id)
     if user is None:
         return -1
     return user.get_user_power()
-    
+
 def getUserName(user_id):
     user = User.objects.get(id=user_id)
     if user is None:
         return None
     return user.username
-    
+
 def isZipDownloaded(bin):
     return os.path.isfile(ZIP_CACHE_PATH + '/' + bin + '.zip')
-    
+
 def getZipForBin(bin, timeseries):
     if not isZipDownloaded(bin):
         downloadZipForBin(bin, timeseries)
     return open(ZIP_CACHE_PATH + '/' + bin + '.zip', 'rb').read()
-    
+
 def downloadZipForBin(bin, timeseries):
 
     t = time.time()
@@ -135,7 +135,7 @@ def downloadZipForBin(bin, timeseries):
         if time.time() - t > 30: # 30 second timeout before just trying to download the file again
             break
         time.sleep(1)
-        
+
     if not isZipDownloaded(bin):
         logging.info('started downloading: ' + timeseries + bin + '.zip')
         # create the file first, just so we know it's being downloaded
@@ -146,10 +146,10 @@ def downloadZipForBin(bin, timeseries):
             f.write(r.content)
         os.rename(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', ZIP_CACHE_PATH + '/' + bin + '.zip')
         logging.info('finished downloading: ' + timeseries + bin + '.zip')
-    
+
 def areAutoResultsCached(bin):
     return os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin)
-    
+
 def removeDuplicates(arr):
     seen = set()
     result = []
@@ -167,13 +167,13 @@ def removeDuplicates(arr):
 def getAutoResultsForBin(bin, timeseries):
     classifications = {}
     path = timeseries + bin + '_class_scores.csv'
-    
+
     t = time.time()
     while os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp'):
         if time.time() - t > 30: # 30 second timeout before just trying to download the file again
             break
         time.sleep(1)
-        
+
     if areAutoResultsCached(bin):
         with open(AUTO_RESULTS_CACHE_PATH + '/' + bin) as f:
             try:
@@ -229,7 +229,7 @@ def getBinsInRange(start, end, timeseries):
     with closing(requests.get(url, stream=True)) as r:
         data = json.loads(r.text)
         for dict in data:
-            bins.append(dict['pid'].replace(timeseries, ''))
+            bins.append(binWithoutTimeseries(timeseries, dict['pid']))
     return bins
 
 def binWithoutTimeseries(ts, bin):

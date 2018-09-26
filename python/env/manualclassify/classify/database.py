@@ -351,15 +351,15 @@ def filterBins(bins, views, sortby):
     conn.commit()
     rows = cur.fetchall()
     
-    # print(cur.query)
+    #print(cur.query)
     
     good_bins = []
     
     for row in rows:
         good_bins.append(row[0])
         
-    # print("View: [" + str(classID) + ", " + str(tagIDs) + "]")
-    # print(good_bins)
+    #print("View: [" + str(classID) + ", " + str(tagIDs) + "]")
+    #print(good_bins)
 
     good_bins.extend(filterBins(bins, views[1:], sortby))
     
