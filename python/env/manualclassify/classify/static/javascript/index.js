@@ -1,7 +1,7 @@
 $(function() {
-    
+
     let TIMESERIES = null;
-    
+
     let main = $('#main-form');
     let page1 = $('#page1');
     let tspage = $('#timeseries-page');
@@ -9,40 +9,42 @@ $(function() {
     let addoptions = $('#add-options');
     let recents = $('#recent-bins');
     let alert = $('#alert');
-    
+
     $('#date-start').datetimepicker();
     $('#date-end').datetimepicker();
-    
+    $('#date-start').data('DateTimePicker').useCurrent('day');
+    $('#date-end').data('DateTimePicker').useCurrent('day');
+
     $.fn.selectpicker.Constructor.DEFAULTS.liveSearchStyle = 'startsWith';
-    
+
     if (failed != "") {
         showAlert(failed, 'alert-danger');
     }
 
-    
+
     // don't actually delete the alert, we'll want to show it again later
     $('#alert-close').click(function() {
         alert.fadeTo(500, 0);
     });
-    
+
     if (getCookie('timeseries') != '' &&
             $('#timeseries-select option[value="' + getCookie('timeseries') + '"]').length > 0) {
         $('#timeseries-select').selectpicker('val', getCookie('timeseries'));
     }
-    
+
     $(window).resize(function() {
-        
+
         if (binpage.height() > 0) {
-            
+
             addoptions.stop();
             addoptions.css('left', main[0].getBoundingClientRect().left - addoptions[0].getBoundingClientRect().width - 20)
             recents.stop();
             recents.css('left', main[0].getBoundingClientRect().right + 20);
-            
+
         }
-        
+
     });
-    
+
     $(document).on('click', '.glyphicon-plus', function() {
         let recent = $(this).parent().parent().attr('id') == 'recent-list';
         let results = $(this).parent().parent().attr('id') == 'date-list';
@@ -57,7 +59,7 @@ $(function() {
             $('#no-recents').css('display', 'block');
         }
     });
-    
+
     $(document).on('click', '.glyphicon-remove', function() {
         let bin = $(this).closest('li').detach();
         if (bin.data('recent')) {
@@ -78,7 +80,7 @@ $(function() {
             $('#add-view-item').css('max-height', 'calc(100% - 5px');
         }
     });
-    
+
     $('#classify-button').click(function() {
         page1.stop().animate({
             'height' : 0,
@@ -96,7 +98,7 @@ $(function() {
             }, 500);
         });
     });
-    
+
     $('#timeseries-back').click(function() {
         tspage.stop().animate({
             'height' : 0,
@@ -114,20 +116,20 @@ $(function() {
             }, 500);
         });
     });
-    
+
     $('#timeseries-next').click(function() {
-        
+
         TIMESERIES = $('#timeseries-select').val();
         setCookie('timeseries', TIMESERIES, 365);
-        
+
         $('#no-recents').css('display', 'block');
-        
+
         $('#recent-list li').each(function() {
             if ($(this).attr('id') != 'no-recents') {
                 $(this).remove();
             }
         });
-        
+
         let recent_bins = getRecentBins(TIMESERIES);
         for (let n = 0; n < recent_bins.length; n++) {
             let item = recent_bins[n];
@@ -135,7 +137,7 @@ $(function() {
             $('#recent-list').append(b);
             $('#no-recents').css("display", "none");
         }
-        
+
         tspage.stop().animate({
             'height' : 0,
         }, 500, function() {
@@ -162,19 +164,19 @@ $(function() {
                 'left' : right + 20
             }, 500);
         });
-        
+
     });
-    
+
     $('#bin-back').click(function() {
-        
+
         addoptions.animate({
             'left' : 0 - addoptions[0].getBoundingClientRect().width
         }, 500);
-        
+
         recents.animate({
             'left': '100%'
         }, 500);
-        
+
         binpage.stop().animate({
             'height' : 0,
         }, 500, function() {
@@ -197,9 +199,9 @@ $(function() {
                 $('#results-back').click();
             }
         });
-        
+
     });
-    
+
     $('#recent-clear').click(function() {
         $('#recent-list li').each(function() {
             if ($(this).attr('id') == 'no-recents') {
@@ -210,9 +212,9 @@ $(function() {
         });
         setCookie(TIMESERIES + "_bins", "", 3650);
     });
-    
+
     $('#add-manual').click(function() {
-        
+
         $('#options-page1').stop().animate({
             'height' : 0
         }, 500, function() {
@@ -224,11 +226,11 @@ $(function() {
                 $('#options-manual').css('height', 'auto');
             });
         });
-        
+
     });
-    
+
     $('#manual-back').click(function() {
-    
+
         $('#options-manual').stop().animate({
             'height' : 0
         }, 500, function() {
@@ -241,23 +243,23 @@ $(function() {
             });
             $('#manual-entry').val('');
         });
-        
+
     });
-    
+
     $('#manual-add').click(function() {
         let bins = $('#manual-entry').val().split(/[\s,]+/).filter(Boolean);
         if (bins.length == 0) {
             showAlert("Please input at least one bin.", 'alert-danger');
             return;
         }
-        
+
         $('#manual-add').prop("disabled", true);
         $('#manual-back').prop("disabled", true);
         $('#bin-back').prop("disabled", true);
         $('#bin-next').prop("disabled", true);
         $('#manual-add').text("Loading...");
         $('#manual-entry').prop("disabled", true);
-        
+
         function done() {
             $('#manual-add').prop("disabled", false);
             $('#manual-back').prop("disabled", false);
@@ -267,12 +269,12 @@ $(function() {
             $('#manual-add').text("Add");
             $('#manual-entry').val('');
         }
-        
+
         let stripped = [];
         for(let n = 0; n < bins.length; n++) {
             stripped.push(bins[n].replace(TIMESERIES, ""));
         }
-        
+
         $.ajax({
             url : '/validatebins/',
             type : 'POST',
@@ -298,9 +300,9 @@ $(function() {
                 done();
             }
         });
-        
+
     });
-    
+
     $('#add-date').click(function() {
         $('#options-page1').stop().animate({
             'height' : 0
@@ -317,7 +319,7 @@ $(function() {
             });
         });
     });
-    
+
     $('#date-back').click(function() {
         $('#options-date').css('overflow', 'hidden')
         $('#options-date').stop().animate({
@@ -332,22 +334,22 @@ $(function() {
             });
         });
     });
-    
+
     let start = $('#date-start input');
     let end = $('#date-end input');
-    
+
     $('#date-search').click(function() {
         if (!start.val() || !end.val()) {
             showAlert("Please pick two times to search between.", 'alert-danger');
             return;
         }
-        
+
         $('#date-search').prop("disabled", true);
         $('#date-back').prop("disabled", true);
         $('#bin-back').prop("disabled", true);
         $('#bin-next').prop("disabled", true);
         $('#date-search').text("Loading...");
-        
+
         function done() {
             $('#date-search').prop("disabled", false);
             $('#date-back').prop("disabled", false);
@@ -355,7 +357,7 @@ $(function() {
             $('#bin-next').prop("disabled", false);
             $('#date-search').text("Search");
         }
-        
+
         $.ajax({
             url : '/searchbins/',
             type : 'POST',
@@ -375,13 +377,13 @@ $(function() {
                 if (data.bins.length > 100) {
                     showAlert("Showing only the first 100 results. Use \"Add All\" to add both visible and hidden bins.", 'alert-warning');
                 }
-                
+
                 $('#options-date').css('overflow', 'hidden');
-                
+
                 $('#bin-list li').each(function() {
                     $(this).data("results", false);
                 });
-                
+
                 for (let n = 0; n < Math.min(100, data.bins.length); n++) {
                     let bin = data.bins[n][0];
                     let date = data.bins[n][1];
@@ -405,9 +407,9 @@ $(function() {
                 done();
             }
         });
-        
+
     });
-    
+
     $('#results-back').click(function() {
         $('#date-results').stop().animate({
             'height' : 0
@@ -422,7 +424,7 @@ $(function() {
             });
         });
     });
-    
+
     $('#results-add-all').click(function() {
         $('#date-list li').each(function() {
             $(this).remove();
@@ -434,7 +436,7 @@ $(function() {
         $('#none-selected').css('display', 'none');
         $('#results-back').click();
     });
-    
+
     $('#bin-next').click(function() {
         if ($('#none-selected').css('display') != 'none') {
             showAlert("You must select at least 1 bin.", 'alert-danger');
@@ -477,7 +479,7 @@ $(function() {
             }, 500);
         }
     });
-    
+
     $('#views-back').click(function() {
         $('#views-page').animate({
             'height' : 0
@@ -507,7 +509,7 @@ $(function() {
             'width' : 256
         }, 500);
     });
-    
+
     $('#views-next').click(function() {
         let bins = $('#bin-list .bin-name');
         let string = ""
@@ -516,9 +518,9 @@ $(function() {
             string = string + bins[n].innerHTML + ","
         }
         string = string.substring(0, string.length - 1);
-        
+
         let timeranges = [];
-        
+
         $('#bin-list').find('.time-range').each(function() {
             let tr = [];
             let dates = $(this).find('.bin-date');
@@ -526,9 +528,9 @@ $(function() {
             tr.push(dates[1].innerHTML);
             timeranges.push(tr);
         });
-        
+
         let views = [];
-        
+
         $('#views-list').find('.list-group-item').each(function() {
             if ($(this).attr('id') == 'add-view-item') {
                 return;
@@ -551,11 +553,11 @@ $(function() {
             view.push(tags);
             views.push(view);
         });
-        
+
         var form = document.createElement('form');
         form.action = '/classify/';
         form.method = 'POST';
-        
+
         form.appendChild(createInput('bins', string));
         form.appendChild(createInput('timeranges', JSON.stringify(timeranges)));
         form.appendChild(createInput('timeseries', TIMESERIES));
@@ -563,11 +565,11 @@ $(function() {
         form.appendChild(createInput('views', JSON.stringify(views)));
         form.appendChild(createInput('sortby', $('#views-page input:radio:checked').val()));
         form.appendChild(createInput('csrfmiddlewaretoken', getCookie('csrftoken')));
-        
+
         $('body').append(form);
         form.submit();
     });
-    
+
     $('#add-view-btn').click(function() {
         let v = $('#view-template').clone();
         v.find('.bootstrap-select').each(function() {
@@ -582,11 +584,11 @@ $(function() {
             $(this).selectpicker();
         });
     });
-    
+
     function createBinItem(name, time, add) {
-        
+
         let btnCls = add ? "glyphicon glyphicon-plus" : "glyphicon glyphicon-remove";
-        
+
         return `
             <li class='list-group-item'>
                 <div class="bin-name">` + name + `</div>
@@ -595,7 +597,7 @@ $(function() {
             </li>
         `;
     }
-    
+
     function createRangeItem(begin, end) {
         return `
             <li class='list-group-item time-range'>
@@ -616,5 +618,5 @@ $(function() {
         alert.css('opacity', '0');
         alert.fadeTo(500, 1.0)
     }
-    
+
 });
