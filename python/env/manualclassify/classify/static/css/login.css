@@ -103,6 +103,32 @@ html,body {
 	opacity: 0.5;
 }
 
+#footer-text {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    color: white;
+    font-size: 12px;
+}
+
+#footer-text > a {
+    color: white;
+    text-decoration: underline;
+}
+
+#version-text {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    color: white;
+    font-size: 12px;
+}
+
+#version-text > a {
+    color: white;
+    text-decoration: underline;
+}
+
 /* stackoverflow.com/questions/11679567/using-css-for-fade-in-effect-on-page-load */
 
 @keyframes fadein {

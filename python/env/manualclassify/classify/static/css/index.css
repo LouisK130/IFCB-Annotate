@@ -67,6 +67,19 @@ body > .row {
     text-decoration: underline;
 }
 
+#version-text {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    color: white;
+    font-size: 12px;
+}
+
+#version-text > a {
+    color: white;
+    text-decoration: underline;
+}
+
 #main-form {
 	min-width: 300px;
 	position: absolute;
