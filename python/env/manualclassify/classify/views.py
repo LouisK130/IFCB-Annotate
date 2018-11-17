@@ -247,8 +247,11 @@ class ZipDownloadPageView(TemplateView):
             ts = request.POST.get('timeseries', '')
             if bin == '':
                 return HttpResponse('failure')
+            # print("Got request for " + bin)
+            t1 = time.time()
             response = HttpResponse(utils.getZipForBin(bin, ts), content_type='application/zip')
             response['Content-Disposition'] = 'attachment; filename=' + bin + '.zip'
+            # print("Response took " + str(time.time() - t1) + " seconds")
             return response
 
 class CacheBinPageView(TemplateView):

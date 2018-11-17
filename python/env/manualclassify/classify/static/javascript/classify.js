@@ -59,9 +59,30 @@ $(function() {
 
     // choosing a new classification to apply resets tag application
     classApplySelect.onchange = function() {
-        tagApplySelect.value = '';
+        $('#tag-apply-select').selectpicker('deselectAll');
     }
-
+    
+    let old_scroll;
+    
+    // when an option is clicked, bootstrap-select focuses the dropdown button
+    // and scrolls to it, causing an undesirable scroll
+    // this works because mousedown happens before click, so we can determine the
+    // scroll position immediately before the click and then get back to it afterwards
+    $('body').on('mousedown', '.dropdown-menu a', function(e) {
+        old_scroll = $(window).scrollTop();
+    });
+    
+    $('body').on('focus', '[data-id=class-apply-select]', function() {
+        if (old_scroll != undefined) {
+            $(window).scrollTop(old_scroll);
+        }
+        old_scroll = undefined;
+    });
+    
+    $(window).scroll(function() {
+        old_scroll = undefined;
+    });
+    
     // redo layout when window is resized
     var timeout = setTimeout(layoutMosaic, 0); // define the timer and call layout once immediately
     document.body.onresize = function() {

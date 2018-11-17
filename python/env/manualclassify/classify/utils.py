@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 import json
 import time
 import logging
+import threading
 from .settings import CACHE_DIR
 
 logger = logging.getLogger(__name__)
@@ -128,13 +129,12 @@ def getZipForBin(bin, timeseries):
         downloadZipForBin(bin, timeseries)
     return open(ZIP_CACHE_PATH + '/' + bin + '.zip', 'rb').read()
 
-def downloadZipForBin(bin, timeseries):
+def downloadZipForBin(bin, timeseries, force=False):
 
-    t = time.time()
-    while os.path.isfile(ZIP_CACHE_PATH + '/' + bin + '_temp.zip'):
-        if time.time() - t > 30: # 30 second timeout before just trying to download the file again
-            break
-        time.sleep(1)
+    if not force and os.path.isfile(ZIP_CACHE_PATH + '/' + bin + '_temp.zip'):
+        threading.Timer(30,
+            lambda : downloadZipForbin(bin, timeseries, force=True))
+        return
 
     if not isZipDownloaded(bin):
         logging.info('started downloading: ' + timeseries + bin + '.zip')

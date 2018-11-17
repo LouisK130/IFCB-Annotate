@@ -23,9 +23,9 @@ def getAllDataForBins(bins, targets, timeseries):
 
     # since timeseries_id should already be held in memory, no point in joining that table again in below query
     timeseries_id = getTimeseriesId(timeseries)
-    
+
     params = [timeseries_id]
-    
+
     # result column order:
     # 0   1    2    3        4     5                  6      7              8                  9              10     11        12
     # id, bin, roi, user_id, time, classification_id, level, verifications, verification_time, timeseries_id, power, username, pid
@@ -42,14 +42,14 @@ def getAllDataForBins(bins, targets, timeseries):
     query = query[:-2] + ');'
     # now that JS wants to order itself, we don't order here
     # query += 'ORDER BY pid, p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC;'
-    
+
     conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
     cur = conn.cursor()
     cur.execute(query, params)
     rows = cur.fetchall()
-    
+
     data = {}
-    
+
     for row in rows:
         dict = {
             'id' : row[0],
@@ -86,10 +86,10 @@ def getAllDataForBins(bins, targets, timeseries):
                 'classifications' : [],
                 'tags' : [],
             }
-    
+
     # now we query for tags, but the 'accepted' logic for them is less straightforward, so we'll leave that to JS
     # here, we simply add tags to the 'tags' array for their respective pids
-    
+
     # result column order:
     # 0   1    2    3        4     5       6      7              8                  9              10        11     12        13
     # id, bin, roi, user_id, time, tag_id, level, verifications, verification_time, timeseries_id, negation, power, username, pid
@@ -103,10 +103,10 @@ def getAllDataForBins(bins, targets, timeseries):
     for bin in bins:
         query += '%s, '
     query = query[:-2] + ');'
-        
+
     cur.execute(query, params)
     rows = cur.fetchall()
-    
+
     for row in rows:
         data[row[13]]['tags'].append({
             'id' : row[0],
@@ -121,7 +121,7 @@ def getAllDataForBins(bins, targets, timeseries):
             'user_power' : row[11],
             'username' : row[12],
         })
-        
+
     return data
 
 # Unfortunately, Django doesn't seem to have a good way to do many UPSERTs at once (I tried just looping objects, and it's PAINFULLY slow)
@@ -162,29 +162,29 @@ def insertUpdates(updates, user_id, is_classifications, negations, timeseries):
         return_updates['tags'] = {}
         table = 'classify_tag'
         col = 'tag_id'
-    
+
     # begin to build the query string
     # unfortunately it seems Django Model defaults aren't actually set as defaults in the database
     # so because we are doing a manual insert, we need to provide a value for every single column
     query = 'INSERT INTO ' + table + ' (bin, roi, user_id, time, ' + col + ', level, verifications, verification_time, timeseries_id'
-    
+
     # the tag table also has a `negation` column that needs to be handled
     if not is_classifications:
         query = query + ', negation'
-        
+
     # loop updates and build the VALUES portion of the query string
     query = query + ') VALUES '
-    
+
     # now we're looking at user inputs, so we need to pass paramters to psycopg2 instead of inserting directly into the query
     params = [];
-    
+
     for pid,id in updates.items():
-    
+
         # parse out the bin and roi from pid
         i = pid.rfind('_')
         bin = pid[:i]
         roi = pid[i+1:]
-        
+
         if not is_classifications:
             # if these are tags or negations, each `id` is actually an array of ids
             neg = 'true' if negations else 'false'
@@ -197,22 +197,22 @@ def insertUpdates(updates, user_id, is_classifications, negations, timeseries):
 
     # trim off the trailing space and comma
     query = query[:-2]
-    
+
     # handle conflicts that require an update instead of an insert
     query = query + ' ON CONFLICT (bin, roi, user_id, ' + col + ''
     if not is_classifications:
         query = query + ', negation'
     query = query + ') DO UPDATE SET (verifications, verification_time) = (' + table + '.verifications + 1, now()) RETURNING *;'
-    
+
     conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
     cur = conn.cursor()
     cur.execute(query, params)
     conn.commit()
     rows = cur.fetchall()
-    
+
     # loop returned (affected) rows and build dictionaries to be passed to JS
     for row in rows:
-    
+
         # I'm not sure if there's a better way to access columns
         # This is risky because if the schema changes, the indices are all thrown off
         pid = row[1] + '_' + utils.formatROI(row[2])
@@ -227,10 +227,10 @@ def insertUpdates(updates, user_id, is_classifications, negations, timeseries):
             'username' : utils.getUserName(row[3]),
             'timeseries_id' : row[9],
         }
-        
+
         if dict['verification_time']:
             dict['verification_time'] = dict['verification_time'].isoformat()
-            
+
         if is_classifications:
             dict['classification_id'] = row[5]
             return_updates['classifications'][pid] = dict
@@ -240,22 +240,24 @@ def insertUpdates(updates, user_id, is_classifications, negations, timeseries):
             if not pid in return_updates['tags']:
                 return_updates['tags'][pid] = []
             return_updates['tags'][pid].append(dict)
-            
+
     conn.close()
     return return_updates
 
 def filterBins(bins, views, sortby):
     if len(views) == 0 or len(bins) == 0:
         return []
-        
+
+    t1 = time.time()
+
     # there's definitely a better way to do this,
     # but I'm gonna do it recursively and hope it's not too slow
-    
+
     classID = views[0][0]
     tagIDs = views[0][1]
-    
+
     params = []
-        
+
     query = ('WITH '
                 'CA AS ( '
                     'SELECT DISTINCT ON (c.bin, c.roi) c.*, p.power '
@@ -263,16 +265,16 @@ def filterBins(bins, views, sortby):
                     'WHERE c.user_id = g.user_id '
                     'AND p.id = g.group_id '
                     'AND c.bin in (')
-                    
+
     for bin in bins:
         query += '%s, '
         params.append(bin)
-        
+
     query = query[:-2]
-    
+
     query = query + (') '
                     'ORDER BY c.bin, c.roi, ')
-                    
+
     if sortby == 'power':
         query = query + 'p.power DESC, c.verification_time DESC NULLS LAST, c.time DESC), '
     elif sortby == 'date':
@@ -280,13 +282,13 @@ def filterBins(bins, views, sortby):
     else:
         print("UNKNOWN SORTBY: " + sortby)
         return
-        
+
     query = query + ('CF AS ( '
                         'SELECT * FROM CA WHERE classification_id = %s '
                     ')')
-    
+
     params.append(classID)
-    
+
     if len(tagIDs) == 0 or not (tagIDs[0] == 'ANY' or tagIDs[0] == 'SMART'):
 
         query = query + (''
@@ -297,22 +299,22 @@ def filterBins(bins, views, sortby):
                     'WHERE t.user_id = g.user_id '
                     'AND p.id = g.group_id '
                     'AND t.bin IN (')
-                    
+
         for bin in bins:
             query += '%s, '
             params.append(bin)
 
         query = query[:-2]
-        
+
         query = query + ') ORDER BY t.bin, t.roi, t.tag_id, '
-        
+
         if sortby == 'power':
             query = query + 'p.power DESC, t.verification_time DESC NULLS LAST, t.time DESC)'
         elif sortby == 'date':
             query = query + 't.verification_time DESC NULLS LAST, t.time DESC, p.power DESC)'
 
         if len(tagIDs) > 0:
-        
+
             query = query + (', '
                     'TF AS ( '
                         'SELECT bin, roi, COUNT(*) AS cnt FROM TA '
@@ -321,22 +323,22 @@ def filterBins(bins, views, sortby):
             for id in tagIDs:
                 query += '%s, '
                 params.append(id)
-            
+
             query = query[:-2] + ') GROUP BY (bin, roi)'
-        
+
             query = query + ('), PC AS ('
                                     'SELECT bin, roi, COUNT(*) AS cnt FROM TA '
                                     'WHERE negation = false GROUP BY (bin, roi))'
                             )
-            
+
             query = query + ('SELECT DISTINCT ON (bin) CF.bin FROM TF, CF, PC '
                                 'WHERE TF.roi = CF.roi AND TF.bin = CF.bin '
                                 'AND CF.bin = PC.bin AND CF.roi = PC.roi '
                                 'AND PC.cnt = TF.cnt AND PC.cnt = ' + str(len(tagIDs)) + ';'
                             )
-            
+
         else:
-         
+
             query = query + (' SELECT DISTINCT ON (bin) bin FROM CF '
                              'WHERE bin || \'_\' || roi NOT IN ('
                                 'SELECT CF.bin || \'_\' || CF.roi AS pid FROM CF, TA '
@@ -344,27 +346,28 @@ def filterBins(bins, views, sortby):
                              ');')
     else:
         query = query + ' SELECT DISTINCT ON (bin) bin FROM CF;'
-        
+
     conn = sql.connect(database=config.db, user=config.username, password=config.password, host=config.server)
     cur = conn.cursor()
     cur.execute(query, params)
     conn.commit()
     rows = cur.fetchall()
-    
+
     #print(cur.query)
-    
+
     good_bins = []
-    
+
     for row in rows:
         good_bins.append(row[0])
-        
+
     #print("View: [" + str(classID) + ", " + str(tagIDs) + "]")
     #print(good_bins)
 
+    print("iteration took " + str(time.time() - t1) + " seconds")
     good_bins.extend(filterBins(bins, views[1:], sortby))
-    
+
     return utils.removeDuplicates(good_bins)
-    
+
 # we cache timeseries info here, so we don't make the same call to the database thousands of times
 # format:
 #    URL : UUID
@@ -405,7 +408,7 @@ def getTagList():
         c['id'] = tl.pk
         c['name'] = tl.name
         data.append(c)
-    data = sorted(data, key=lambda c: c['name'].lower())        
+    data = sorted(data, key=lambda c: c['name'].lower())
     return data;
 
 # adds annotations based on the auto classifier results to the data being prepared for passing to the client
@@ -469,4 +472,3 @@ def addClassifierData(bins, classes, tags, data, timeseries):
                     else:
                         logging.warn('Classifier attempted to annotate Thalassiosira_dirty but no external_detritus tag was found!')
     return data
-
