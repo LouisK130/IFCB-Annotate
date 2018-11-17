@@ -6,7 +6,7 @@
     {% endfor %}
     </select>
     <div class='MCSelectLabel'>Select tag(s) to view:</div>
-    <select id="tag-select" class="selectpicker" data-container="body" data-live-search="true" data-selected-text-format="count" multiple data-width="90%">
+    <select id="tag-select" class="selectpicker" data-container="body" data-live-search="true" data-selected-text-format="count" data-none-selected-text="No Tags" multiple data-width="90%">
         <option value='ANY' selected>ANY</option>
         {% for label in tag_labels %}
             <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
