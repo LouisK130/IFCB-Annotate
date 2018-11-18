@@ -20,7 +20,10 @@ $(function() {
     if (failed != "") {
         showAlert(failed, 'alert-danger');
     }
-
+    
+    $('#import-checkbox').change(function() {
+        setCookie('import', $(this).prop('checked'), 365);
+    });
 
     // don't actually delete the alert, we'll want to show it again later
     $('#alert-close').click(function() {
@@ -30,6 +33,61 @@ $(function() {
     if (getCookie('timeseries') != '' &&
             $('#timeseries-select option[value="' + getCookie('timeseries') + '"]').length > 0) {
         $('#timeseries-select').selectpicker('val', getCookie('timeseries'));
+    }
+    
+    if (getCookie('datestart') != '') {
+        $('#date-start input').val(getCookie('datestart'));
+    }
+    
+    if (getCookie('dateend') != '') {
+        $('#date-end input').val(getCookie('dateend'));
+    }
+    
+    if (getCookie('import') != '') {
+        if (getCookie('import') == 'true') {
+            let cb = $('#import-checkbox');
+            cb.find('span').addClass('checked');
+            cb.prop('checked', 'true');
+        }
+    }
+    
+    if (getCookie('selectedbins') != '') {
+        // loop and add bins and ranges
+        let cook = getCookie('selectedbins');
+        while (cook != '') {
+            if (cook.substring(0, 6) == 'range(') {
+                cook = cook.substring(6);
+                if (cook.indexOf('%|%') < 0) {
+                    console.log("ERROR: Malformated selectedbins cookie.");
+                    break;
+                }
+                let start = cook.substring(0, cook.indexOf('%|%'))
+                cook = cook.substring(cook.indexOf('%|%') + 3);
+                let stop = cook.substring(0, cook.indexOf(');'))
+                cook = cook.substring(cook.indexOf(');') + 2);
+                let range = createRangeItem(start, stop);
+                $(range).data('range-start', start);
+                $(range).data('range-end', stop);
+                $('#bin-list').append(item);
+                $('#none-selected').css('display', 'none');
+            } else if (cook.substring(0, 4) == 'bin(') {
+                cook = cook.substring(4);
+                if (cook.indexOf('%|%') < 0) {
+                    console.log("ERROR: Malformated selectedbins cookie.");
+                    break;
+                }
+                let name = decodeURIComponent(cook.substring(0, cook.indexOf('%|%')));
+                cook = cook.substring(cook.indexOf('%|%') + 3);
+                let date = cook.substring(0, cook.indexOf(');'));
+                cook = cook.substring(cook.indexOf(');') + 2);
+                let item = createBinItem(name, date, false);
+                $('#bin-list').append(item);
+                $('#none-selected').css('display', 'none');
+            } else {
+                console.log("ERROR: Malformated selectedbins cookie.");
+                break;
+            }
+        }
     }
 
     $(window).resize(function() {
@@ -58,6 +116,7 @@ $(function() {
         if ($('#recent-list li').length == 1) {
             $('#no-recents').css('display', 'block');
         }
+        updateSelectedBinsCookie();
     });
 
     $(document).on('click', '.glyphicon-remove', function() {
@@ -290,6 +349,7 @@ $(function() {
                     $('#bin-list').append(item);
                     $('#none-selected').css('display', 'none');
                 }
+                updateSelectedBinsCookie();
                 if (data.bad.length > 0) {
                     showAlert(data.bad.length + " invalid bins were omitted.", 'alert-danger');
                 }
@@ -343,6 +403,9 @@ $(function() {
             showAlert("Please pick two times to search between.", 'alert-danger');
             return;
         }
+        
+        setCookie('datestart', start.val(), 365);
+        setCookie('dateend', end.val(), 365);
 
         $('#date-search').prop("disabled", true);
         $('#date-back').prop("disabled", true);
@@ -435,6 +498,7 @@ $(function() {
         $('#bin-list').append(item);
         $('#none-selected').css('display', 'none');
         $('#results-back').click();
+        updateSelectedBinsCookie();
     });
 
     $('#bin-next').click(function() {
@@ -617,6 +681,22 @@ $(function() {
         $('#alert-message').html(message);
         alert.css('opacity', '0');
         alert.fadeTo(500, 1.0)
+    }
+    
+    function updateSelectedBinsCookie() {
+        let str = "";
+        $('#bin-list').find('.list-group-item').each(function() {
+            if ($(this).attr('id') == 'none-selected') return;
+            // %|% is just some weirdly specific pattern that I hope won't appear in bin names...
+           if ($(this).hasClass('time-range')) {
+               str += "range(" + $(this).data('range-start') + '%|%' + $(this).data('range-end') + ');'
+           } else {
+               console.log($(this));
+               console.log($(this).find('.bin-name').html());
+               str += "bin(" + encodeURIComponent($(this).find('.bin-name').html()) + '%|%' + $(this).find('.bin-date').html() + ');'
+           }
+        });
+        setCookie('selectedbins', str, 365);
     }
 
 });
