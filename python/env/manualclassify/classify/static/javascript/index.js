@@ -66,9 +66,7 @@ $(function() {
                 let stop = cook.substring(0, cook.indexOf(');'))
                 cook = cook.substring(cook.indexOf(');') + 2);
                 let range = createRangeItem(start, stop);
-                $(range).data('range-start', start);
-                $(range).data('range-end', stop);
-                $('#bin-list').append(item);
+                $('#bin-list').append(range);
                 $('#none-selected').css('display', 'none');
             } else if (cook.substring(0, 4) == 'bin(') {
                 cook = cook.substring(4);
@@ -493,8 +491,6 @@ $(function() {
             $(this).remove();
         });
         let item = createRangeItem(start.val(), end.val());
-        $(item).data('range-start', start.val());
-        $(item).data('range-end', end.val());
         $('#bin-list').append(item);
         $('#none-selected').css('display', 'none');
         $('#results-back').click();
@@ -689,10 +685,9 @@ $(function() {
             if ($(this).attr('id') == 'none-selected') return;
             // %|% is just some weirdly specific pattern that I hope won't appear in bin names...
            if ($(this).hasClass('time-range')) {
-               str += "range(" + $(this).data('range-start') + '%|%' + $(this).data('range-end') + ');'
+               let dates = $(this).find('.bin-date');
+               str += "range(" + dates[0].innerHTML + '%|%' + dates[1].innerHTML + ');'
            } else {
-               console.log($(this));
-               console.log($(this).find('.bin-name').html());
                str += "bin(" + encodeURIComponent($(this).find('.bin-name').html()) + '%|%' + $(this).find('.bin-date').html() + ');'
            }
         });
