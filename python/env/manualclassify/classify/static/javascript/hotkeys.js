@@ -130,7 +130,7 @@ function sortPidIntoView(pid) {
         if (oc in pids_in_views) {
             if (ot in pids_in_views[oc]) {
                 let o = pids_in_views[oc][ot];
-                for (let n = 0; n < o.length; o++) {
+                for (let n = 0; n < o.length; n++) {
                     if (o[n]['pid'] == pid) {
                         o.splice(n, 1);
                         break;
