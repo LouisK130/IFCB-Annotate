@@ -60,7 +60,7 @@ def parseBinToTargets(bin, timeseries):
             return json.load(f)
     else:
         # create the temp file first so we know it's being downloaded
-        f = open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w')
+        f = open(TARGETS_CACHE_PATH + '/' + bin + '_temp', 'w+')
         f.close()
 
         logging.info('started downloading: ' + timeseries + bin + '_roisizes')
@@ -129,23 +129,22 @@ def getZipForBin(bin, timeseries):
         downloadZipForBin(bin, timeseries)
     return open(ZIP_CACHE_PATH + '/' + bin + '.zip', 'rb').read()
 
-def downloadZipForBin(bin, timeseries, force=False):
-
-    if not force and os.path.isfile(ZIP_CACHE_PATH + '/' + bin + '_temp.zip'):
-        threading.Timer(30,
-            lambda : downloadZipForbin(bin, timeseries, force=True))
-        return
-
+def downloadZipForBin(bin, timeseries):
     if not isZipDownloaded(bin):
         logging.info('started downloading: ' + timeseries + bin + '.zip')
         # create the file first, just so we know it's being downloaded
-        f = open(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', 'w')
+        f = open(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', 'w+')
         f.close()
         r = requests.get(timeseries + bin + '.zip')
         with open(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', 'wb') as f:
             f.write(r.content)
-        os.rename(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', ZIP_CACHE_PATH + '/' + bin + '.zip')
-        logging.info('finished downloading: ' + timeseries + bin + '.zip')
+        if os.path.getsize(ZIP_CACHE_PATH + '/' + bin + '_temp.zip') > 0:
+            os.rename(ZIP_CACHE_PATH + '/' + bin + '_temp.zip', ZIP_CACHE_PATH + '/' + bin + '.zip')
+            logging.info('finished downloading: ' + timeseries + bin + '.zip')
+        else:
+            os.remove(ZIP_CACHE_PATH + '/' + bin + '_temp.zip')
+            logging.error('failed to download zip for bin: ' + timeseries + bin + '.zip')
+            print("error")
 
 def areAutoResultsCached(bin):
     return os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin)
