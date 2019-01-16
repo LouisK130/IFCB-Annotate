@@ -13,7 +13,9 @@ function createRightClickMenu(pid) {
     document.body.appendChild(menu);
 
     var title = document.createElement('div');
-    title.innerHTML = '<b>' + pid + '</b>';
+    var href = timeseries + pid + '.html'
+    var anchor = '<a href="'+href+'" target="_blank"><b>'+pid+'</b></a>';
+    title.innerHTML = anchor;
     title.style.padding = '5px';
     title.style.textAlign = 'center';
 
