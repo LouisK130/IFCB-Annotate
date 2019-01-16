@@ -266,6 +266,10 @@ div.MCDetailEntryPiece {
     font-size: small;
     font-family: 'Roboto';
     color: white;
+    -webkit-user-select: text;  /* Chrome 49+ */
+    -moz-user-select: text;     /* Firefox 43+ */
+    -ms-user-select: text;      /* No support yet */
+    user-select: text;          /* Likely future */   
 }
 #MCLoading {
     font-family: 'Roboto';
@@ -274,4 +278,11 @@ div.MCDetailEntryPiece {
 
 .col-xs-2 {
     min-width: 200px;
+}
+
+#MCRightClickMenu {
+    -webkit-user-select: text;  /* Chrome 49+ */
+    -moz-user-select: text;     /* Firefox 43+ */
+    -ms-user-select: text;      /* No support yet */
+    user-select: text;          /* Likely future */   
 }
