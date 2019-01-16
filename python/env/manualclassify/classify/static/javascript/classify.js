@@ -411,8 +411,10 @@ function submitUpdates() {
                 if (target['pid'] in tag_updates)
                     document.getElementById('MCNewTag_' + pid).style.color = '#56f442';
                 
-                if (target['view'][0] == c_select.selectpicker('val') &&
-                    sameArray(target['view'][1], t_select.selectpicker('val')) &&
+                let tagMatch = sameArray(target['view'][1], t_select.selectpicker('val'))
+                                || t_select.selectpicker('val') == 'ANY';
+                
+                if (target['view'][0] == c_select.selectpicker('val') && tagMatch &&
                     checkPidFilter(target, f_select.selectpicker('val'))) {
                     
                     if (pid in classification_updates) {

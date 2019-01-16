@@ -272,13 +272,22 @@ function checkPidFilter(target, filter) {
 }
 
 function getTargetsInCategory(classification, tags, filter) {
-    var targets = [];
-    if (!(classification in pids_in_views) || !(tags in pids_in_views[classification]))
-        return [];
-    for(let n = 0; n < pids_in_views[classification][tags].length; n++) {
-        let t = pids_in_views[classification][tags][n];
-        if (checkPidFilter(t, filter))
-            targets.push(t)
+    let targets = [];
+    let tagArrays = [];
+    if (!(classification in pids_in_views)) return [];
+    if (tags[0] == 'ANY') {
+        for (let arr in pids_in_views[classification]) tagArrays.push(arr);
+    } else {
+        if (!(tags in pids_in_views[classification])) return [];
+        tagArrays.push(tags)
+    }
+    for (let k = 0; k < tagArrays.length; k++) {
+        let arr = tagArrays[k];
+        for(let n = 0; n < pids_in_views[classification][arr].length; n++) {
+            let t = pids_in_views[classification][arr][n];
+            if (checkPidFilter(t, filter))
+                targets.push(t)
+        }
     }
     targets.sort(compareTargets);
     return targets;

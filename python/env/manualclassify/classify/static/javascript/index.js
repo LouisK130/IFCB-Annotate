@@ -136,6 +136,7 @@ $(function() {
         if ($('#views-list li').length == 1) {
             $('#add-view-item').css('max-height', 'calc(100% - 5px');
         }
+        updateSelectedBinsCookie();
     });
 
     $('#classify-button').click(function() {
