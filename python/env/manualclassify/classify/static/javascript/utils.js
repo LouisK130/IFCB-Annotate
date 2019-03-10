@@ -274,6 +274,7 @@ function checkPidFilter(target, filter) {
 function getTargetsInCategory(classification, tags, filter) {
     let targets = [];
     let tagArrays = [];
+    tags.sort();
     if (!(classification in pids_in_views)) return [];
     if (tags[0] == 'ANY') {
         for (let arr in pids_in_views[classification]) tagArrays.push(arr);
