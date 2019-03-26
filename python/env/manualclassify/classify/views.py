@@ -179,7 +179,11 @@ class ClassifyPageView(TemplateView):
                 else:
                     bins = utils.removeDuplicates(bins + utils.getBinsInRange(start, end, ts))
             if len(views) > 0:
-                bins = database.filterBins(bins, views, sortby)
+                original = bins
+                filtered = database.filterBins(bins, views, sortby)
+                bins = []
+                for b in original:
+                    if b in filtered: bins.append(b)
 
         if len(bins) == 0 or (len(bins) == 1 and bins[0] == ''):
             request.session['failed'] = 'None of those bins had results in those views.'
