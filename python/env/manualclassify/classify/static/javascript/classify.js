@@ -194,6 +194,10 @@ function reloadTargets() {
     let tags = [];
     for (let n = 0; n < t.selectedOptions.length; n++) {
         tags.push(t.selectedOptions[n].value);
+        if (t.selectedOptions[n].value == 'ANY') {
+            tags = ['ANY'];
+            break;
+        }
     }
     current_targets = getTargetsInCategory(c.value, tags, f.value);
     updateLoadedCounter();

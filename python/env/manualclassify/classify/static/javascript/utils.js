@@ -98,21 +98,22 @@ function getBatchEnd() {
     return getCookie('MCBatchEnd') || null;
 }
 
+// this should really only be used for tag arrays
+// it modifies the given arrays to make all elements ints
 function sameArray(one, two) {
-    let r = one.length == two.length;
-    if (r) {
-        for (let n = 0; n < one.length; n++) {
-            if (!two.includes(one[n])) {
-                try {
-                    if (!two.includes(parseInt(one[n])))
-                        return false;
-                } catch(err) {
-                    return false;
-                }
-            }
+    if (one.length != two.length) return false;
+    for (let n = 0; n < one.length; n++) {
+        try {
+            one[n] = parseInt(one[n]);
+            two[n] = parseInt(two[n]);
+        } catch(err) {
+            console.log("Exception comparing arrays: " + err);
+            return false;
         }
     }
-    return r;
+    for (let n = 0; n < one.length; n++)
+        if (!one.includes(two[n]) || !two.includes(one[n])) return false;
+    return true;
 }
 
 function serializeTags(tags) {
@@ -314,7 +315,7 @@ function makeUpdatesToClassifications(updates) {
             var update = updates['classifications'][pid]
             var oc = c['classifications'];
             for (var n = 0; n < oc.length; n++) {
-                if (oc[n]['user_id'] = update['user_id'] && oc[n]['classification_id'] == update['classification_id']) {
+                if (oc[n]['user_id'] == update['user_id'] && oc[n]['classification_id'] == update['classification_id']) {
                     oc.splice(n, 1);
                     break;
                 }
