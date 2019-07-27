@@ -417,15 +417,15 @@ function loadImage(pid, entry) {
 
 function keepElementOnScreen(ele) {
     var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-    width -= 10;
+    width -= 25;
     var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
     height -= 10;
     var rect = ele.getBoundingClientRect();
     
     if (rect.right >= width)
-        ele.style.left = width - ele.offsetWidth + 'px';
+        ele.style.left = width - $(ele).width() + "px"
     if (rect.bottom >= height)
-        ele.style.top = height - ele.offsetHeight + 'px';
+        ele.style.top = height - $(ele).height() + "px"
 }
 
 function getLabelById(id, tag) {
