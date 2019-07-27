@@ -86,18 +86,24 @@ function createContextMenu() {
         var clas = option.children[0];
         var tag = option.children[1];
         // Probably an inefficient way to resize, but certainly the easiest for me; let CSS do the math
-        while (clas.scrollWidth > clas.clientWidth || tag.scrollWidth > tag.clientWidth)
-            menu.style.width = menu.offsetWidth + 1 + 'px';
+	for (let i = 0; i < 200; i++) {
+		if (clas.scrollWidth > clas.clientWidth || tag.scrollWidth > tag.clientWidth) {
+			$(menu).width($(menu).width() + 1);
+		} else {
+			break;
+		}
+	}
     }
-    
-    if (menu.offsetWidth > 200)
-        menu.style.width = (menu.offsetWidth + 30) + 'px';
+	
+    if ($(menu).width() > 200) {
+    	$(menu).width($(menu).width() + 30)
+    }
     
     keepElementOnScreen(menu);
     
 }
 
-function createApplicationOption(c, t) {
+function createApplicationOption(c, t, menu) {
     var div = document.createElement('div');
     div.style.borderBottom = '1px solid';
     div.style.borderTop = '1px solid';
