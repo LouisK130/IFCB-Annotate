@@ -229,15 +229,13 @@ function moreRecent(c1, c2) {
 
 function compareClassifications(c1, c2) {
     if (sortby == 'power') {
-        if (c1['user_power'] == c2['user_power']) {
-            return moreRecent(c1, c2) == c2;
-        } else {
-            return morePowerful(c1, c2) == c2;
+        if ((c1['user_power'] == c2['user_power'] && moreRecent(c1, c2) == c2) || morePowerful(c1, c2) == c2) {
+			return 1
         }
-    } else if (sortby == "date") {
-        // the miniscule possibility of a tie in time is ignored here
-        return moreRecent(c1, c2) == c2;
+    } else if (sortby == "date" && moreRecent(c1, c2) == c2) {
+		return 1
     }
+	return -1
 }
 
 function checkPidFilter(target, filter) {
