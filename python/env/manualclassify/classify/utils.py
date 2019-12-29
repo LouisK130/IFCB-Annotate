@@ -167,50 +167,32 @@ def getAutoResultsForBin(bin, timeseries):
     classifications = {}
     path = timeseries + bin + '_class_scores.csv'
 
-    t = time.time()
-    while os.path.isfile(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp'):
-        if time.time() - t > 30: # 30 second timeout before just trying to download the file again
-            break
-        time.sleep(1)
-
-    if areAutoResultsCached(bin):
-        with open(AUTO_RESULTS_CACHE_PATH + '/' + bin) as f:
-            try:
-                classifications = json.load(f)
-            except ValueError:
-                pass
-    else:
-        f = open(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', 'w')
-        f.close()
-        logging.info('started downloading: ' + path)
-        with closing(requests.get(path, stream=True)) as r:
-            if r.status_code == 404:
-                logging.info('no auto results available at: ' + path)
-                os.rename(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', AUTO_RESULTS_CACHE_PATH + '/' + bin)
-                return None
-            reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
-            headers = next(reader)
-            try:
-                pid_index = headers.index('pid')
-            except:
-                return None
-            for row in reader:
-                i = 0
-                winner = None
-                for col in row:
-                    if i == pid_index:
-                        i += 1
-                        continue
-                    if not winner:
-                        winner = (headers[i], col)
-                    else:
-                        if col > winner[1]:
-                            winner = (headers[i], col)
+    logging.info('started downloading: ' + path)
+    with closing(requests.get(path, stream=True)) as r:
+        if r.status_code == 404:
+            logging.info('no auto results available at: ' + path)
+            return None
+        reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'), delimiter=',')
+        headers = next(reader)
+        try:
+            pid_index = headers.index('pid')
+        except:
+            return None
+        for row in reader:
+            i = 0
+            winner = None
+            for col in row:
+                if i == pid_index:
                     i += 1
-                classifications[row[pid_index]] = winner[0]
-        with open(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', 'w') as f:
-            json.dump(classifications, f)
-        os.rename(AUTO_RESULTS_CACHE_PATH + '/' + bin + '_temp', AUTO_RESULTS_CACHE_PATH + '/' + bin)
+                    continue
+                v = float(col)
+                if not winner:
+                    winner = (headers[i], v)
+                else:
+                    if v > winner[1]:
+                        winner = (headers[i], v)
+                i += 1
+            classifications[row[pid_index]] = winner[0]
         logging.info('finished downloading: ' + path)
     return classifications
 
