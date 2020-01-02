@@ -8,6 +8,13 @@ let OPEN_SELECT_2 = 50 // 2
 let OPEN_SELECT_3 = 51 // 3
 let OPEN_SELECT_4 = 52 // 4
 
+let NO_ANNOTATION_ID = -1
+for (let c in classification_labels) {
+    if (c['name'] == 'No annotation') {
+        NO_ANNOTATION_ID = c['id']
+    }
+}
+
 let bound_keys = [
         FORWARD_KEY,
         PREVIOUS_KEY,
@@ -19,8 +26,6 @@ let bound_keys = [
         OPEN_SELECT_3,
         OPEN_SELECT_4
     ];
-
-let UNCLASSIFIED_CLASS = 40;
 
 document.addEventListener('keydown', generalKeyDown, false);
 
@@ -112,7 +117,7 @@ function sortPidIntoView(pid) {
     let target = classifications[pid];
     let c;
     if (!('classifications' in target) || target['classifications'].length == 0) {
-        c = UNCLASSIFIED_CLASS;
+        c = NO_ANNOTATION_ID;
     } else {
         c = target['classifications'][0]['classification_id'];
     }

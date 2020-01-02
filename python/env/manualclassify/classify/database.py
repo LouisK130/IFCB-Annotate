@@ -9,6 +9,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+NO_MATCH_CLASS = {
+    'id' : -2,
+    'name' : 'NO MATCH FOR AUTOCLASS',
+    'international_id' : -2
+}
+
+# This class is referenced _exactly_ by name in "hotkeys.js"
+# Changing the name here requires it to be changed there as well!
+NO_ANNOTATION_CLASS = {
+    'id' : -1,
+    'name' : 'No annotation',
+    'international_id' : -1
+}
+
 # NOTE: Throughout this application, PIDs and bins are stored and transferred WITHOUT the timeseries url prepended
 
 # Filtering using django objects is fast, but then iterating through them is slow
@@ -399,6 +413,8 @@ def getClassificationList():
         c['international_id'] = cl.international_id
         data.append(c)
     data = sorted(data, key=lambda c: c['name'].lower())
+    data.insert(0, NO_ANNOTATION_CLASS)
+    data.insert(0, NO_MATCH_CLASS)
     return data
 
 def getTagList():
@@ -422,53 +438,53 @@ def getTagList():
 # Output: the same dictionary given in Param 4, modified to include annotations from the auto classifier
 
 def addClassifierData(bins, classes, tags, data, timeseries):
+
+    class_dict = {}
+    tag_dict = {}
+    # array to dict for faster access
+    for c in classes:
+        class_dict[c['name']] = c
+    for t in tags:
+        tag_dict[t['name']] = t
+    
     for bin in bins:
         auto_results = utils.getAutoResultsForBin(bin, timeseries)
         if not auto_results:
             continue;
         for pid, classification in auto_results.items():
-            classification_id = None
-            new_name = None
-            if classification in utils.CLASSIFIER_CONVERSION_TABLE:
-                new_name = utils.CLASSIFIER_CONVERSION_TABLE[classification]
+            name, tags = utils.convertClassifierName(classification)
+            if name in class_dict:
+                classification_id = class_dict[name]['id']
             else:
-                new_name = classification.replace('_', ' ')
-            for c in classes:
-                if c['name'] == new_name:
-                    classification_id = c['id']
-                    break
-            if not classification_id:
-                logging.warn('Auto classifier label "' + classification + '" did not have a matching classification label in the database!')
-                for c in classes:
-                    if c['name'] == 'unclassified':
-                        classification_id = c['id']
-                        break
-            if pid in data:
-                dict = {
-                    'user_id' : -1,
-                    'classification_id' : classification_id,
-                    'level' : 1,
-                    'timeseries_id' : getTimeseriesId(timeseries),
-                    'user_power' : -1,
-                    'username' : 'auto',
-                }
-                data[pid]['classifications'].append(dict)
-                # this is a special case, where the classifier also annotates an 'external detritus' tag
-                if classification == 'Thalassiosira_dirty':
-                    tag_id = None
-                    for t in tags:
-                        if t['name'] == 'external detritus':
-                            tag_id = t['id']
-                    if tag_id:
-                        dict = {
-                            'user_id' : -1,
-                            'tag_id' : tag_id,
-                            'user_power' : -1,
-                            'level' : 1,
-                            'timeseries_id' : getTimeseriesId(timeseries),
-                            'username' : 'auto',
-                        }
-                        data[pid]['tags'].append(dict)
-                    else:
-                        logging.warn('Classifier attempted to annotate Thalassiosira_dirty but no external_detritus tag was found!')
+                logging.error("Auto classifier label '" + classification + "' had no matching class label. Expected '" + name + "'.")
+                classification_id = NO_MATCH_CLASS['id']
+            if not pid in data:
+                continue
+            
+            c_dict = {
+                'user_id' : -1,
+                'classification_id' : classification_id,
+                'level' : 1,
+                'timeseries_id' : getTimeseriesId(timeseries),
+                'user_power' : -1,
+                'username' : 'auto',
+            }
+
+            for tag in tags:
+                if tag in tag_dict:
+                    t_dict = {
+                        'user_id' : -1,
+                        'tag_id' : tag_dict[tag]['id'],
+                        'user_power' : -1,
+                        'level' : 1,
+                        'timeseries_id' : getTimeseriesId(timeseries),
+                        'username' : 'auto',
+                    }
+                    data[pid]['tags'].append(t_dict)
+                else:
+                    logging.error("Auto classifier label '" + classification + "' had no matching tab label. Expected '" + tag + "'.")
+                    c_dict['classification_id'] = NO_MATCH_CLASS['id']
+            
+            data[pid]['classifications'].append(c_dict)
+
     return data

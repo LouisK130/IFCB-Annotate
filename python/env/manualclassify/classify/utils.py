@@ -10,6 +10,8 @@ import logging
 import threading
 from .settings import CACHE_DIR
 
+TAG_REGEX = "_TAG_"
+
 logger = logging.getLogger(__name__)
 
 ZIP_CACHE_PATH = os.path.join(CACHE_DIR,'zips')
@@ -22,29 +24,6 @@ if not os.path.exists(TARGETS_CACHE_PATH):
     os.makedirs(TARGETS_CACHE_PATH, exist_ok=True)
 if not os.path.exists(AUTO_RESULTS_CACHE_PATH):
     os.makedirs(AUTO_RESULTS_CACHE_PATH, exist_ok=True)
-
-CLASSIFIER_CONVERSION_TABLE = {
-    'Asterionellopsis' : 'Asterionellopsis glacialis',
-    'Corethron' : 'Corethron hystrix',
-    'DactFragCerataul' : 'Dactyliosolen fragilissimus',
-    'Dactyliosolen' : 'Dactyliosolen blavyanus',
-    'Ditylum' : 'Ditylum brightwellii',
-    'Eucampia' : 'Eucampia cornuta',
-    'Guinardia' : 'Guinardia delicatula',
-    'Pseudonitzschia' : 'Pseudo-nitzschia',
-    'Thalassiosira_dirty' : 'Thalassiosira', # TAGGED: 'external detritus'
-    'dino30' : 'Dinophyceae',
-    'Lauderia' : 'Lauderia annulata',
-    'Cerataulina' : 'Cerataulina pelagica',
-    'Paralia' : 'Paralia sulcata',
-    'ciliate_mix' : 'Ciliate mix',
-    'Laboea' : 'Laboea strobila',
-    'Myrionecta' : 'Mesodinium',
-    'tintinnid' : 'Tintinnida',
-    'Pyramimonas' : 'Pyramimonas longicauda',
-    'clusterflagellate' : 'Corymbellus',
-    'kiteflagellates' : 'Chrysochromulina lanceolata',
-}
 
 def parseBinToTargets(bin, timeseries):
     targets = {}
@@ -166,7 +145,6 @@ def removeDuplicates(arr):
 def getAutoResultsForBin(bin, timeseries):
     classifications = {}
     path = timeseries + bin + '_class_scores.csv'
-
     logging.info('started downloading: ' + path)
     with closing(requests.get(path, stream=True)) as r:
         if r.status_code == 404:
@@ -195,6 +173,16 @@ def getAutoResultsForBin(bin, timeseries):
             classifications[row[pid_index]] = winner[0]
         logging.info('finished downloading: ' + path)
     return classifications
+    
+def convertClassifierName(original):
+    pieces = original.split(TAG_REGEX)
+    name = pieces[0].replace("_", " ")
+    tags = []
+    for i in range(1, len(pieces)):
+        tag = pieces[i].replace("_", " ")
+        tags.append(tag)
+
+    return [name, tags]
 
 # gets all bin names for a timeseries in a date range
 

@@ -4,7 +4,9 @@
         <option value=''></option>
         <option value='CLEAR'>CLEAR</option>
         {% for label in classification_labels %}
-            <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+            {% if label.id >= 0 %}
+                <option value='{{ label.id }}'>{{ label.name }} ({{ label.id }})</option>
+            {% endif %}
         {% endfor %}
     </select>
     <div class='MCSelectLabel'>Select tag(s) to apply:</div>

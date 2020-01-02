@@ -480,8 +480,8 @@ function loadMore(n) {
         return;
     if (target_counter == 0) {
         var markers = document.getElementsByClassName('MCEndSetMarker');
-        for (var z = 0; z < markers.length; z++) {
-            markers[z].outerHTML = '';
+        while (markers.length > 0) {
+            markers[0].parentNode.removeChild(markers[0])
         }
     }
     else {
