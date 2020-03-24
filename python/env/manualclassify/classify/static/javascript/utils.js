@@ -234,6 +234,8 @@ function compareClassifications(c1, c2) {
         }
     } else if (sortby == "date" && moreRecent(c1, c2) == c2) {
 		return 1
+    } else if (sortby == 'classifier' && c2['user_id'] == -1) {
+        return 1
     }
 	return -1
 }
