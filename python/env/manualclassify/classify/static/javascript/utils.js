@@ -244,6 +244,7 @@ function checkPidFilter(target, filter) {
     if (target['classifications'].length == 0)
         return filter == 'ANY' || filter == 'NONE';
     let c = target['classifications'][0];
+    let sb;
     switch (filter) {
         case 'ANY':
             return true;
@@ -252,22 +253,25 @@ function checkPidFilter(target, filter) {
         case 'OTHERS':
             return c['user_id'] && c['user_id'] > 0 && c['user_id'] != user_id;
         case 'NONE':
-            return !c['user_id'] || c['user_id'] < 0;
-        case 'DIFFER':
+            return !c['user_id'] || (c['user_id'] < 0 && target['classifications'].length == 1);
+        case 'PD_DIFFER':
+            sb = ['power', 'date']
+        case 'PC_DIFFER':
+            sb = ['power', 'classifier']
+        default:
+            // notice fallthrough here handles both PD_DIFFER and PC_DIFFER
             if (target['classifications'].length < 2)
                 return false;
             let old = sortby;
-            if (sortby == 'power') {
-                sortby = 'date';
-            }
-            else {
-                sortby = 'power';
-            }
+            sortby = sb[0];
+            target['classifications'].sort(compareClassifications);
+            let c1 = target['classifications'][0];
+            sortby = sb[1];
             target['classifications'].sort(compareClassifications);
             let c2 = target['classifications'][0];
             sortby = old;
             target['classifications'].sort(compareClassifications);
-            return c != c2;
+            return c1 != c2;
     }
     return false;
 }
