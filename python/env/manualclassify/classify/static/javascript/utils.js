@@ -256,13 +256,10 @@ function checkPidFilter(target, filter) {
             return !c['user_id'] || (c['user_id'] < 0 && target['classifications'].length == 1);
         case 'PD_DIFFER':
             sb = ['power', 'date']
-            invert = false;
         case 'PC_DIFFER':
             sb = ['power', 'classifier']
-            invert = false;
         case 'PC_AGREE':
             sb = ['power', 'classifier']
-            invert = true;
         default:
             // notice fallthrough here
             if (target['classifications'].length < 2)
@@ -276,11 +273,10 @@ function checkPidFilter(target, filter) {
             let c2 = target['classifications'][0];
             sortby = old;
             target['classifications'].sort(compareClassifications);
-            differ = c1 != c2;
-            if (invert) {
-                return !differ;
-            } else {
-                return differ;
+            if (filter == "PC_AGREE") {
+                return (c1['user_id'] != c2['user_id']) && (c1['classification_id'] == c2['classification_id']);
+            } else { 
+                return c1['classification_id'] != c2['classification_id']
             }
     }
     return false;
